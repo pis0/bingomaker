@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with TexturePacker https://www.codeandweb.com/texturepacker -->
+<!-- $TexturePacker:SmartUpdate:9b8af62b6022f70b53a61f0a34dd38f8:c3254f7a9e15d68b07f268085de095c6:dc0414630cf0f50274cbd949924d0342$ -->
+<TextureAtlas imagePath="menton_bonus1_M3.png" width="256" height="512">
+    <SubTexture name="B1" x="0" y="356" width="56" height="56"/>
+    <SubTexture name="caixa_D" x="81" y="430" width="85" height="73"/>
+    <SubTexture name="card2" x="0" y="250" rotated="true" width="104" height="100"/>
+    <SubTexture name="grablemon08" x="142" y="0" width="109" height="87" frameX="-213" frameY="-300" frameWidth="537" frameHeight="418"/>
+    <SubTexture name="juice_04" x="142" y="93" rotated="true" width="108" height="86"/>
+    <SubTexture name="liqu_col0011" x="110" y="293" rotated="true" width="87" height="48" frameX="0" frameY="-21" frameWidth="48" frameHeight="108"/>
+    <SubTexture name="liqu_col0012" x="110" y="293" rotated="true" width="87" height="48" frameX="0" frameY="-21" frameWidth="48" frameHeight="108"/>
+    <SubTexture name="liqu_col0015" x="0" y="142" rotated="true" width="108" height="48"/>
+    <SubTexture name="liqu_col0016" x="0" y="142" rotated="true" width="108" height="48"/>
+    <SubTexture name="liqu_col0017" x="114" y="185" rotated="true" width="108" height="48"/>
+    <SubTexture name="liqu_col0018" x="114" y="185" rotated="true" width="108" height="48"/>
+    <SubTexture name="liqu_col0019" x="0" y="196" rotated="true" width="108" height="48"/>
+    <SubTexture name="liqu_col0020" x="0" y="196" rotated="true" width="108" height="48"/>
+    <SubTexture name="liqu_col0021" x="114" y="239" rotated="true" width="108" height="48"/>
+    <SubTexture name="liqu_col0022" x="114" y="239" rotated="true" width="108" height="48"/>
+    <SubTexture name="menton_share2" x="0" y="0" width="136" height="136"/>
+    <SubTexture name="pipo_juice0013" x="0" y="430" rotated="true" width="75" height="76"/>
+    <SubTexture name="pipo_juice0014" x="0" y="430" rotated="true" width="75" height="76"/>
+    <SubTexture name="starlemon03" x="110" y="347" width="86" height="77" frameX="-60" frameY="-1" frameWidth="227" frameHeight="221"/>
+    <SubTexture name="uvaC" x="172" y="430" width="73" height="73" frameX="0" frameY="0" frameWidth="85" frameHeight="73"/>
+</TextureAtlas>

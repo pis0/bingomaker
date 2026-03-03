@@ -1,0 +1,57 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>com.assukar.praia</groupId>
+		<artifactId>praia-client-menton</artifactId>
+		<version>0.1</version>
+	</parent>
+
+	<artifactId>praia-client-menton-view</artifactId>
+	<name>praia-client-menton-view</name>
+	<version>0.1</version>
+	<packaging>swc</packaging>
+	
+	<dependencies>				
+		<dependency>
+			<groupId>com.assukar.praia</groupId>
+			<artifactId>praia-client-assets</artifactId>
+			<type>swc</type>
+		</dependency>
+		<dependency>
+			<groupId>com.assukar.praia</groupId>
+			<artifactId>praia-client-domain</artifactId>
+			<type>swc</type>
+		</dependency>			
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.sonatype.flexmojos</groupId>
+				<artifactId>flexmojos-maven-plugin</artifactId>
+				<configuration>
+					<includeClasses>
+						<scan>
+							<excludes>
+							  <exclude>*.*_P</exclude>
+							  <exclude>*.*_E</exclude>
+							  <exclude>*.Fake*</exclude>
+							  <exclude>*.*Composer*</exclude>
+							  <exclude>*.*Test*</exclude>
+							  <exclude>*.*MoviePlayer</exclude>							
+							  <exclude>*.*SoundsSwf</exclude>
+							  <exclude>*.*SpritesSwf</exclude>
+							  <exclude>*.*Embeds*</exclude>
+							  <exclude>*.*Validator*</exclude>
+							  <exclude>*.*Startup*</exclude>
+							  <exclude>*.*Validation*</exclude>
+							</excludes>
+						</scan>
+					</includeClasses>				
+				</configuration>				
+			</plugin>
+		</plugins>
+	</build>
+	
+</project>

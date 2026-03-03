@@ -1,0 +1,310 @@
+.debug-panel {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 9999;
+  width: 340px;
+  max-height: calc(100vh - 16px);
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-y: auto;
+  pointer-events: auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.debug-panel * {
+  box-sizing: border-box;
+}
+
+/* Header */
+.debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(98, 0, 234, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.debug-header h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #bb86fc;
+  letter-spacing: 0.5px;
+}
+
+.debug-header button {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.debug-header button:hover {
+  color: #fff;
+}
+
+.debug-body {
+  padding: 0;
+}
+
+/* Sections */
+.debug-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+}
+
+.debug-section:last-child {
+  border-bottom: none;
+}
+
+.debug-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+}
+
+/* Inputs */
+.debug-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.debug-row label {
+  width: 40px;
+  color: #888;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.debug-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 6px;
+  outline: none;
+}
+
+.debug-input:focus {
+  border-color: #bb86fc;
+}
+
+/* Buttons */
+.debug-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.debug-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.debug-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.debug-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.debug-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.debug-btn--primary {
+  background: rgba(98, 0, 234, 0.4);
+  border-color: rgba(98, 0, 234, 0.6);
+}
+
+.debug-btn--primary:hover {
+  background: rgba(98, 0, 234, 0.6);
+}
+
+/* Status label */
+.debug-status {
+  margin-top: 6px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 10px;
+}
+
+/* Card Grid */
+.debug-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.debug-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.debug-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+  font-size: 9px;
+  color: #888;
+}
+
+.debug-card-header .payout {
+  color: #4caf50;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+}
+
+.debug-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 3px;
+  border: 1.5px solid transparent;
+}
+
+.debug-cell--empty {
+  background: #1a1a2e;
+  color: #555;
+}
+
+.debug-cell--matched {
+  background: #1565c0;
+  color: #fff;
+}
+
+.debug-cell--in-pattern {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.debug-cell--new-match {
+  background: #e65100;
+  color: #fff;
+}
+
+.debug-cell--new-in-pattern {
+  background: #2e7d32;
+  color: #fff;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.6);
+}
+
+.debug-cell--missing {
+  background: #1a1a2e;
+  color: #ffeb3b;
+  border-color: #ffeb3b;
+}
+
+.debug-cell--preview {
+  border-color: #9c27b0;
+  border-style: dashed;
+}
+
+/* Select */
+.debug-select {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 10px;
+  padding: 4px 6px;
+  outline: none;
+}
+
+.debug-select:focus {
+  border-color: #bb86fc;
+}
+
+/* Draw Log */
+.debug-draw-log {
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.debug-draw-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+.debug-draw-log::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.debug-draw-entry {
+  padding: 1px 0;
+  font-size: 10px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.debug-draw-entry--payout {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.debug-draw-entry--missing {
+  color: #ffeb3b;
+}
+
+/* Completed patterns list */
+.debug-patterns-list {
+  font-size: 9px;
+  color: #4caf50;
+  margin-top: 2px;
+}
+
+/* Scrollbar for panel */
+.debug-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.debug-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}

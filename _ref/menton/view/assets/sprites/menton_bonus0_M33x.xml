@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with TexturePacker https://www.codeandweb.com/texturepacker -->
+<!-- $TexturePacker:SmartUpdate:9b8af62b6022f70b53a61f0a34dd38f8:c3254f7a9e15d68b07f268085de095c6:dc0414630cf0f50274cbd949924d0342$ -->
+<TextureAtlas imagePath="menton_bonus0_M33x.png" width="2048" height="2048">
+    <SubTexture name="abacaxiB" x="1996" y="174" width="51" height="45"/>
+    <SubTexture name="bgbonus" x="0" y="0" width="1080" height="1917"/>
+    <SubTexture name="caixa_D" x="951" y="1923" width="143" height="124"/>
+    <SubTexture name="caixa_J" x="1996" y="225" width="50" height="213"/>
+    <SubTexture name="caixa_K" x="1816" y="1783" rotated="true" width="164" height="43" frameX="0" frameY="0" frameWidth="72" frameHeight="164"/>
+    <SubTexture name="caixaFx_C" x="1086" y="1564" rotated="true" width="259" height="270"/>
+    <SubTexture name="crabfull" x="1100" y="174" width="890" height="689" frameX="-8" frameY="-8" frameWidth="906" frameHeight="705"/>
+    <SubTexture name="craboff" x="1100" y="869" width="885" height="689" frameX="-13" frameY="-8" frameWidth="906" frameHeight="705"/>
+    <SubTexture name="drops_B" x="1100" y="0" width="933" height="168" frameX="-251" frameY="-310" frameWidth="1433" frameHeight="650"/>
+    <SubTexture name="drops_D" x="0" y="1923" width="945" height="125" frameX="-264" frameY="-467" frameWidth="1433" frameHeight="650"/>
+    <SubTexture name="gota_abacaxiA" x="1963" y="1841" rotated="true" width="85" height="82"/>
+    <SubTexture name="grablemon12" x="1351" y="1564" rotated="true" width="194" height="270" frameX="-591" frameY="-383" frameWidth="906" frameHeight="705"/>
+    <SubTexture name="grablemon15" x="1551" y="1564" rotated="true" width="212" height="267" frameX="-610" frameY="-275" frameWidth="906" frameHeight="705"/>
+    <SubTexture name="juice_05c" x="1996" y="746" rotated="true" width="47" height="60"/>
+    <SubTexture name="juice_06" x="1996" y="553" width="50" height="46"/>
+    <SubTexture name="juice_06b" x="1996" y="812" rotated="true" width="46" height="53"/>
+    <SubTexture name="juice_06c" x="1996" y="605" width="50" height="46"/>
+    <SubTexture name="liqu_col0009" x="1963" y="1929" width="82" height="115" frameX="0" frameY="-68" frameWidth="82" frameHeight="183"/>
+    <SubTexture name="liqu_col0010" x="1963" y="1929" width="82" height="115" frameX="0" frameY="-68" frameWidth="82" frameHeight="183"/>
+    <SubTexture name="liqu_col0011" x="1389" y="1922" rotated="true" width="146" height="82" frameX="0" frameY="-37" frameWidth="82" frameHeight="183"/>
+    <SubTexture name="liqu_col0012" x="1389" y="1922" rotated="true" width="146" height="82" frameX="0" frameY="-37" frameWidth="82" frameHeight="183"/>
+    <SubTexture name="liqu_horizontal0003" x="1996" y="499" rotated="true" width="50" height="48" frameX="0" frameY="-6" frameWidth="440" frameHeight="56"/>
+    <SubTexture name="liqu_horizontal0004" x="1996" y="499" rotated="true" width="50" height="48" frameX="0" frameY="-6" frameWidth="440" frameHeight="56"/>
+    <SubTexture name="liqu_horizontal0005" x="1996" y="657" rotated="true" width="49" height="83" frameX="0" frameY="-7" frameWidth="440" frameHeight="56"/>
+    <SubTexture name="liqu_horizontal0006" x="1996" y="657" rotated="true" width="49" height="83" frameX="0" frameY="-7" frameWidth="440" frameHeight="56"/>
+    <SubTexture name="liqu_horizontal0017" x="1991" y="949" rotated="true" width="56" height="440"/>
+    <SubTexture name="liqu_horizontal0018" x="1991" y="949" rotated="true" width="56" height="440"/>
+    <SubTexture name="liqu_horizontal0019" x="1991" y="1395" rotated="true" width="56" height="440"/>
+    <SubTexture name="liqu_horizontal0020" x="1991" y="1395" rotated="true" width="56" height="440"/>
+    <SubTexture name="liquido_vertical0009" x="1086" y="1841" width="449" height="75" frameX="0" frameY="-102" frameWidth="449" frameHeight="177"/>
+    <SubTexture name="liquido_vertical0010" x="1086" y="1841" width="449" height="75" frameX="0" frameY="-102" frameWidth="449" frameHeight="177"/>
+    <SubTexture name="macaC" x="1769" y="1783" rotated="true" width="41" height="46"/>
+    <SubTexture name="morangoC" x="1991" y="871" width="57" height="72"/>
+    <SubTexture name="morangoD" x="1996" y="444" rotated="true" width="50" height="49"/>
+    <SubTexture name="pipo_juice0013" x="1255" y="1922" width="128" height="126" frameX="-1" frameY="0" frameWidth="129" frameHeight="126"/>
+    <SubTexture name="pipo_juice0014" x="1255" y="1922" width="128" height="126" frameX="-1" frameY="0" frameWidth="129" frameHeight="126"/>
+    <SubTexture name="sino_brilho0004" x="1769" y="1564" width="215" height="213" frameX="-12" frameY="-13" frameWidth="240" frameHeight="239"/>
+    <SubTexture name="sino_brilho0005" x="1541" y="1841" rotated="true" width="205" height="206" frameX="-17" frameY="-17" frameWidth="240" frameHeight="239"/>
+    <SubTexture name="sino_brilho0007" x="1752" y="1841" rotated="true" width="205" height="206" frameX="-17" frameY="-17" frameWidth="240" frameHeight="239"/>
+    <SubTexture name="tool3" x="1100" y="1922" rotated="true" width="149" height="126"/>
+    <SubTexture name="wheelA0001" x="1427" y="2010" rotated="true" width="31" height="37" frameX="0" frameY="-1" frameWidth="37" frameHeight="32"/>
+    <SubTexture name="wheelA0002" x="1427" y="2010" rotated="true" width="31" height="37" frameX="0" frameY="-1" frameWidth="37" frameHeight="32"/>
+    <SubTexture name="wheelA0003" x="1389" y="2010" rotated="true" width="32" height="37"/>
+    <SubTexture name="wheelA0004" x="1389" y="2010" rotated="true" width="32" height="37"/>
+    <SubTexture name="wheelB0001" x="1502" y="2010" rotated="true" width="31" height="36" frameX="0" frameY="-1" frameWidth="36" frameHeight="32"/>
+    <SubTexture name="wheelB0002" x="1502" y="2010" rotated="true" width="31" height="36" frameX="0" frameY="-1" frameWidth="36" frameHeight="32"/>
+    <SubTexture name="wheelB0003" x="1464" y="2010" rotated="true" width="32" height="36"/>
+    <SubTexture name="wheelB0004" x="1464" y="2010" rotated="true" width="32" height="36"/>
+</TextureAtlas>

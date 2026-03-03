@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="Flex" version="4">
+  <component name="FlexBuildConfigurationManager" active="lib">
+    <configurations>
+      <configuration name="lib" target-platform="Mobile" pure-as="true" output-type="Library" output-file="menton.swc" output-folder="$MODULE_DIR$/../../../../../../_ideaProjects/praia/out" skip-build="true">
+        <dependencies>
+          <entries>
+            <entry module-name="PRAIA-ASSETS" build-configuration-name="lib">
+              <dependency linkage="Include" />
+            </entry>
+          </entries>
+        </dependencies>
+        <compiler-options />
+        <packaging-air-desktop />
+        <packaging-android />
+        <packaging-ios />
+      </configuration>
+      <configuration name="MentonSyncSpritesSwf" target-platform="Desktop" pure-as="true" main-class="com.assukar.praia.menton.assets.imports.MentonSyncSpritesSwf" output-file="MentonSyncSpritesSwf.swf" output-folder="$MODULE_DIR$/../../../../static/praia/game/swf">
+        <dependencies>
+          <entries>
+            <entry library-name="praia-assets" library-level="project">
+              <dependency linkage="Merged" />
+            </entry>
+          </entries>
+        </dependencies>
+        <compiler-options>
+          <map>
+            <entry key="compiler.debug.swf" value="false" />
+          </map>
+        </compiler-options>
+        <packaging-air-desktop package-file-name="MentonSyncSpritesSwf" />
+        <packaging-android />
+        <packaging-ios />
+      </configuration>
+      <configuration name="MentonSyncSoundsSwf" target-platform="Desktop" pure-as="true" main-class="com.assukar.praia.menton.assets.imports.MentonSyncSoundsSwf" output-file="MentonSyncSoundsSwf.swf" output-folder="$MODULE_DIR$/../../../../static/praia/game/swf">
+        <dependencies>
+          <entries>
+            <entry library-name="praia-assets" library-level="project">
+              <dependency linkage="Merged" />
+            </entry>
+          </entries>
+        </dependencies>
+        <compiler-options>
+          <map>
+            <entry key="compiler.debug.swf" value="false" />
+          </map>
+        </compiler-options>
+        <packaging-air-desktop package-file-name="MentonSyncSoundsSwf" />
+        <packaging-android />
+        <packaging-ios />
+      </configuration>
+    </configurations>
+    <compiler-options />
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../assets" />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="PRAIA-ASSETS" exported="" />
+    <orderEntry type="library" exported="" name="praia-assets" level="application" />
+    <orderEntry type="library" exported="" name="praia-assets" level="project" />
+  </component>
+</module>

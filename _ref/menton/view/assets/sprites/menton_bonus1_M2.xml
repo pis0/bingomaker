@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with TexturePacker https://www.codeandweb.com/texturepacker -->
+<!-- $TexturePacker:SmartUpdate:ae3e4fe7e53ce847048ac56f1edec53a:d55ebfedfec9a6a7a74a3196e1d96ef6:10820005b915bf333998f80a5f8e3a2c$ -->
+<TextureAtlas imagePath="menton_bonus1_M2.png" width="512" height="512">
+    <SubTexture name="abacaxi" x="255" y="0" rotated="true" width="71" height="46"/>
+    <SubTexture name="abacaxiB" x="474" y="369" rotated="true" width="13" height="15"/>
+    <SubTexture name="abacaxiD" x="225" y="410" width="33" height="24"/>
+    <SubTexture name="abacaxiE" x="372" y="303" width="35" height="31"/>
+    <SubTexture name="B1" x="459" y="331" width="28" height="28"/>
+    <SubTexture name="B2" x="465" y="289" width="32" height="32"/>
+    <SubTexture name="caixa_B" x="49" y="353" rotated="true" width="29" height="36"/>
+    <SubTexture name="caixa_D" x="294" y="245" width="42" height="37"/>
+    <SubTexture name="caixa_E" x="135" y="377" rotated="true" width="36" height="32"/>
+    <SubTexture name="caixa_H" x="0" y="197" width="52" height="24" frameX="-2" frameY="0" frameWidth="54" frameHeight="24"/>
+    <SubTexture name="caixa_K" x="90" y="245" rotated="true" width="49" height="14" frameX="0" frameY="0" frameWidth="21" frameHeight="49"/>
+    <SubTexture name="card1" x="247" y="181" rotated="true" width="52" height="50"/>
+    <SubTexture name="card2" x="92" y="151" rotated="true" width="52" height="50"/>
+    <SubTexture name="card3" x="154" y="178" rotated="true" width="50" height="49"/>
+    <SubTexture name="cardweapon_normal" x="140" y="332" rotated="true" width="37" height="35"/>
+    <SubTexture name="cardweapon_selected" x="88" y="354" rotated="true" width="37" height="35"/>
+    <SubTexture name="crab_payout" x="0" y="265" width="44" height="33"/>
+    <SubTexture name="G1" x="417" y="316" width="32" height="29"/>
+    <SubTexture name="G2" x="241" y="323" width="36" height="33"/>
+    <SubTexture name="gota_abacaxiA" x="413" y="355" rotated="true" width="25" height="24"/>
+    <SubTexture name="gota_macaA" x="62" y="233" rotated="true" width="18" height="17"/>
+    <SubTexture name="gota_macaB" x="486" y="183" rotated="true" width="26" height="43"/>
+    <SubTexture name="gota_macaC" x="486" y="110" rotated="true" width="26" height="63"/>
+    <SubTexture name="gota_morangoA" x="214" y="182" rotated="true" width="18" height="17"/>
+    <SubTexture name="gota_morangoB" x="486" y="236" rotated="true" width="26" height="43"/>
+    <SubTexture name="gota_morangoC" x="93" y="81" width="63" height="26"/>
+    <SubTexture name="gota_uvaA" x="64" y="174" rotated="true" width="18" height="23"/>
+    <SubTexture name="grablemon13" x="174" y="80" width="63" height="54" frameX="-188" frameY="-140" frameWidth="268" frameHeight="209"/>
+    <SubTexture name="grablemon14" x="0" y="88" rotated="true" width="54" height="31" frameX="-235" frameY="-125" frameWidth="268" frameHeight="209"/>
+    <SubTexture name="I1" x="221" y="144" width="16" height="28"/>
+    <SubTexture name="I2" x="492" y="0" width="20" height="32"/>
+    <SubTexture name="juice_04" x="312" y="158" rotated="true" width="54" height="43"/>
+    <SubTexture name="juice_05" x="211" y="293" width="17" height="13"/>
+    <SubTexture name="juice_05b" x="448" y="369" width="16" height="13"/>
+    <SubTexture name="juice_05c" x="214" y="209" width="18" height="14"/>
+    <SubTexture name="juice_06" x="497" y="356" width="15" height="14"/>
+    <SubTexture name="juice_06b" x="371" y="380" width="16" height="14"/>
+    <SubTexture name="juice_06c" x="497" y="380" width="15" height="14"/>
+    <SubTexture name="lemon1A" x="492" y="42" rotated="true" width="20" height="24"/>
+    <SubTexture name="lemon1B" x="492" y="76" rotated="true" width="20" height="24"/>
+    <SubTexture name="liqu_col0005" x="457" y="200" rotated="true" width="19" height="20" frameX="-4" frameY="-35" frameWidth="24" frameHeight="54"/>
+    <SubTexture name="liqu_col0006" x="457" y="200" rotated="true" width="19" height="20" frameX="-4" frameY="-35" frameWidth="24" frameHeight="54"/>
+    <SubTexture name="liqu_col0011" x="89" y="269" rotated="true" width="44" height="24" frameX="0" frameY="-10" frameWidth="24" frameHeight="54"/>
+    <SubTexture name="liqu_col0012" x="89" y="269" rotated="true" width="44" height="24" frameX="0" frameY="-10" frameWidth="24" frameHeight="54"/>
+    <SubTexture name="liqu_col0013" x="92" y="211" rotated="true" width="50" height="24" frameX="0" frameY="-4" frameWidth="24" frameHeight="54"/>
+    <SubTexture name="liqu_col0014" x="92" y="211" rotated="true" width="50" height="24" frameX="0" frameY="-4" frameWidth="24" frameHeight="54"/>
+    <SubTexture name="liqu_col0015" x="0" y="129" rotated="true" width="54" height="24"/>
+    <SubTexture name="liqu_col0016" x="0" y="129" rotated="true" width="54" height="24"/>
+    <SubTexture name="liqu_col0017" x="93" y="117" rotated="true" width="54" height="24"/>
+    <SubTexture name="liqu_col0018" x="93" y="117" rotated="true" width="54" height="24"/>
+    <SubTexture name="liqu_col0019" x="0" y="163" rotated="true" width="54" height="24"/>
+    <SubTexture name="liqu_col0020" x="0" y="163" rotated="true" width="54" height="24"/>
+    <SubTexture name="liqu_col0021" x="157" y="144" rotated="true" width="54" height="24"/>
+    <SubTexture name="liqu_col0022" x="157" y="144" rotated="true" width="54" height="24"/>
+    <SubTexture name="liqu_horizontal0003" x="340" y="316" rotated="true" width="16" height="15" frameX="0" frameY="-1" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0004" x="340" y="316" rotated="true" width="16" height="15" frameX="0" frameY="-1" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0005" x="346" y="245" rotated="true" width="16" height="26" frameX="0" frameY="-1" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0006" x="346" y="245" rotated="true" width="16" height="26" frameX="0" frameY="-1" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0007" x="62" y="260" rotated="true" width="17" height="35" frameX="0" frameY="0" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0008" x="62" y="260" rotated="true" width="17" height="35" frameX="0" frameY="0" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0009" x="214" y="233" rotated="true" width="17" height="50" frameX="0" frameY="0" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0010" x="214" y="233" rotated="true" width="17" height="50" frameX="0" frameY="0" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0011" x="336" y="0" width="69" height="17" frameX="0" frameY="0" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="liqu_horizontal0012" x="336" y="0" width="69" height="17" frameX="0" frameY="0" frameWidth="130" frameHeight="17"/>
+    <SubTexture name="macaA" x="419" y="279" rotated="true" width="36" height="27"/>
+    <SubTexture name="macaB" x="64" y="137" width="18" height="27"/>
+    <SubTexture name="macaD" x="62" y="207" rotated="true" width="20" height="16"/>
+    <SubTexture name="maça" x="440" y="230" rotated="true" width="36" height="39"/>
+    <SubTexture name="morango" x="89" y="303" width="41" height="41"/>
+    <SubTexture name="morangoA" x="64" y="88" rotated="true" width="19" height="16"/>
+    <SubTexture name="morangoB" x="346" y="281" rotated="true" width="16" height="25"/>
+    <SubTexture name="morangoD" x="497" y="331" width="15" height="15"/>
+    <SubTexture name="morangoE" x="277" y="373" width="33" height="33"/>
+    <SubTexture name="N1" x="287" y="335" width="35" height="28"/>
+    <SubTexture name="N2" x="0" y="352" width="39" height="32"/>
+    <SubTexture name="O1" x="332" y="341" rotated="true" width="29" height="33"/>
+    <SubTexture name="O2" x="372" y="260" width="37" height="33"/>
+    <SubTexture name="pipo_juice0003" x="0" y="394" width="38" height="14" frameX="0" frameY="-23" frameWidth="38" frameHeight="37"/>
+    <SubTexture name="pipo_juice0004" x="0" y="394" width="38" height="14" frameX="0" frameY="-23" frameWidth="38" frameHeight="37"/>
+    <SubTexture name="pipo_juice0005" x="457" y="152" rotated="true" width="19" height="38" frameX="0" frameY="-18" frameWidth="38" frameHeight="37"/>
+    <SubTexture name="pipo_juice0006" x="457" y="152" rotated="true" width="19" height="38" frameX="0" frameY="-18" frameWidth="38" frameHeight="37"/>
+    <SubTexture name="pipo_juice0007" x="54" y="305" rotated="true" width="25" height="38" frameX="0" frameY="-12" frameWidth="38" frameHeight="37"/>
+    <SubTexture name="pipo_juice0008" x="54" y="305" rotated="true" width="25" height="38" frameX="0" frameY="-12" frameWidth="38" frameHeight="37"/>
+    <SubTexture name="power_selection" x="0" y="0" width="83" height="78"/>
+    <SubTexture name="Sino" x="371" y="344" rotated="true" width="32" height="26" frameX="0" frameY="0" frameWidth="26" frameHeight="33"/>
+    <SubTexture name="sino_brilho0004" x="336" y="27" width="65" height="65" frameX="-3" frameY="-3" frameWidth="71" frameHeight="71"/>
+    <SubTexture name="sino_brilho0007" x="255" y="56" width="63" height="63" frameX="-4" frameY="-4" frameWidth="71" frameHeight="71"/>
+    <SubTexture name="sino_brilho0008" x="411" y="77" width="65" height="65" frameX="-3" frameY="-3" frameWidth="71" frameHeight="71"/>
+    <SubTexture name="sino_brilho0009" x="415" y="0" width="67" height="67" frameX="-2" frameY="-2" frameWidth="71" frameHeight="71"/>
+    <SubTexture name="sino_brilho0010" x="174" y="0" width="71" height="70" frameX="0" frameY="0" frameWidth="71" frameHeight="71"/>
+    <SubTexture name="sino_brilho0011" x="93" y="0" width="71" height="71"/>
+    <SubTexture name="smallcashpayout" x="64" y="114" width="19" height="13"/>
+    <SubTexture name="star2_payout" x="233" y="366" width="34" height="34"/>
+    <SubTexture name="star_payout" x="181" y="406" width="34" height="34"/>
+    <SubTexture name="starlemon01" x="393" y="152" rotated="true" width="54" height="46" frameX="-31" frameY="-45" frameWidth="114" frameHeight="111"/>
+    <SubTexture name="starlemon02" x="376" y="208" width="54" height="42" frameX="-6" frameY="-22" frameWidth="114" frameHeight="111"/>
+    <SubTexture name="starlemon04" x="241" y="276" width="42" height="37" frameX="-63" frameY="-19" frameWidth="114" frameHeight="111"/>
+    <SubTexture name="starlemon05" x="0" y="308" rotated="true" width="41" height="34" frameX="-63" frameY="-45" frameWidth="114" frameHeight="111"/>
+    <SubTexture name="tool1" x="0" y="231" rotated="true" width="52" height="24"/>
+    <SubTexture name="tucanlemon04" x="152" y="237" rotated="true" width="49" height="47" frameX="-100" frameY="-53" frameWidth="162" frameHeight="192"/>
+    <SubTexture name="tucanlemon05" x="143" y="294" rotated="true" width="42" height="28" frameX="-101" frameY="-38" frameWidth="162" frameHeight="192"/>
+    <SubTexture name="tucanlemon06" x="309" y="211" rotated="true" width="51" height="24" frameX="-68" frameY="-53" frameWidth="162" frameHeight="192"/>
+    <SubTexture name="tucanlemon07" x="241" y="241" rotated="true" width="43" height="25" frameX="-100" frameY="-9" frameWidth="162" frameHeight="192"/>
+    <SubTexture name="tucanlemon08" x="328" y="102" width="55" height="46" frameX="-46" frameY="-12" frameWidth="162" frameHeight="192"/>
+    <SubTexture name="tucanlemon10" x="247" y="129" width="55" height="42" frameX="-9" frameY="-1" frameWidth="162" frameHeight="192"/>
+    <SubTexture name="tucano2_payout" x="293" y="292" width="37" height="33" frameX="-1" frameY="0" frameWidth="43" frameHeight="33"/>
+    <SubTexture name="tucano_payout" x="187" y="363" width="36" height="33" frameX="-2" frameY="0" frameWidth="43" frameHeight="33"/>
+    <SubTexture name="uvaA" x="397" y="389" width="13" height="13"/>
+    <SubTexture name="uvaC" x="195" y="316" rotated="true" width="36" height="37" frameX="0" frameY="0" frameWidth="42" frameHeight="36"/>
+    <SubTexture name="uvaD" x="420" y="389" width="13" height="13"/>
+</TextureAtlas>

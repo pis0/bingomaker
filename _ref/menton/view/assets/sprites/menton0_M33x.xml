@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with TexturePacker https://www.codeandweb.com/texturepacker -->
+<!-- $TexturePacker:SmartUpdate:2dd799f1a02c5237d068ba10f9457f51:a8c86c8adca02ae1d29b71c84a95e6e0:6cbab6f68a52f7a678572f5caf1ead14$ -->
+<TextureAtlas imagePath="menton0_M33x.png" width="2048" height="2048">
+    <SubTexture name="ball" x="1580" y="1944" width="63" height="62"/>
+    <SubTexture name="balljuice" x="1086" y="1335" width="74" height="74" frameX="-3" frameY="-5" frameWidth="80" frameHeight="83"/>
+    <SubTexture name="ballpipe" x="574" y="1923" width="98" height="108"/>
+    <SubTexture name="bell1" x="2002" y="1651" rotated="true" width="46" height="269"/>
+    <SubTexture name="bell3" x="2001" y="0" rotated="true" width="47" height="269"/>
+    <SubTexture name="bgextraball" x="1175" y="0" width="529" height="186"/>
+    <SubTexture name="bgextraball_full" x="1175" y="192" width="529" height="186"/>
+    <SubTexture name="bgmenton" x="0" y="0" width="1080" height="1917"/>
+    <SubTexture name="bigball" x="1803" y="1840" width="193" height="193"/>
+    <SubTexture name="bigballpipe2" x="2014" y="1364" width="24" height="130"/>
+    <SubTexture name="bigballv2" x="212" y="1923" width="118" height="118" frameX="-1" frameY="0" frameWidth="120" frameHeight="118"/>
+    <SubTexture name="bomb1" x="1871" y="1651" rotated="true" width="46" height="179"/>
+    <SubTexture name="bomb3" x="1429" y="1358" width="179" height="47"/>
+    <SubTexture name="btbet_hit" x="1168" y="1900" width="255" height="127" frameX="0" frameY="-4" frameWidth="255" frameHeight="131"/>
+    <SubTexture name="btbet_idle" x="1241" y="1635" rotated="true" width="131" height="255"/>
+    <SubTexture name="btbet_off" x="1378" y="1635" rotated="true" width="131" height="255"/>
+    <SubTexture name="btend_idle" x="1515" y="1623" rotated="true" width="131" height="255"/>
+    <SubTexture name="btextra_hit" x="1614" y="1332" width="394" height="149" frameX="0" frameY="-4" frameWidth="394" frameHeight="153"/>
+    <SubTexture name="btextra_idle" x="1647" y="696" width="394" height="153"/>
+    <SubTexture name="btextra_off" x="1647" y="855" width="394" height="153"/>
+    <SubTexture name="btplay_hit" x="1086" y="1500" rotated="true" width="149" height="394" frameX="0" frameY="-4" frameWidth="394" frameHeight="153"/>
+    <SubTexture name="btplay_idle" x="1647" y="1014" width="394" height="153"/>
+    <SubTexture name="btplay_off" x="1635" y="1173" width="394" height="153"/>
+    <SubTexture name="card" x="1175" y="384" width="466" height="216" frameX="0" frameY="-20" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="cardbell1" x="1428" y="1517" width="92" height="100"/>
+    <SubTexture name="cardbell2" x="2014" y="1332" width="26" height="26"/>
+    <SubTexture name="cardbell3" x="1652" y="1622" width="213" height="212"/>
+    <SubTexture name="cardbet1" x="1175" y="828" width="466" height="23" frameX="0" frameY="0" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="cardbet2" x="1175" y="857" width="466" height="23" frameX="0" frameY="0" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="cardbet3" x="1175" y="886" width="466" height="23" frameX="0" frameY="0" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="cardbet4" x="1175" y="915" width="466" height="23" frameX="0" frameY="0" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="cardbet5" x="1175" y="944" width="466" height="23" frameX="0" frameY="0" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="cardbet6" x="1175" y="973" width="466" height="23" frameX="0" frameY="0" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="cardbet7" x="1175" y="1002" width="466" height="23" frameX="0" frameY="0" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="cardbet8" x="1175" y="1031" width="466" height="23" frameX="0" frameY="0" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="extraball" x="1086" y="386" width="79" height="79"/>
+    <SubTexture name="extragratis" x="1647" y="466" width="56" height="58"/>
+    <SubTexture name="ficha" x="862" y="1923" rotated="true" width="72" height="108"/>
+    <SubTexture name="fundopipoqueira" x="1429" y="1896" rotated="true" width="145" height="147" frameX="-43" frameY="0" frameWidth="200" frameHeight="145"/>
+    <SubTexture name="gotas_final0001" x="1086" y="1305" width="76" height="24" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0002" x="1086" y="1305" width="76" height="24" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0003" x="1086" y="1305" width="76" height="24" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0004" x="1086" y="1305" width="76" height="24" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0005" x="1086" y="1264" width="76" height="35" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0006" x="1086" y="1264" width="76" height="35" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0007" x="1086" y="1264" width="76" height="35" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0008" x="1086" y="1264" width="76" height="35" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0009" x="1647" y="384" rotated="true" width="57" height="76" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0010" x="1647" y="384" rotated="true" width="57" height="76" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0011" x="1086" y="1158" width="76" height="100" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0012" x="1086" y="1158" width="76" height="100" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0013" x="1086" y="959" width="76" height="193" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0014" x="1086" y="959" width="76" height="193" frameX="0" frameY="0" frameWidth="76" frameHeight="274"/>
+    <SubTexture name="gotas_final0015" x="1086" y="679" width="76" height="274"/>
+    <SubTexture name="jackbar1" x="1091" y="2034" width="78" height="8" frameX="-4" frameY="0" frameWidth="86" frameHeight="8"/>
+    <SubTexture name="jackbar2" x="1860" y="657" rotated="true" width="183" height="7" frameX="0" frameY="-12" frameWidth="7" frameHeight="205"/>
+    <SubTexture name="lemon3" x="1429" y="1411" width="179" height="47"/>
+    <SubTexture name="liquido_fim" x="1707" y="558" rotated="true" width="340" height="93" frameX="-10" frameY="-3" frameWidth="112" frameHeight="343"/>
+    <SubTexture name="liquido_meio" x="1175" y="1260" rotated="true" width="433" height="92" frameX="-10" frameY="0" frameWidth="112" frameHeight="433"/>
+    <SubTexture name="marking0001" x="336" y="2044" width="3" height="3" frameX="0" frameY="0" frameWidth="80" frameHeight="54"/>
+    <SubTexture name="marking0002" x="1053" y="2034" rotated="true" width="13" height="14" frameX="-34" frameY="-22" frameWidth="80" frameHeight="54"/>
+    <SubTexture name="marking0003" x="1086" y="1415" width="21" height="21" frameX="-30" frameY="-18" frameWidth="80" frameHeight="54"/>
+    <SubTexture name="marking0004" x="1825" y="657" width="29" height="29" frameX="-26" frameY="-14" frameWidth="80" frameHeight="54"/>
+    <SubTexture name="marking0005" x="1086" y="1451" rotated="true" width="36" height="37" frameX="-22" frameY="-10" frameWidth="80" frameHeight="54"/>
+    <SubTexture name="marking0008" x="1923" y="1749" width="59" height="54" frameX="-11" frameY="0" frameWidth="80" frameHeight="54"/>
+    <SubTexture name="marking0009" x="1580" y="1884" width="66" height="54" frameX="-8" frameY="0" frameWidth="80" frameHeight="54"/>
+    <SubTexture name="marking0010" x="1647" y="616" rotated="true" width="54" height="74" frameX="-3" frameY="0" frameWidth="80" frameHeight="54"/>
+    <SubTexture name="marking0011" x="1086" y="146" width="80" height="54"/>
+    <SubTexture name="marking0012" x="1086" y="206" width="80" height="54"/>
+    <SubTexture name="marking0013" x="1086" y="266" width="80" height="54"/>
+    <SubTexture name="marking0014" x="1086" y="326" width="80" height="54"/>
+    <SubTexture name="marking0015" x="1647" y="530" rotated="true" width="54" height="80"/>
+    <SubTexture name="missing_3colunas" x="1086" y="471" rotated="true" width="77" height="98"/>
+    <SubTexture name="missing_4colunas" x="678" y="1923" rotated="true" width="86" height="108"/>
+    <SubTexture name="missing_bingo" x="100" y="1923" rotated="true" width="106" height="121"/>
+    <SubTexture name="missing_caixadupla" x="770" y="1923" rotated="true" width="86" height="108"/>
+    <SubTexture name="missing_linhadupla" x="1086" y="575" rotated="true" width="77" height="98"/>
+    <SubTexture name="moldura_3colunas" x="1241" y="1358" rotated="true" width="181" height="271"/>
+    <SubTexture name="moldura_bingo" x="1175" y="606" width="466" height="216" frameX="0" frameY="-20" frameWidth="466" frameHeight="236"/>
+    <SubTexture name="moldura_caixadupla" x="1175" y="1060" width="454" height="194"/>
+    <SubTexture name="moldura_linhadupla" x="574" y="2037" width="473" height="11"/>
+    <SubTexture name="multiply3" x="1429" y="1464" width="179" height="47"/>
+    <SubTexture name="multiply_anim" x="0" y="1923" rotated="true" width="94" height="122"/>
+    <SubTexture name="payout" x="1710" y="147" width="283" height="131"/>
+    <SubTexture name="payout_glow" x="1710" y="284" width="283" height="128"/>
+    <SubTexture name="payout_on" x="1710" y="418" width="283" height="128"/>
+    <SubTexture name="pipoqueiralimao" x="1086" y="0" width="82" height="77"/>
+    <SubTexture name="pipoqueirasuco" x="1888" y="1500" width="147" height="145" frameX="-43" frameY="0" frameWidth="200" frameHeight="145"/>
+    <SubTexture name="prize1" x="2002" y="1926" rotated="true" width="45" height="85"/>
+    <SubTexture name="prize2" x="1999" y="275" rotated="true" width="49" height="89" frameX="-1" frameY="-1" frameWidth="91" frameHeight="51"/>
+    <SubTexture name="prize3" x="1999" y="370" rotated="true" width="49" height="88" frameX="-2" frameY="-1" frameWidth="91" frameHeight="51"/>
+    <SubTexture name="prize4" x="1999" y="464" rotated="true" width="49" height="88" frameX="-2" frameY="-1" frameWidth="91" frameHeight="51"/>
+    <SubTexture name="prize_won" x="1923" y="1651" rotated="true" width="70" height="92"/>
+    <SubTexture name="prizedot1" x="1072" y="2034" width="13" height="13"/>
+    <SubTexture name="prizejack" x="940" y="1923" width="222" height="105"/>
+    <SubTexture name="prizejack_on" x="336" y="1923" width="232" height="115"/>
+    <SubTexture name="slotmask1" x="1710" y="0" width="285" height="141"/>
+    <SubTexture name="slotmask3" x="1614" y="1487" width="268" height="129" frameX="-8" frameY="-6" frameWidth="285" frameHeight="141"/>
+    <SubTexture name="smallball" x="1707" y="657" rotated="true" width="31" height="32"/>
+    <SubTexture name="splash0001" x="1526" y="1517" rotated="true" width="70" height="99"/>
+    <SubTexture name="splash0002" x="1526" y="1517" rotated="true" width="70" height="99"/>
+    <SubTexture name="splash0003" x="1526" y="1517" rotated="true" width="70" height="99"/>
+    <SubTexture name="splash0004" x="1744" y="657" width="75" height="29" frameX="-10" frameY="-41" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="splash0005" x="1744" y="657" width="75" height="29" frameX="-10" frameY="-41" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="splash0006" x="1744" y="657" width="75" height="29" frameX="-10" frameY="-41" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="splash0007" x="1086" y="83" width="80" height="57" frameX="-10" frameY="-13" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="splash0008" x="1086" y="83" width="80" height="57" frameX="-10" frameY="-13" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="splash0009" x="1086" y="83" width="80" height="57" frameX="-10" frameY="-13" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="splash0010" x="1166" y="1358" rotated="true" width="68" height="87" frameX="-5" frameY="-2" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="splash0011" x="1166" y="1358" rotated="true" width="68" height="87" frameX="-5" frameY="-2" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="splash0012" x="1166" y="1358" rotated="true" width="68" height="87" frameX="-5" frameY="-2" frameWidth="99" frameHeight="70"/>
+    <SubTexture name="tampapipoqueira" x="1652" y="1840" rotated="true" width="145" height="200"/>
+</TextureAtlas>
