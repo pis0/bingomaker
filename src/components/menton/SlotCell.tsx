@@ -242,6 +242,15 @@ export default function SlotCell({ card, row, col, x, y, hasBell }: Props) {
       {/* Background quad */}
       <pixiGraphics draw={drawBg} />
 
+      {/* Bell icon (slot bonus indicator, AS3: cardbell4 at +10,+3) — behind everything except bg */}
+      {bellTex && (
+        <pixiSprite
+          texture={bellTex}
+          x={10}
+          y={3}
+        />
+      )}
+
       {/* Match marking animation (plays on new match) */}
       <pixiAnimatedSprite
         ref={onAnimCreated}
@@ -273,14 +282,6 @@ export default function SlotCell({ card, row, col, x, y, hasBell }: Props) {
         />
       )}
 
-      {/* Bell icon (slot bonus indicator, AS3: cardbell4 at +10,+3) */}
-      {bellTex && (
-        <pixiSprite
-          texture={bellTex}
-          x={10}
-          y={3}
-        />
-      )}
     </pixiContainer>
   )
 }
