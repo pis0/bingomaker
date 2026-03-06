@@ -242,8 +242,8 @@ export default function SlotCell({ card, row, col, x, y, hasBell }: Props) {
       {/* Background quad */}
       <pixiGraphics draw={drawBg} />
 
-      {/* Bell icon (slot bonus indicator, AS3: cardbell4 at +10,+3) — behind everything except bg */}
-      {bellTex && (
+      {/* Bell icon — hidden once slot is matched */}
+      {bellTex && !matched && (
         <pixiSprite
           texture={bellTex}
           x={10}
