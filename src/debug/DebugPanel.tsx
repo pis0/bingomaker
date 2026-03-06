@@ -69,6 +69,7 @@ export default function DebugPanel({ engine }: Props) {
                       key={card.index}
                       card={card}
                       preview={engine.patternPreview}
+                      bellPosition={engine.round!.bellPositions[card.index]}
                     />
                   ))}
                 </div>

@@ -1,12 +1,21 @@
-import { DEFAULT_BALLS } from './constants';
+import { DEFAULT_BALLS, ROWS, COLS } from './constants';
 import type { Card } from './Card';
 import type { Draw } from './Draw';
 import { checkForPatterns } from './PatternResolver';
+import type { RandomFn } from './types';
+
+export interface BellPosition {
+  row: number;
+  col: number;
+}
 
 export class Round {
   readonly cards: Card[];
   readonly ballSequence: number[];
   readonly draws: Draw[] = [];
+
+  /** One bell position per card (same index as cards[]) */
+  bellPositions: BellPosition[];
 
   /** ball number → card that contains it */
   private readonly cardsByBall = new Map<number, Card>();
@@ -14,14 +23,32 @@ export class Round {
   private ballIndex = 0;
   private _totalPayout = 0;
 
-  constructor(cards: Card[], ballSequence: number[]) {
+  constructor(cards: Card[], ballSequence: number[], random: RandomFn = Math.random) {
     this.cards = cards;
     this.ballSequence = ballSequence;
+    this.bellPositions = Round.shuffleBells(cards.length, random);
 
     // Register all cards' balls
     for (const card of cards) {
       card.reset(this.cardsByBall);
     }
+  }
+
+  /** Generate one random bell position per card */
+  static shuffleBells(count: number, random: RandomFn): BellPosition[] {
+    const positions: BellPosition[] = [];
+    for (let i = 0; i < count; i++) {
+      positions.push({
+        row: Math.floor(random() * ROWS),
+        col: Math.floor(random() * COLS),
+      });
+    }
+    return positions;
+  }
+
+  /** Re-randomize bell positions (AS3: SlotBonusSession.shuffle on Shuffle button) */
+  reshuffleBells(): void {
+    this.bellPositions = Round.shuffleBells(this.cards.length, Math.random);
   }
 
   get totalPayout(): number {

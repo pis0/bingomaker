@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useRef, useMemo } from 'react'
 import { Graphics, Text, TextStyle, Sprite, Container } from 'pixi.js'
-import { extend } from '@pixi/react'
+import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { SLOT_W, SLOT_H, MISSING_ICONS, MISSING_ICON_OFFSETS, COLORS } from './cardConstants'
 import type { MissingPatternsHolder } from '../../engine/MissingPatternsHolder'
@@ -10,7 +10,6 @@ extend({ Graphics, Text, Sprite, Container })
 const FONT_FAMILY = '"Iowan Old Style Black", "Iowan Old Style", Georgia, serif'
 
 // --- Shared text styles (matching AS3 MissingMarkMovie) ---
-// title: ball number, large — green for LINE/DOUBLE_COLUMN, dark for others
 const titleStyleGreen = new TextStyle({
   fontFamily: FONT_FAMILY, fontSize: 30, fontWeight: 'bold',
   fill: COLORS.missingTitle,
@@ -21,11 +20,48 @@ const titleStyleDark = new TextStyle({
   fill: COLORS.textDefault,
 })
 
-// label: payout value on green bar
 const priceStyle = new TextStyle({
   fontFamily: FONT_FAMILY, fontSize: 18, fontWeight: 'bold',
   fill: 0xffffff,
 })
+
+const bonusStyle = new TextStyle({
+  fontFamily: FONT_FAMILY, fontSize: 14, fontWeight: 'bold',
+  fill: 0xfff770,
+})
+
+// --- Entrance bounce easing (AS3: Transitions.EASE_OUT_BOUNCE) ---
+function easeOutBounce(t: number): number {
+  if (t < 1 / 2.75) {
+    return 7.5625 * t * t
+  } else if (t < 2 / 2.75) {
+    t -= 1.5 / 2.75
+    return 7.5625 * t * t + 0.75
+  } else if (t < 2.5 / 2.75) {
+    t -= 2.25 / 2.75
+    return 7.5625 * t * t + 0.9375
+  } else {
+    t -= 2.625 / 2.75
+    return 7.5625 * t * t + 0.984375
+  }
+}
+
+function easeInCubic(t: number): number {
+  return t * t * t
+}
+
+// --- Entrance animation (Y bounce, no scale) ---
+// Phase 0: push up + fade in (0.2s) — y to finalY - 10, alpha 0→1
+// Phase 1: bounce down (0.2s) — y from finalY - 10 to finalY
+// Phase 2: settled
+const DROP_OFFSET = -10
+const DROP_DURATION = 200  // ms
+const BOUNCE_DURATION = 200 // ms
+
+interface AnimState {
+  phase: number // 0=push-up, 1=bounce-down, 2=settled
+  startTime: number
+}
 
 // --- Component ---
 interface Props {
@@ -36,15 +72,13 @@ interface Props {
 }
 
 // Title/label y-positions per priority (from AS3 MissingMarkMovie.playBg)
-// Priority 1 (LINE/DOUBLE_COLUMN): default positions, green title, no icon
-// Priority 2+ (TRIPLE_COLUMN and above): icon shown, positions shift to accommodate
 const MISSING_LAYOUT: Record<number, { titleY: number; labelY: number }> = {
   1: { titleY: -6, labelY: 24 },
-  2: { titleY: -10, labelY: 21 },   // TRIPLE_COLUMN
-  3: { titleY: -10, labelY: 23 },   // DOUBLE_LINE
-  4: { titleY: -10, labelY: 23 },   // QUAD_COLUMN
-  5: { titleY: -10, labelY: 23 },   // QUAD_COLUMN_3
-  6: { titleY: -15, labelY: 21 },   // FULL
+  2: { titleY: -10, labelY: 21 },
+  3: { titleY: -10, labelY: 23 },
+  4: { titleY: -10, labelY: 23 },
+  5: { titleY: -10, labelY: 23 },
+  6: { titleY: -15, labelY: 21 },
 }
 
 export default function MissingMark({ holder, ballNumber, x, y }: Props) {
@@ -52,9 +86,10 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
   const payout = holder.expectation
   const iconName = MISSING_ICONS[priority]
   const iconOffset = MISSING_ICON_OFFSETS[priority]
-  // Only LINE and DOUBLE_COLUMN (priority 1) use green title
   const titleStyle = priority <= 1 ? titleStyleGreen : titleStyleDark
   const layout = MISSING_LAYOUT[priority] ?? MISSING_LAYOUT[1]
+
+  const hasEntrance = priority >= 2
 
   const iconTex = useMemo(
     () => (iconName ? tex(iconName) : null),
@@ -64,56 +99,113 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
   const drawBg = useMemo(
     () => (g: Graphics) => {
       g.clear()
-      // White background
       g.rect(-1, 0, SLOT_W + 3, SLOT_H)
       g.fill(COLORS.missingBg)
-      // Green price background at bottom
       g.rect(-1, 28, SLOT_W + 3, 16)
       g.fill(COLORS.missingPriceBg)
     },
     [],
   )
 
+  // Ref for entrance Y-bounce (on container)
+  const containerRef = useRef<Container | null>(null)
+  const animState = useRef<AnimState>({
+    phase: hasEntrance ? 0 : 2,
+    startTime: performance.now(),
+  })
+  const prevPriority = useRef(priority)
+
+  // Reset animation when priority changes (e.g. 1→2 as more patterns approach completion)
+  if (priority !== prevPriority.current) {
+    prevPriority.current = priority
+    if (hasEntrance) {
+      animState.current = { phase: 0, startTime: performance.now() }
+      if (containerRef.current) {
+        containerRef.current.alpha = 0
+        containerRef.current.y = DROP_OFFSET
+      }
+    } else {
+      animState.current = { phase: 2, startTime: performance.now() }
+      if (containerRef.current) {
+        containerRef.current.alpha = 1
+        containerRef.current.y = 0
+      }
+    }
+  }
+
+  useTick(() => {
+    const c = containerRef.current
+    if (!c) return
+
+    const st = animState.current
+    const now = performance.now()
+    const elapsed = now - st.startTime
+
+    // --- Entrance Y-bounce (priority 2+ only) ---
+    if (st.phase === 0) {
+      // Push up + fade in
+      const t = Math.min(elapsed / DROP_DURATION, 1)
+      const eased = easeInCubic(t)
+      c.y = DROP_OFFSET
+      c.alpha = eased
+      if (t >= 1) {
+        st.phase = 1
+        st.startTime = now
+      }
+    } else if (st.phase === 1) {
+      // Bounce down: y from DROP_OFFSET → 0
+      const t = Math.min(elapsed / BOUNCE_DURATION, 1)
+      const eased = easeOutBounce(t)
+      c.y = DROP_OFFSET * (1 - eased)
+      c.alpha = 1
+      if (t >= 1) {
+        c.y = 0
+        st.phase = 2
+      }
+    }
+  })
+
   const payoutText = payout === 0 ? 'BONUS' : payout > 0 ? String(payout) : ''
 
   return (
     <pixiContainer x={x} y={y}>
-      {/* White bg + green price bar */}
-      <pixiGraphics draw={drawBg} />
+      <pixiContainer
+        ref={(inst: Container | null) => { containerRef.current = inst }}
+        y={hasEntrance ? DROP_OFFSET : 0}
+        alpha={hasEntrance ? 0 : 1}
+      >
+        {/* White bg + green price bar */}
+        <pixiGraphics draw={drawBg} />
 
-      {/* Priority icon */}
-      {iconTex && iconOffset && (
-        <pixiSprite
-          texture={iconTex}
-          x={iconOffset.x}
-          y={iconOffset.y}
-        />
-      )}
+        {/* Priority icon */}
+        {iconTex && iconOffset && (
+          <pixiSprite
+            texture={iconTex}
+            x={iconOffset.x}
+            y={iconOffset.y}
+          />
+        )}
 
-      {/* Ball number (large, centered horizontally) */}
-      <pixiText
-        text={String(ballNumber)}
-        style={titleStyle}
-        anchor={{ x: 0.5, y: 0 }}
-        x={SLOT_W / 2}
-        y={layout.titleY}
-      />
-
-      {/* Payout label on green bar */}
-      {payoutText !== '' && (
+        {/* Ball number */}
         <pixiText
-          text={payoutText}
-          style={payout === 0 ? bonusStyle : priceStyle}
+          text={String(ballNumber)}
+          style={titleStyle}
           anchor={{ x: 0.5, y: 0 }}
           x={SLOT_W / 2}
-          y={layout.labelY}
+          y={layout.titleY}
         />
-      )}
+
+        {/* Payout label on green bar */}
+        {payoutText !== '' && (
+          <pixiText
+            text={payoutText}
+            style={payout === 0 ? bonusStyle : priceStyle}
+            anchor={{ x: 0.5, y: 0 }}
+            x={SLOT_W / 2}
+            y={layout.labelY}
+          />
+        )}
+      </pixiContainer>
     </pixiContainer>
   )
 }
-
-const bonusStyle = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 14, fontWeight: 'bold',
-  fill: 0xfff770,
-})

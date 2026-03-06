@@ -1,18 +1,24 @@
 import { useRef, useState, useMemo, useCallback } from 'react'
-import { Graphics, Text, TextStyle, AnimatedSprite, Texture } from 'pixi.js'
+import { Graphics, Text, TextStyle, AnimatedSprite, Sprite, Texture } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import type { Card } from '../../engine/Card'
-import { textures as getTextures } from '../../assets/atlas'
+import { tex, textures as getTextures } from '../../assets/atlas'
 import { SLOT_W, SLOT_H, COLORS } from './cardConstants'
 import MissingMark from './MissingMark'
 
-extend({ Graphics, Text, AnimatedSprite })
+extend({ Graphics, Text, AnimatedSprite, Sprite })
 
 // ── Shared resources (created once) ──────────────────────────
 let markingFrames: Texture[] | null = null
 function getMarkingFrames() {
   if (!markingFrames) markingFrames = getTextures('marking')
   return markingFrames
+}
+
+let _bellTex: Texture | null = null
+function getBellTex() {
+  if (!_bellTex) _bellTex = tex('cardbell4')
+  return _bellTex
 }
 
 const FONT_FAMILY = '"Iowan Old Style Black", "Iowan Old Style", Georgia, serif'
@@ -64,15 +70,17 @@ interface Props {
   col: number
   x: number
   y: number
+  hasBell?: boolean
 }
 
-export default function SlotCell({ card, row, col, x, y }: Props) {
+export default function SlotCell({ card, row, col, x, y, hasBell }: Props) {
   const matched = card.matches[row][col]
   const inPattern = card.inPattern[row][col]
   const priority = card.patternPriority[row][col]
   const num = String(card.numbers[row][col])
   const holder = card.expectations[row][col]
   const isMissing = !matched && holder !== null
+  const bellTex = useMemo(() => hasBell ? getBellTex() : null, [hasBell])
 
   // Track match state for animation triggers
   const wasMatched = useRef(false)
@@ -262,6 +270,15 @@ export default function SlotCell({ card, row, col, x, y }: Props) {
           ballNumber={card.numbers[row][col]}
           x={0}
           y={0}
+        />
+      )}
+
+      {/* Bell icon (slot bonus indicator, AS3: cardbell4 at +10,+3) */}
+      {bellTex && (
+        <pixiSprite
+          texture={bellTex}
+          x={10}
+          y={3}
         />
       )}
     </pixiContainer>

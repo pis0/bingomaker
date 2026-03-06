@@ -29,6 +29,7 @@ export interface DebugEngine {
   setSeed: (seed: number) => void;
   setStakeIndex: (index: number) => void;
   newRound: (force?: ForceConfig) => void;
+  shuffle: () => void;
   forceNow: (config: ForceConfig) => void;
   drawNext: () => void;
   drawAll: () => void;
@@ -67,7 +68,7 @@ export function useDebugEngine(): DebugEngine {
       }
     }
 
-    return new Round(cards, ballSequence);
+    return new Round(cards, ballSequence, random);
   }, [seed]);
 
   const newRound = useCallback((force?: ForceConfig) => {
@@ -78,6 +79,32 @@ export function useDebugEngine(): DebugEngine {
     logNewRound(round, seed);
     rerender();
   }, [seed, buildRound, rerender]);
+
+  const shuffle = useCallback(() => {
+    if (!roundRef.current) return;
+    // Re-deal cards + bells with next seed (AS3: MentonEngine.shuffle)
+    const nextSeed = seed + 1;
+    setSeed(nextSeed);
+    const random = makeSeededRandom(nextSeed);
+    const dist = distributeCards(random);
+    const cards: Card[] = [];
+    for (let i = 0; i < NUM_CARDS; i++) {
+      const card = new Card(i);
+      card.setNumbers(dist.cardNumbers[i]);
+      cards.push(card);
+    }
+    let ballSequence = dist.ballSequence;
+    const force = lastForceRef.current;
+    if (force) {
+      const card = cards[force.cardIndex];
+      if (card) ballSequence = prioritizePatternBalls(ballSequence, card, force.pattern);
+    }
+    const round = new Round(cards, ballSequence, random);
+    roundRef.current = round;
+    setPatternPreview(null);
+    logNewRound(round, nextSeed);
+    rerender();
+  }, [seed, setSeed, rerender]);
 
   const drawNext = useCallback(() => {
     const round = roundRef.current;
@@ -146,6 +173,7 @@ export function useDebugEngine(): DebugEngine {
     setSeed,
     setStakeIndex: (i: number) => setStakeIndex(Math.max(0, Math.min(i, STAKE_LEVELS.length - 1))),
     newRound,
+    shuffle,
     forceNow,
     drawNext,
     drawAll,

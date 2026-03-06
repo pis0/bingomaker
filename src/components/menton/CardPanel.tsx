@@ -32,7 +32,7 @@ export default function CardPanel({ round, stakeIndex = 0, x, y }: Props) {
     <pixiContainer x={offsetX} y={offsetY}>
       {round.cards.map((card, i) => (
         <pixiContainer key={card.index} x={positions[i].x} y={positions[i].y}>
-          <CardView card={card} stakeIndex={stakeIndex} />
+          <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} />
         </pixiContainer>
       ))}
     </pixiContainer>

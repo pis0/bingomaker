@@ -208,6 +208,15 @@
   font-weight: 600;
   border-radius: 3px;
   border: 1.5px solid transparent;
+  position: relative;
+}
+
+.debug-bell {
+  position: absolute;
+  top: -2px;
+  right: -1px;
+  font-size: 7px;
+  line-height: 1;
 }
 
 .debug-cell--empty {

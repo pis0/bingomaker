@@ -9,6 +9,7 @@ import SlotCell from './SlotCell'
 import MissingBackground from './MissingBackground'
 import PatternMovie, { getPatternAnimConfigs } from './PatternMovie'
 import type { Pattern } from '../../engine/Pattern'
+import type { BellPosition } from '../../engine/Round'
 
 extend({ Graphics, Text, Container, Sprite })
 
@@ -18,9 +19,10 @@ export const CARD_TOTAL_H = CARD_H
 interface Props {
   card: Card
   stakeIndex?: number
+  bellPosition?: BellPosition
 }
 
-export default function CardView({ card, stakeIndex = 0 }: Props) {
+export default function CardView({ card, stakeIndex = 0, bellPosition }: Props) {
   const cardTex = useMemo(() => tex('card'), [])
   const betTex = useMemo(() => tex(`cardbet${stakeIndex + 1}`), [stakeIndex])
 
@@ -87,6 +89,7 @@ export default function CardView({ card, stakeIndex = 0 }: Props) {
               col={col}
               x={X_O + col * CELL_W}
               y={Y_O + row * CELL_H}
+              hasBell={bellPosition?.row === row && bellPosition?.col === col}
             />
           )
         }),
@@ -107,6 +110,7 @@ export default function CardView({ card, stakeIndex = 0 }: Props) {
               col={col}
               x={X_O + col * CELL_W}
               y={Y_O + row * CELL_H}
+              hasBell={bellPosition?.row === row && bellPosition?.col === col}
             />
           )
         }),

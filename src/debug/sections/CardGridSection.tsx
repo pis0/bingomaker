@@ -1,10 +1,12 @@
 import { COLS, ROWS } from '../../engine/constants';
 import type { Card } from '../../engine/Card';
 import type { Pattern } from '../../engine/Pattern';
+import type { BellPosition } from '../../engine/Round';
 
 interface Props {
   card: Card;
   preview: { pattern: Pattern; cardIndex: number } | null;
+  bellPosition?: BellPosition;
 }
 
 function cellClass(card: Card, row: number, col: number, preview: Props['preview']): string {
@@ -39,7 +41,7 @@ function cellClass(card: Card, row: number, col: number, preview: Props['preview
  * The NEW_MATCH highlight only appears on the tick where the draw happened.
  * For simplicity in the debug panel, we just use matched/inPattern/expectations.
  */
-export default function CardGridSection({ card, preview }: Props) {
+export default function CardGridSection({ card, preview, bellPosition }: Props) {
   const patternNames = [...card.completedPatterns].map((p) => p.name);
 
   return (
@@ -50,11 +52,15 @@ export default function CardGridSection({ card, preview }: Props) {
       </div>
       <div className="debug-grid">
         {Array.from({ length: ROWS }, (_, row) =>
-          Array.from({ length: COLS }, (_, col) => (
-            <div key={row * COLS + col} className={cellClass(card, row, col, preview)}>
-              {card.numbers[row][col]}
-            </div>
-          )),
+          Array.from({ length: COLS }, (_, col) => {
+            const isBell = bellPosition?.row === row && bellPosition?.col === col;
+            return (
+              <div key={row * COLS + col} className={cellClass(card, row, col, preview)}>
+                {card.numbers[row][col]}
+                {isBell && <span className="debug-bell" title="Bell">&#128276;</span>}
+              </div>
+            );
+          }),
         )}
       </div>
       {patternNames.length > 0 && (

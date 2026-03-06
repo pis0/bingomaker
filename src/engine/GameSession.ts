@@ -34,7 +34,7 @@ export class GameSession {
       return card;
     });
 
-    const round = new Round(cards, ballSequence);
+    const round = new Round(cards, ballSequence, random);
     round.process(stake);
 
     return {
