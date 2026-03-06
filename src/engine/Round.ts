@@ -94,6 +94,11 @@ export class Round {
     return this.cards.some((card) => card.maxMissingPriority >= 4);
   }
 
+  /** Replace the remaining (undrawn) portion of the ball sequence */
+  reorderRemaining(newRemaining: number[]): void {
+    this.ballSequence.splice(this.ballIndex, this.ballSequence.length - this.ballIndex, ...newRemaining);
+  }
+
   /** Draw an extra ball */
   drawExtra(stake: number): Draw | null {
     return this.drawNext(stake);

@@ -6,3 +6,4 @@ export const TOTAL_NUMBERS = 90;
 export const DEFAULT_BALLS = 30;
 export const EXTRA_BALLS = 10;
 export const SUPER_EXTRA_BALLS = 5;
+export const STAKE_LEVELS = [1, 2, 3, 5, 10, 25, 50, 100] as const;

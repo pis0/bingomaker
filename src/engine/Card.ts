@@ -9,6 +9,7 @@ export class Card {
   readonly numbers: Grid<number> = [];
   readonly matches: Grid<boolean> = [];
   readonly inPattern: Grid<boolean> = [];
+  readonly patternPriority: Grid<number> = [];
   readonly expectations: Grid<MissingPatternsHolder | null> = [];
 
   /** ball number → { row, col } for quick lookup */
@@ -32,6 +33,7 @@ export class Card {
       this.numbers[row] = new Array(COLS).fill(0);
       this.matches[row] = new Array(COLS).fill(false);
       this.inPattern[row] = new Array(COLS).fill(false);
+      this.patternPriority[row] = new Array(COLS).fill(0);
       this.expectations[row] = new Array(COLS).fill(null);
     }
   }
@@ -61,6 +63,7 @@ export class Card {
       for (let col = 0; col < COLS; col++) {
         this.matches[row][col] = false;
         this.inPattern[row][col] = false;
+        this.patternPriority[row][col] = 0;
         this.expectations[row][col] = null;
       }
     }
@@ -96,11 +99,15 @@ export class Card {
   setPattern(pattern: Pattern, stake: number): number {
     this.completedPatterns.add(pattern);
 
-    // Mark cells in pattern
+    // Mark cells in pattern with priority
+    const priority = pattern.group.priority;
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         if (pattern.getMaskIndex(row, col)) {
           this.inPattern[row][col] = true;
+          if (priority > this.patternPriority[row][col]) {
+            this.patternPriority[row][col] = priority;
+          }
         }
       }
     }

@@ -3,7 +3,6 @@ import { MatchType } from '../../engine/types';
 import type { Card } from '../../engine/Card';
 import type { Draw } from '../../engine/Draw';
 import type { Round } from '../../engine/Round';
-import type { Pattern } from '../../engine/Pattern';
 
 function cardGridAscii(card: Card): string {
   const lines: string[] = [];
@@ -66,22 +65,5 @@ export function logNewRound(round: Round, seed: number): void {
     console.log(`Card ${card.index}:`);
     console.log(cardGridAscii(card));
   }
-  console.groupEnd();
-}
-
-export function logForceResult(
-  card: Card,
-  pattern: Pattern,
-  forcedCells: Array<{ row: number; col: number; ball: number }>,
-  payout: number,
-): void {
-  console.group(
-    `%cForce: ${pattern.name} on Card ${card.index}`,
-    'color: #9c27b0; font-weight: bold; font-size: 12px;',
-  );
-  console.log(`Forced ${forcedCells.length} cells:`, forcedCells.map((c) => `${c.ball}[${c.row},${c.col}]`).join(', '));
-  console.log(`Payout: ${payout}`);
-  console.log(`Completed: ${[...card.completedPatterns].map((p) => p.name).join(', ')}`);
-  console.log(cardGridAscii(card));
   console.groupEnd();
 }
