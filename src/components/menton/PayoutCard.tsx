@@ -38,6 +38,7 @@ interface Props {
   winCount: number
   drawing?: boolean
   idleHighlighted?: boolean
+  idlePattern?: Pattern | null
 }
 
 // --- Style factories (per-instance to avoid shared mutation) ---
@@ -61,7 +62,7 @@ function makeCountStyle() {
 
 // --- Component ---
 
-export default function PayoutCard({ cardIndex, patterns, stake, state, missings, winCount, drawing = false, idleHighlighted = false }: Props) {
+export default function PayoutCard({ cardIndex, patterns, stake, state, missings, winCount, drawing = false, idleHighlighted = false, idlePattern = null }: Props) {
   const labelStyleRef = useRef(makeLabelStyle())
   const countStyleRef = useRef(makeCountStyle())
   // Pattern cycling for idle animation
@@ -156,14 +157,19 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
   useTick((ticker) => {
     const dt = ticker.deltaMS
 
-    if (state === 'idle' && patterns.length > 1 && !drawing) {
-      // Cycle patterns every PATTERN_CYCLE_INTERVAL (stops when draws start)
-      cycleTimerRef.current += dt
-      if (cycleTimerRef.current >= PATTERN_CYCLE_INTERVAL) {
-        cycleTimerRef.current = 0
-        patternIndexRef.current = (patternIndexRef.current + 1) % patterns.length
-        const pat = patterns[patternIndexRef.current]
-        updateDots(pat, 0xffffff)
+    if (state === 'idle' && !drawing) {
+      if (idlePattern && idleHighlighted) {
+        // Synced with IntervalCardPatternController — show the specific pattern from Menton
+        updateDots(idlePattern, 0xffffff)
+      } else if (patterns.length > 1) {
+        // Fallback: cycle patterns independently (when not driven by controller)
+        cycleTimerRef.current += dt
+        if (cycleTimerRef.current >= PATTERN_CYCLE_INTERVAL) {
+          cycleTimerRef.current = 0
+          patternIndexRef.current = (patternIndexRef.current + 1) % patterns.length
+          const pat = patterns[patternIndexRef.current]
+          updateDots(pat, 0xffffff)
+        }
       }
     }
 
@@ -212,7 +218,8 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
       patternIndexRef.current = 0
       cycleTimerRef.current = 0
       blinkOnRef.current = false
-      updateDots(patterns[0], 0xffffff)
+      // Show the specific idle pattern if synced, otherwise first pattern
+      updateDots(idleHighlighted && idlePattern ? idlePattern : patterns[0], 0xffffff)
     } else if (state === 'missing') {
       bgIdle.visible = false
       bgOn.visible = true
@@ -230,7 +237,7 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
       // Show the won pattern dots (use first pattern, white tint like idle)
       updateDots(patterns[0], 0xffffff)
     }
-  }, [state, patterns, updateDots, cardIndex, idleHighlighted])
+  }, [state, patterns, updateDots, cardIndex, idleHighlighted, idlePattern])
 
   // --- Sync label text when stake/prize changes ---
   useEffect(() => {

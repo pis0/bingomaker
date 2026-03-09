@@ -85,7 +85,17 @@ export const FONT_LABEL = '"Iowan Old Style Black", "Iowan Old Style", Georgia, 
 export const FONT_COUNT = '"Myriad Pro", "Myriad Pro Bold", Arial, sans-serif'
 
 // Timing
-export const PATTERN_CYCLE_INTERVAL = 2000    // ms between pattern changes in idle
+export const PATTERN_CYCLE_INTERVAL = 2000    // ms between pattern changes in idle (PayoutCard dot cycling)
+export const INTERVAL_PATTERN_DELAY = 1500    // ms — AS3 IntervalCardPatternController.animPattern delay
 export const MISSING_BLINK_INTERVAL = 1500    // ms — Syncable.interval
 export const MISSING_ANIM_INTERVAL = 1200     // ms between cycling missing patterns
 export const MISSING_ANIM_INTERVAL_SINGLE = 330 // ms when only 1 missing pattern
+
+// All individual patterns for idle cycling (AS3: IntervalCardPatternController.PATTERNS — no FULL)
+export const INTERVAL_PATTERNS: Pattern[] = [
+  LINE_1, LINE_2, LINE_3,
+  DOUBLE_COLUMN_1, DOUBLE_COLUMN_2, DOUBLE_COLUMN_3, DOUBLE_COLUMN_4,
+  TRIPLE_COLUMN_1, TRIPLE_COLUMN_2, TRIPLE_COLUMN_3,
+  DOUBLE_LINE_1, DOUBLE_LINE_2, DOUBLE_LINE_3,
+  QUAD_COLUMN_1, QUAD_COLUMN_2, QUAD_COLUMN_3,
+]

@@ -36,6 +36,11 @@ const styleInPattern = new TextStyle({
   fontFamily: FONT_FAMILY, fontSize: FONT_SIZE, fontWeight: 'bold',
   fill: COLORS.textInPattern, letterSpacing: -1,
 })
+// AS3: setMark with intervalMark=true → MARKED_NUMBER_COLORS_BY_STAKE_INDEX[0]
+const styleIdleHighlight = new TextStyle({
+  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE, fontWeight: 'bold',
+  fill: COLORS.textMatched, letterSpacing: -1, // 0x852f96
+})
 
 // ── Color interpolation (matching AS3 Slot.enterFrame) ───────
 const CYCLE_LENGTH = 20 // frames per color transition
@@ -71,9 +76,10 @@ interface Props {
   x: number
   y: number
   hasBell?: boolean
+  idleHighlighted?: boolean
 }
 
-export default function SlotCell({ card, row, col, x, y, hasBell }: Props) {
+export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighted = false }: Props) {
   const matched = card.matches[row][col]
   const inPattern = card.inPattern[row][col]
   const priority = card.patternPriority[row][col]
@@ -210,6 +216,10 @@ export default function SlotCell({ card, row, col, x, y, hasBell }: Props) {
   } else if (matched) {
     bgColor = COLORS.bgMatched
     textStyle = styleMatched
+  } else if (idleHighlighted) {
+    // AS3: setIntervalPattern → setMark(i,j,false,true) — purple bg + purple text
+    bgColor = COLORS.bgMatched // 0x5b1f72
+    textStyle = styleIdleHighlight
   } else {
     bgColor = COLORS.bgDefault
     textStyle = styleDefault
@@ -242,8 +252,8 @@ export default function SlotCell({ card, row, col, x, y, hasBell }: Props) {
       {/* Background quad */}
       <pixiGraphics draw={drawBg} />
 
-      {/* Bell icon — hidden once slot is matched */}
-      {bellTex && !matched && (
+      {/* Bell icon — hidden when slot is matched or idle-highlighted */}
+      {bellTex && !matched && !idleHighlighted && (
         <pixiSprite
           texture={bellTex}
           x={10}

@@ -1,11 +1,11 @@
-import { Sprite, Container } from 'pixi.js'
+import { Container } from 'pixi.js'
 import { extend } from '@pixi/react'
 import type { Round } from '../../engine/Round'
+import type { Pattern } from '../../engine/Pattern'
 import CardView from './CardView'
-import { tex } from '../../assets/atlas'
 import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
 
-extend({ Container, Sprite })
+extend({ Container })
 
 // Card positions in the 2x2 grid (matching AS3: (332+5)*col, (168+5)*row)
 const positions = [
@@ -18,31 +18,25 @@ const positions = [
 interface Props {
   round: Round | null
   stakeIndex?: number
+  idlePattern?: Pattern | null
   x?: number
   y?: number
 }
 
-export default function CardPanel({ round, stakeIndex = 0, x, y }: Props) {
+export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y }: Props) {
   // AS3 Menton.as: addComp(new CardPanel(), {x:70, y:255})
   const offsetX = x ?? 70
   const offsetY = y ?? 255
 
+  if (!round) return null
+
   return (
     <pixiContainer x={offsetX} y={offsetY}>
-      {round
-        ? round.cards.map((card, i) => (
-            <pixiContainer key={card.index} x={positions[i].x} y={positions[i].y}>
-              <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} />
-            </pixiContainer>
-          ))
-        : positions.map((pos, i) => (
-            <pixiContainer key={i} x={pos.x} y={pos.y}>
-              {/* Idle: empty card frame + bet header */}
-              <pixiSprite texture={tex('card')} x={10} y={9} />
-              <pixiSprite texture={tex(`cardbet${stakeIndex + 1}`)} x={10} y={9} />
-            </pixiContainer>
-          ))
-      }
+      {round.cards.map((card, i) => (
+        <pixiContainer key={card.index} x={positions[i].x} y={positions[i].y}>
+          <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} idlePattern={idlePattern} />
+        </pixiContainer>
+      ))}
     </pixiContainer>
   )
 }

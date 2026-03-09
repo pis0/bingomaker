@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo } from 'react'
 import { Container } from 'pixi.js'
-import { extend, useTick } from '@pixi/react'
+import { extend } from '@pixi/react'
 import type { Round } from '../../engine/Round'
+import type { Pattern } from '../../engine/Pattern'
 import PayoutCard, { type PayoutCardState, type MissingInfo } from './PayoutCard'
 import {
   PAYOUT_CARD_PATTERNS,
@@ -9,7 +10,6 @@ import {
   PAYOUT_CARD_SPACING,
   PAYOUT_TABLE_X,
   PAYOUT_TABLE_Y,
-  PATTERN_CYCLE_INTERVAL,
 } from './payoutConstants'
 
 extend({ Container })
@@ -17,6 +17,8 @@ extend({ Container })
 interface Props {
   round: Round | null
   stake: number
+  activeIdleCard?: number
+  idlePattern?: Pattern | null
   x?: number
   y?: number
 }
@@ -68,7 +70,7 @@ function deriveCardStates(round: Round | null): {
   return { states, missings, winCounts }
 }
 
-export default function PayoutTable({ round, stake, x, y }: Props) {
+export default function PayoutTable({ round, stake, activeIdleCard = -1, idlePattern = null, x, y }: Props) {
   const posX = x ?? PAYOUT_TABLE_X
   const posY = y ?? PAYOUT_TABLE_Y
 
@@ -80,22 +82,6 @@ export default function PayoutTable({ round, stake, x, y }: Props) {
 
   // AS3: PatternsController.stopAnimas() called when draws start
   const drawing = (round?.draws.length ?? 0) > 0
-
-  // Sequential idle highlight: one card at a time shows colored bg
-  const [activeIdle, setActiveIdle] = useState(0)
-  const idleTimerRef = useRef(0)
-
-  useTick((ticker) => {
-    if (drawing) return
-    const dt = ticker.deltaMS
-    idleTimerRef.current += dt
-    const activePatterns = PAYOUT_CARD_PATTERNS[activeIdle]
-    const duration = activePatterns.length * PATTERN_CYCLE_INTERVAL
-    if (idleTimerRef.current >= duration) {
-      idleTimerRef.current = 0
-      setActiveIdle((prev) => (prev + 1) % PAYOUT_CARD_PATTERNS.length)
-    }
-  })
 
   return (
     <pixiContainer x={posX} y={posY}>
@@ -109,7 +95,8 @@ export default function PayoutTable({ round, stake, x, y }: Props) {
             missings={missings[i]}
             winCount={winCounts[i]}
             drawing={drawing}
-            idleHighlighted={!drawing && states[i] === 'idle' && i === activeIdle}
+            idleHighlighted={!drawing && states[i] === 'idle' && i === activeIdleCard}
+            idlePattern={!drawing && states[i] === 'idle' && i === activeIdleCard ? idlePattern : null}
           />
         </pixiContainer>
       ))}
