@@ -204,7 +204,7 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
 
     if (state === 'idle') {
       bgIdle.visible = true
-      bgOn.visible = false
+      bgOn.visible = true  // AS3: bgon visible during idle (colored bg behind white dots)
       bgWon.visible = false
       labelStyleRef.current.fill = LABEL_COLOR_IDLE
       countStyleRef.current.fill = COUNT_COLOR_IDLE
@@ -290,12 +290,12 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
         ref={(ref: Sprite | null) => { bgIdleRef.current = ref }}
       />
 
-      {/* BG on (missing) — prize2-7 */}
+      {/* BG on — prize2-7 (visible in idle + missing, hidden only in won) */}
       <pixiSprite
         texture={tex(BG_ON_TEXTURES[cardIndex])}
         x={BGON_OFFSET_X}
         y={BGON_OFFSET_Y}
-        visible={state === 'missing'}
+        visible={state !== 'won'}
         ref={(ref: Sprite | null) => { bgOnRef.current = ref }}
       />
 
