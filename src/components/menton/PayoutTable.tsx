@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Container } from 'pixi.js'
-import { extend } from '@pixi/react'
+import { extend, useTick } from '@pixi/react'
 import type { Round } from '../../engine/Round'
 import PayoutCard, { type PayoutCardState, type MissingInfo } from './PayoutCard'
 import {
@@ -9,6 +9,7 @@ import {
   PAYOUT_CARD_SPACING,
   PAYOUT_TABLE_X,
   PAYOUT_TABLE_Y,
+  PATTERN_CYCLE_INTERVAL,
 } from './payoutConstants'
 
 extend({ Container })
@@ -80,6 +81,22 @@ export default function PayoutTable({ round, stake, x, y }: Props) {
   // AS3: PatternsController.stopAnimas() called when draws start
   const drawing = (round?.draws.length ?? 0) > 0
 
+  // Sequential idle highlight: one card at a time shows colored bg
+  const [activeIdle, setActiveIdle] = useState(0)
+  const idleTimerRef = useRef(0)
+
+  useTick((ticker) => {
+    if (drawing) return
+    const dt = ticker.deltaMS
+    idleTimerRef.current += dt
+    const activePatterns = PAYOUT_CARD_PATTERNS[activeIdle]
+    const duration = activePatterns.length * PATTERN_CYCLE_INTERVAL
+    if (idleTimerRef.current >= duration) {
+      idleTimerRef.current = 0
+      setActiveIdle((prev) => (prev + 1) % PAYOUT_CARD_PATTERNS.length)
+    }
+  })
+
   return (
     <pixiContainer x={posX} y={posY}>
       {PAYOUT_CARD_PATTERNS.map((patterns, i) => (
@@ -92,6 +109,7 @@ export default function PayoutTable({ round, stake, x, y }: Props) {
             missings={missings[i]}
             winCount={winCounts[i]}
             drawing={drawing}
+            idleHighlighted={!drawing && states[i] === 'idle' && i === activeIdle}
           />
         </pixiContainer>
       ))}

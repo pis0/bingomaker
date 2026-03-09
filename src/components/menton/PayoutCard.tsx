@@ -37,6 +37,7 @@ interface Props {
   missings: MissingInfo[]
   winCount: number
   drawing?: boolean
+  idleHighlighted?: boolean
 }
 
 // --- Style factories (per-instance to avoid shared mutation) ---
@@ -60,7 +61,7 @@ function makeCountStyle() {
 
 // --- Component ---
 
-export default function PayoutCard({ cardIndex, patterns, stake, state, missings, winCount, drawing = false }: Props) {
+export default function PayoutCard({ cardIndex, patterns, stake, state, missings, winCount, drawing = false, idleHighlighted = false }: Props) {
   const labelStyleRef = useRef(makeLabelStyle())
   const countStyleRef = useRef(makeCountStyle())
   // Pattern cycling for idle animation
@@ -204,7 +205,7 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
 
     if (state === 'idle') {
       bgIdle.visible = true
-      bgOn.visible = true  // AS3: bgon visible during idle (colored bg behind white dots)
+      bgOn.visible = idleHighlighted  // AS3: bgon cycles per card during idle
       bgWon.visible = false
       labelStyleRef.current.fill = LABEL_COLOR_IDLE
       countStyleRef.current.fill = COUNT_COLOR_IDLE
@@ -229,7 +230,7 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
       // Show the won pattern dots (use first pattern, white tint like idle)
       updateDots(patterns[0], 0xffffff)
     }
-  }, [state, patterns, updateDots, cardIndex])
+  }, [state, patterns, updateDots, cardIndex, idleHighlighted])
 
   // --- Sync label text when stake/prize changes ---
   useEffect(() => {
@@ -290,12 +291,12 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
         ref={(ref: Sprite | null) => { bgIdleRef.current = ref }}
       />
 
-      {/* BG on — prize2-7 (visible in idle + missing, hidden only in won) */}
+      {/* BG on — prize2-7 (cycles per card in idle, always on in missing) */}
       <pixiSprite
         texture={tex(BG_ON_TEXTURES[cardIndex])}
         x={BGON_OFFSET_X}
         y={BGON_OFFSET_Y}
-        visible={state !== 'won'}
+        visible={state === 'missing' || (state === 'idle' && idleHighlighted)}
         ref={(ref: Sprite | null) => { bgOnRef.current = ref }}
       />
 

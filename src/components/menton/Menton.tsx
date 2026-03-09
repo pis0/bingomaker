@@ -20,7 +20,7 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
     <pixiContainer>
       <Scenery />
       <PayoutTable round={round} stake={stake} />
-      {round && <CardPanel round={round} stakeIndex={stakeIndex} />}
+      <CardPanel round={round} stakeIndex={stakeIndex} />
     </pixiContainer>
   )
 }
