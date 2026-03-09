@@ -25,8 +25,9 @@ interface Props {
 }
 
 export default function CardPanel({ round, stakeIndex = 0, x, y }: Props) {
-  const offsetX = x ?? Math.round((GAME_WIDTH - PANEL_W) / 2)
-  const offsetY = y ?? 630
+  // AS3 Menton.as: addComp(new CardPanel(), {x:70, y:255})
+  const offsetX = x ?? 70
+  const offsetY = y ?? 255
 
   return (
     <pixiContainer x={offsetX} y={offsetY}>
