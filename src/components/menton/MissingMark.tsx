@@ -30,7 +30,13 @@ const bonusStyle = new TextStyle({
   fill: 0xfff770,
 })
 
-// --- Entrance bounce easing (AS3: Transitions.EASE_OUT_BOUNCE) ---
+// --- Easing functions ---
+function easeInOutCirc(t: number): number {
+  if (t < 0.5) return (1 - Math.sqrt(1 - 4 * t * t)) / 2
+  return (Math.sqrt(1 - (-2 * t + 2) ** 2) + 1) / 2
+}
+
+// AS3: Transitions.EASE_OUT_BOUNCE
 function easeOutBounce(t: number): number {
   if (t < 1 / 2.75) {
     return 7.5625 * t * t
@@ -60,6 +66,21 @@ const BOUNCE_DURATION = 200 // ms
 
 interface AnimState {
   phase: number // 0=push-up, 1=bounce-down, 2=settled
+  startTime: number
+}
+
+// --- Spotlight (holofote) for FULL/jackpot (priority 6) ---
+// AS3: MissingMarkMovie.createLight / animatelLight
+const SPOTLIGHT_INTERVAL = 1700  // ms — tween every 1.7s
+const SPOTLIGHT_DURATION = 1600  // ms — tween lasts 1.6s
+
+function randomLightPos(offset: number) {
+  return { x: Math.random() * 50 - offset, y: Math.random() * 50 - offset }
+}
+
+interface SpotlightState {
+  fromX: number; fromY: number
+  toX: number; toY: number
   startTime: number
 }
 
@@ -111,34 +132,49 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
   const containerRef = useRef<Container | null>(null)
   const animState = useRef<AnimState>({
     phase: hasEntrance ? 0 : 2,
-    startTime: performance.now(),
+    startTime: 0,
   })
   const prevPriority = useRef(priority)
 
-  // Reset animation when priority changes (e.g. 1→2 as more patterns approach completion)
-  if (priority !== prevPriority.current) {
-    prevPriority.current = priority
-    if (hasEntrance) {
-      animState.current = { phase: 0, startTime: performance.now() }
-      if (containerRef.current) {
-        containerRef.current.alpha = 0
-        containerRef.current.y = DROP_OFFSET
-      }
-    } else {
-      animState.current = { phase: 2, startTime: performance.now() }
-      if (containerRef.current) {
-        containerRef.current.alpha = 1
-        containerRef.current.y = 0
-      }
-    }
-  }
+  // Spotlight refs (priority 6 only)
+  const light1Ref = useRef<Sprite | null>(null)
+  const light2Ref = useRef<Sprite | null>(null)
+  const initPos1 = useMemo(() => randomLightPos(10), [])
+  const initPos2 = useMemo(() => randomLightPos(5), [])
+  const spot1 = useRef<SpotlightState>({
+    fromX: initPos1.x, fromY: initPos1.y,
+    toX: initPos1.x, toY: initPos1.y,
+    startTime: 0,
+  })
+  const spot2 = useRef<SpotlightState>({
+    fromX: initPos2.x, fromY: initPos2.y,
+    toX: initPos2.x, toY: initPos2.y,
+    startTime: 0,
+  })
 
   useTick(() => {
     const c = containerRef.current
     if (!c) return
 
-    const st = animState.current
     const now = performance.now()
+
+    // Reset animation when priority changes (detected in tick to avoid ref access during render)
+    if (priority !== prevPriority.current) {
+      prevPriority.current = priority
+      if (hasEntrance) {
+        animState.current = { phase: 0, startTime: now }
+        c.alpha = 0
+        c.y = DROP_OFFSET
+      } else {
+        animState.current = { phase: 2, startTime: now }
+        c.alpha = 1
+        c.y = 0
+      }
+    }
+
+    const st = animState.current
+    // Capture real start time on first tick (startTime=0 means "not yet started")
+    if (st.startTime === 0) st.startTime = now
     const elapsed = now - st.startTime
 
     // --- Entrance Y-bounce (priority 2+ only) ---
@@ -163,6 +199,29 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
         st.phase = 2
       }
     }
+
+    // --- Spotlight animation (priority 6 only) ---
+    if (priority === 6) {
+      const animateSpot = (sprite: Sprite | null, state: SpotlightState, offset: number) => {
+        if (!sprite) return
+        const e = now - state.startTime
+        if (e >= SPOTLIGHT_INTERVAL) {
+          // Start new tween
+          state.fromX = state.toX
+          state.fromY = state.toY
+          const next = randomLightPos(offset)
+          state.toX = next.x
+          state.toY = next.y
+          state.startTime = now
+        }
+        const progress = Math.min((now - state.startTime) / SPOTLIGHT_DURATION, 1)
+        const eased = easeInOutCirc(progress)
+        sprite.x = state.fromX + (state.toX - state.fromX) * eased
+        sprite.y = state.fromY + (state.toY - state.fromY) * eased
+      }
+      animateSpot(light1Ref.current, spot1.current, 10)
+      animateSpot(light2Ref.current, spot2.current, 5)
+    }
   })
 
   const payoutText = payout === 0 ? 'BONUS' : payout > 0 ? String(payout) : ''
@@ -174,6 +233,26 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
         y={hasEntrance ? DROP_OFFSET : 0}
         alpha={hasEntrance ? 0 : 1}
       >
+        {/* Spotlight holofotes — behind everything (priority 6 only) */}
+        {priority === 6 && (
+          <>
+            <pixiSprite
+              ref={(inst: Sprite | null) => { light1Ref.current = inst }}
+              texture={tex('missing_holofote')}
+              anchor={0.5}
+              x={initPos1.x}
+              y={initPos1.y}
+            />
+            <pixiSprite
+              ref={(inst: Sprite | null) => { light2Ref.current = inst }}
+              texture={tex('missing_holofote')}
+              anchor={0.5}
+              x={initPos2.x}
+              y={initPos2.y}
+            />
+          </>
+        )}
+
         {/* White bg + green price bar */}
         <pixiGraphics draw={drawBg} />
 

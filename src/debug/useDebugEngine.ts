@@ -82,7 +82,6 @@ export function useDebugEngine(): DebugEngine {
 
   const shuffle = useCallback(() => {
     if (!roundRef.current) return;
-    // Re-deal cards + bells with next seed (AS3: MentonEngine.shuffle)
     const nextSeed = seed + 1;
     setSeed(nextSeed);
     const random = makeSeededRandom(nextSeed);

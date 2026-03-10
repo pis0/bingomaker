@@ -18,6 +18,15 @@ export const mentonManifest: AssetsManifest = {
         { alias: 'bgmenton', src: '/assets/menton/bgmenton.webp' },
         { alias: 'menton0', src: '/assets/menton/menton0.json' },
         { alias: 'menton_4col_bright', src: '/assets/menton/particles/menton_4col_bright.png' },
+        { alias: 'menton_pipoqueira_bbl', src: '/assets/menton/particles/menton_pipoqueira_bbl.png' },
+        { alias: 'menton_chip_xplosion', src: '/assets/menton/particles/menton_chip_xplosion.png' },
+        { alias: 'menton_lemon_xplosion', src: '/assets/menton/particles/menton_lemon_xplosion.png' },
+      ],
+    },
+    {
+      name: 'menton-movies',
+      assets: [
+        { alias: 'menton_bingo', src: '/assets/menton/menton_bingo.json' },
       ],
     },
     // Future bundles:

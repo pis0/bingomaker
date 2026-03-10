@@ -54,6 +54,13 @@ export class ParticleEmitter {
   emitterXVariance: number
   emitterYVariance: number
 
+  /** Override config lifespan at runtime (AS3: particle.lifespan = ...) */
+  set lifespan(v: number) { this.config.lifespan = v }
+  get lifespan(): number { return this.config.lifespan }
+
+  set lifespanVariance(v: number) { this.config.lifespanVariance = v }
+  get lifespanVariance(): number { return this.config.lifespanVariance }
+
   constructor(config: ParticleConfig, texture: Texture) {
     this.config = config
     this.texture = texture
@@ -92,6 +99,10 @@ export class ParticleEmitter {
     this.emitting = true
     this.elapsed = 0
     this.emitCounter = 0
+    // Remove existing listener before adding to avoid accumulation
+    if (this._ticker) {
+      this._ticker.remove(this._update, this)
+    }
     this._ticker = ticker
     ticker.add(this._update, this)
   }

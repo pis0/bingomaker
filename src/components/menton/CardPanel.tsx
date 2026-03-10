@@ -1,8 +1,11 @@
+import { useState, useCallback, useRef } from 'react'
 import { Container } from 'pixi.js'
 import { extend } from '@pixi/react'
 import type { Round } from '../../engine/Round'
 import type { Pattern } from '../../engine/Pattern'
+import { FULL } from '../../engine/Pattern'
 import CardView from './CardView'
+import BingoMovie from './BingoMovie'
 import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
 
 extend({ Container })
@@ -28,15 +31,46 @@ export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x
   const offsetX = x ?? 70
   const offsetY = y ?? 255
 
+  const [cardsVisible, setCardsVisible] = useState(true)
+  const [bingoCardIndex, setBingoCardIndex] = useState<number | null>(null)
+  const triggeredFullRef = useRef<Set<number>>(new Set())
+
+  // Detect FULL pattern on any card (AS3: Cardd → CardPanel.ME.animaBingo)
+  if (round) {
+    for (const card of round.cards) {
+      if (card.completedPatterns.has(FULL) && !triggeredFullRef.current.has(card.index)) {
+        triggeredFullRef.current.add(card.index)
+        setBingoCardIndex(card.index)
+        break
+      }
+      // Undo cleared the FULL — allow re-trigger
+      if (!card.completedPatterns.has(FULL) && triggeredFullRef.current.has(card.index)) {
+        triggeredFullRef.current.delete(card.index)
+      }
+    }
+  } else if (triggeredFullRef.current.size > 0) {
+    triggeredFullRef.current.clear()
+  }
+
+  const handleHideCards = useCallback(() => setCardsVisible(false), [])
+  const handleShowCards = useCallback(() => setCardsVisible(true), [])
+  const handleBingoComplete = useCallback(() => setBingoCardIndex(null), [])
+
   if (!round) return null
 
   return (
     <pixiContainer x={offsetX} y={offsetY}>
       {round.cards.map((card, i) => (
-        <pixiContainer key={card.index} x={positions[i].x} y={positions[i].y}>
+        <pixiContainer key={card.index} x={positions[i].x} y={positions[i].y} visible={cardsVisible}>
           <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} idlePattern={idlePattern} />
         </pixiContainer>
       ))}
+      <BingoMovie
+        cardIndex={bingoCardIndex}
+        onHideCards={handleHideCards}
+        onShowCards={handleShowCards}
+        onComplete={handleBingoComplete}
+      />
     </pixiContainer>
   )
 }
