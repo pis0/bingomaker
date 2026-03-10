@@ -45,6 +45,9 @@ export class SlotBonusSession {
   symbols: SlotSymbol[] | null = null
   prize: SlotSymbol | null = null
 
+  /** Debug: when set, _trigger() forces 3 matching symbols instead of random */
+  forcedPrize: SlotSymbol | null = null
+
   /** Create 4 random bell positions (one per card) */
   shuffle(cards: Card[], random: RandomFn): void {
     this.positions = []
@@ -85,8 +88,23 @@ export class SlotBonusSession {
     return false
   }
 
+  /** Debug: force all bells hit and trigger the slot immediately */
+  forceAllHits(random: RandomFn): void {
+    if (this.triggered) return
+    for (const pos of this.positions) pos.hit = true
+    this.hits = this.positions.length
+    this._trigger(random)
+  }
+
   private _trigger(random: RandomFn): void {
     this.triggered = true
+
+    if (this.forcedPrize) {
+      this.symbols = [this.forcedPrize, this.forcedPrize, this.forcedPrize]
+      this.prize = this.forcedPrize
+      return
+    }
+
     const first = pickRandom(PRIMARY_BUCKET, random)
     const secondary = SECONDARY_BUCKETS[first]
     const second = pickRandom(secondary, random)

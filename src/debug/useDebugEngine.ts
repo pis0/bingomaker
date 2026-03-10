@@ -4,6 +4,7 @@ import { distributeCards } from '../engine/CardDistributor';
 import { DEFAULT_BALLS, NUM_CARDS, STAKE_LEVELS } from '../engine/constants';
 import type { Pattern } from '../engine/Pattern';
 import { Round } from '../engine/Round';
+import type { SlotSymbol } from '../engine/SlotBonusSession';
 import { logDraw, logNewRound } from './helpers/formatters';
 import { prioritizePatternBalls, forcePatternMidRound } from './helpers/patternForcer';
 
@@ -37,6 +38,9 @@ export interface DebugEngine {
   drawSuperExtra: () => void;
   undoDraw: () => void;
   setPreview: (pattern: Pattern | null, cardIndex: number) => void;
+  forceSlotPrize: SlotSymbol | null;
+  setForceSlotPrize: (prize: SlotSymbol | null) => void;
+  triggerSlot: () => void;
 }
 
 export function useDebugEngine(): DebugEngine {
@@ -45,8 +49,10 @@ export function useDebugEngine(): DebugEngine {
   const stake = STAKE_LEVELS[stakeIndex];
   const [, setTick] = useState(0);
   const [patternPreview, setPatternPreview] = useState<{ pattern: Pattern; cardIndex: number } | null>(null);
+  const [forceSlotPrize, setForceSlotPrize] = useState<SlotSymbol | null>(null);
   const roundRef = useRef<Round | null>(null);
   const lastForceRef = useRef<ForceConfig | undefined>(undefined);
+  const forceSlotRef = useRef<SlotSymbol | null>(null);
 
   const rerender = useCallback(() => setTick((t) => t + 1), []);
 
@@ -68,7 +74,9 @@ export function useDebugEngine(): DebugEngine {
       }
     }
 
-    return new Round(cards, ballSequence, random);
+    const round = new Round(cards, ballSequence, random);
+    round.slotBonus.forcedPrize = forceSlotRef.current;
+    return round;
   }, [seed]);
 
   const newRound = useCallback((force?: ForceConfig) => {
@@ -99,6 +107,7 @@ export function useDebugEngine(): DebugEngine {
       if (card) ballSequence = prioritizePatternBalls(ballSequence, card, force.pattern);
     }
     const round = new Round(cards, ballSequence, random);
+    round.slotBonus.forcedPrize = forceSlotRef.current;
     roundRef.current = round;
     setPatternPreview(null);
     logNewRound(round, nextSeed);
@@ -163,6 +172,22 @@ export function useDebugEngine(): DebugEngine {
     setPatternPreview(pattern ? { pattern, cardIndex } : null);
   }, []);
 
+  const handleSetForceSlotPrize = useCallback((prize: SlotSymbol | null) => {
+    forceSlotRef.current = prize;
+    setForceSlotPrize(prize);
+    const round = roundRef.current;
+    if (round) {
+      round.slotBonus.forcedPrize = prize;
+    }
+  }, []);
+
+  const triggerSlot = useCallback(() => {
+    const round = roundRef.current;
+    if (!round || round.slotBonus.triggered) return;
+    round.slotBonus.forceAllHits(makeSeededRandom(seed + Date.now()));
+    rerender();
+  }, [seed, rerender]);
+
   return {
     round: roundRef.current,
     seed,
@@ -180,5 +205,8 @@ export function useDebugEngine(): DebugEngine {
     drawSuperExtra,
     undoDraw,
     setPreview,
+    forceSlotPrize,
+    setForceSlotPrize: handleSetForceSlotPrize,
+    triggerSlot,
   };
 }
