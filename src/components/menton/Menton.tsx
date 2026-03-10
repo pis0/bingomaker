@@ -24,8 +24,13 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
   const [idlePatternIndex, setIdlePatternIndex] = useState(0)
   const idleTimerRef = useRef(0)
 
-  // Slot bonus blinking state
+  // Slot bonus blinking state — reset when round changes
   const [slotBlinking, setSlotBlinking] = useState(false)
+  const prevRoundRef = useRef<Round | null>(null)
+  if (round !== prevRoundRef.current) {
+    prevRoundRef.current = round
+    if (slotBlinking) setSlotBlinking(false)
+  }
 
   useTick((ticker) => {
     if (drawing) return
