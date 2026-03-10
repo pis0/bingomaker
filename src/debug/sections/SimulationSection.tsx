@@ -167,6 +167,10 @@ export default function SimulationSection({ engine }: Props) {
           {drawn}/{round.ballSequence.length} drawn | Payout: {payout}
           {canExtra && ' | Extra available'}
           {canSuperExtra && ' | Super available'}
+          <br />
+          Bells: {round.slotBonus.hits}/4
+          {round.slotBonus.triggered && ` | Slot: [${round.slotBonus.symbols?.join(', ')}]`}
+          {round.slotBonus.prize && ` | Prize: ${round.slotBonus.prize}`}
         </div>
       )}
     </div>

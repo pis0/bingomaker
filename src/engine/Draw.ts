@@ -13,4 +13,6 @@ export interface Draw {
   cardMatches: CardMatches | null;
   /** Additional payout from patterns completed by this draw */
   additionalPayout: number;
+  /** Whether this draw hit a bell position */
+  bellHit: boolean;
 }

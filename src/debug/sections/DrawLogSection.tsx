@@ -16,6 +16,10 @@ function formatDraw(draw: Draw): { text: string; className: string } {
     text += ` → C${draw.affectedCard} [${draw.position.row},${draw.position.col}]`;
   }
 
+  if (draw.bellHit) {
+    text += ' 🔔';
+  }
+
   if (draw.additionalPayout > 0) {
     text += ` +${draw.additionalPayout}`;
     className += ' debug-draw-entry--payout';

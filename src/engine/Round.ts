@@ -1,8 +1,9 @@
-import { DEFAULT_BALLS, ROWS, COLS } from './constants';
+import { DEFAULT_BALLS } from './constants';
 import type { Card } from './Card';
 import type { Draw } from './Draw';
 import { checkForPatterns } from './PatternResolver';
 import type { RandomFn } from './types';
+import { SlotBonusSession } from './SlotBonusSession';
 
 export interface BellPosition {
   row: number;
@@ -14,19 +15,24 @@ export class Round {
   readonly ballSequence: number[];
   readonly draws: Draw[] = [];
 
-  /** One bell position per card (same index as cards[]) */
-  bellPositions: BellPosition[];
+  /** Slot bonus session — tracks bell hits + symbol generation */
+  readonly slotBonus: SlotBonusSession;
 
   /** ball number → card that contains it */
   private readonly cardsByBall = new Map<number, Card>();
 
   private ballIndex = 0;
   private _totalPayout = 0;
+  private _random: RandomFn;
 
   constructor(cards: Card[], ballSequence: number[], random: RandomFn = Math.random) {
     this.cards = cards;
     this.ballSequence = ballSequence;
-    this.bellPositions = Round.shuffleBells(cards.length, random);
+    this._random = random;
+
+    // Initialize slot bonus with bell positions
+    this.slotBonus = new SlotBonusSession();
+    this.slotBonus.shuffle(cards, random);
 
     // Register all cards' balls
     for (const card of cards) {
@@ -34,21 +40,14 @@ export class Round {
     }
   }
 
-  /** Generate one random bell position per card */
-  static shuffleBells(count: number, random: RandomFn): BellPosition[] {
-    const positions: BellPosition[] = [];
-    for (let i = 0; i < count; i++) {
-      positions.push({
-        row: Math.floor(random() * ROWS),
-        col: Math.floor(random() * COLS),
-      });
-    }
-    return positions;
+  /** Bell positions derived from slot bonus positions */
+  get bellPositions(): BellPosition[] {
+    return this.slotBonus.positions.map(p => ({ row: p.row, col: p.col }));
   }
 
   /** Re-randomize bell positions (AS3: SlotBonusSession.shuffle on Shuffle button) */
   reshuffleBells(): void {
-    this.bellPositions = Round.shuffleBells(this.cards.length, Math.random);
+    this.slotBonus.shuffle(this.cards, this._random);
   }
 
   get totalPayout(): number {
@@ -80,10 +79,12 @@ export class Round {
 
   /** Draw a specific ball */
   private drawBall(index: number, ball: number, stake: number): Draw {
+    // Check for bell hit
+    const bellHit = this.slotBonus.process(ball, this._random);
+
     const card = this.cardsByBall.get(ball);
 
     if (!card) {
-      // Ball not on any card (shouldn't happen with proper distribution)
       return {
         index,
         ball,
@@ -91,6 +92,7 @@ export class Round {
         position: null,
         cardMatches: null,
         additionalPayout: 0,
+        bellHit,
       };
     }
 
@@ -108,6 +110,7 @@ export class Round {
       position,
       cardMatches,
       additionalPayout,
+      bellHit,
     };
   }
 
