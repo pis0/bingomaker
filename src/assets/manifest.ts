@@ -17,6 +17,7 @@ export const mentonManifest: AssetsManifest = {
       assets: [
         { alias: 'bgmenton', src: '/assets/menton/bgmenton.webp' },
         { alias: 'menton0', src: '/assets/menton/menton0.json' },
+        { alias: 'menton_4col_bright', src: '/assets/menton/particles/menton_4col_bright.png' },
       ],
     },
     // Future bundles:
