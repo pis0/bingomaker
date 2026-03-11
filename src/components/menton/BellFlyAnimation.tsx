@@ -4,12 +4,9 @@ import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import type { SlotPosition } from '../../engine/SlotBonusSession'
 import { X_O, Y_O, CELL_W, CELL_H, CARD_W, CARD_H, CARD_GAP } from './cardConstants'
+import { CARD_PANEL_X, CARD_PANEL_Y, BELL_PANEL_CENTER_X, BELL_PANEL_CENTER_Y } from './layoutConstants'
 
 extend({ Container })
-
-// Card panel offset in Menton space (AS3: addComp(new CardPanel(), {x:70, y:255}))
-const CARD_PANEL_X = 70
-const CARD_PANEL_Y = 255
 
 const CARD_POSITIONS = [
   { x: 0, y: 0 },
@@ -18,9 +15,9 @@ const CARD_POSITIONS = [
   { x: CARD_W + CARD_GAP, y: CARD_H + CARD_GAP },
 ]
 
-// AS3: bell flies to (550, -200) in CardPanel space → (620, 55) in Menton space
-const TARGET_X = 620
-const TARGET_Y = 55
+// Bell flies to BellPanel center
+const TARGET_X = BELL_PANEL_CENTER_X
+const TARGET_Y = BELL_PANEL_CENTER_Y
 const FLY_DURATION = 0.6
 
 interface FlyAnim {

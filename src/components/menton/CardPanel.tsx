@@ -7,6 +7,7 @@ import { FULL } from '../../engine/Pattern'
 import CardView from './CardView'
 import BingoMovie from './BingoMovie'
 import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
+import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 
 extend({ Container })
 
@@ -27,9 +28,8 @@ interface Props {
 }
 
 export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y }: Props) {
-  // AS3 Menton.as: addComp(new CardPanel(), {x:70, y:255})
-  const offsetX = x ?? 70
-  const offsetY = y ?? 255
+  const offsetX = x ?? CARD_PANEL_X
+  const offsetY = y ?? CARD_PANEL_Y
 
   const [cardsVisible, setCardsVisible] = useState(true)
   const [bingoCardIndex, setBingoCardIndex] = useState<number | null>(null)

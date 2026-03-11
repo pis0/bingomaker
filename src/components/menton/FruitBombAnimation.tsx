@@ -3,12 +3,9 @@ import { Container, Sprite } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
+import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 
 extend({ Container })
-
-// Card panel offset in Menton space
-const CARD_PANEL_X = 70
-const CARD_PANEL_Y = 255
 
 const CARD_POSITIONS = [
   { x: 0, y: 0 },

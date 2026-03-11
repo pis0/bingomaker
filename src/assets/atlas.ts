@@ -18,3 +18,20 @@ export function textures(prefix: string): Texture[] {
     .sort()
     .map(k => sheet.textures[k])
 }
+
+/** Get a single texture from a named atlas */
+export function texFrom(atlas: string, name: string): Texture {
+  const sheet = Assets.get<Spritesheet>(atlas)
+  const t = sheet.textures[name]
+  if (!t) throw new Error(`[atlas] texture "${name}" not found in ${atlas}`)
+  return t
+}
+
+/** Get multiple textures matching a prefix from a named atlas, sorted */
+export function texturesFrom(atlas: string, prefix: string): Texture[] {
+  const sheet = Assets.get<Spritesheet>(atlas)
+  return Object.keys(sheet.textures)
+    .filter(k => k.startsWith(prefix))
+    .sort()
+    .map(k => sheet.textures[k])
+}

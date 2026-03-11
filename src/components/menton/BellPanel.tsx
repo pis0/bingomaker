@@ -2,12 +2,9 @@ import { useRef, useEffect, useCallback } from 'react'
 import { Container, Sprite, Spritesheet, Assets, Texture, Graphics } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { ALL_SLOT_SYMBOLS, type SlotSymbol } from '../../engine/SlotBonusSession'
+import { BELL_PANEL_X, BELL_PANEL_Y } from './layoutConstants'
 
 extend({ Container })
-
-// AS3: BellPanel positioned at (555, 75) in Menton
-const PANEL_X = 555
-const PANEL_Y = 75
 
 // Stripe Y positions (AS3: BellPanel.draww)
 const STRIPE_Y = [0, 32, 58]
@@ -329,5 +326,5 @@ export default function BellPanel({ bellsRevealed, spinSymbols, blinking, onSpin
     }
   }, [spinSymbols])
 
-  return <pixiContainer ref={containerRef} x={PANEL_X} y={PANEL_Y} />
+  return <pixiContainer ref={containerRef} x={BELL_PANEL_X} y={BELL_PANEL_Y} />
 }
