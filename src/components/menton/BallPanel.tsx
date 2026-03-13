@@ -22,6 +22,7 @@ import {
 } from './ballConstants'
 import BallCounter from './BallCounter'
 import AnimatedBall from './AnimatedBall'
+import TubeWater from './TubeWater'
 import IdleLemon from './IdleLemon'
 import { DEFAULT_BALLS } from '../../engine/constants'
 import type { Round } from '../../engine/Round'
@@ -154,7 +155,9 @@ export default function BallPanel({ round, onBallArrive }: Props) {
           />
         )
       })}
-      {/* 4. ballpipe */}
+      {/* 4. Water effects — above balls (AS3: water1+water2 over ballContainer) */}
+      <TubeWater active={drawing} idle={isIdle} />
+      {/* 5. ballpipe */}
       <pixiSprite texture={tex('ballpipe')} x={PIPE_X} />
       {/* 5. BallCounter — hidden during idle */}
       {drawing && <BallCounter count={ballCount} x={COUNTER_X} y={COUNTER_Y} />}
