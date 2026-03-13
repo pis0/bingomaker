@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useMemo } from 'react'
-import { Container, Graphics, AnimatedSprite } from 'pixi.js'
+import { Container, Graphics, AnimatedSprite, Assets, Texture, Ticker } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex, textures as getTextures } from '../../assets/atlas'
+import { ParticleEmitter } from '../../particles/ParticleEmitter'
+import { mentonWater } from '../../particles/configs/menton_water'
 
 extend({ Container, Graphics, AnimatedSprite })
 
@@ -52,6 +54,11 @@ const GOTAS_Y = 67
 const IDLE_DRIP_MIN = 5000
 const IDLE_DRIP_RANGE = 8000
 
+/* ── Water particle — spray at pipe exit ─────────────────────── */
+const PARTICLE_X = 34
+const PARTICLE_Y = 77
+const PARTICLE_SWITCH_DELAY = 2555 // 2.555s before param switch
+
 interface Props {
   active: boolean
   idle?: boolean
@@ -70,6 +77,16 @@ export default function TubeWater({ active, idle = false }: Props) {
   const tankTex = useMemo(() => tex('liquido_tanque_loop'), [])
   const splashFrames = useMemo(() => getTextures('splash'), [])
   const gotasFrames = useMemo(() => getTextures('gotas_final'), [])
+
+  // Water particle emitter — config held by ref so we can mutate speed/size
+  const waterCfg = useRef({ ...mentonWater })
+  const waterEmitter = useRef<ParticleEmitter | null>(null)
+  if (!waterEmitter.current) {
+    const texture = Assets.get<Texture>('menton_water') ?? Texture.WHITE
+    waterEmitter.current = new ParticleEmitter(waterCfg.current, texture)
+    waterEmitter.current.emitterX = PARTICLE_X
+    waterEmitter.current.emitterY = PARTICLE_Y
+  }
 
   // Masks (off-screen Graphics, not in display tree)
   const w1Mask = useRef(new Graphics())
@@ -101,6 +118,8 @@ export default function TubeWater({ active, idle = false }: Props) {
     // Idle drip
     idleActive: false,
     idleNextDrip: 0,
+    // Water particle
+    particleSwitched: false,
   })
 
   // Setup Water1 mask on container mount
@@ -160,6 +179,18 @@ export default function TubeWater({ active, idle = false }: Props) {
       s.gotasFired = false
       s.gotasLoops = 0
       s.gotasTarget = Math.random() < 0.5 ? 2 : 1
+      s.particleSwitched = false
+
+      // Reset particle config to initial AS3 values
+      const cfg = waterCfg.current
+      cfg.speed = 700
+      cfg.startSize = 50
+      const em = waterEmitter.current
+      if (em) {
+        em.emitterXVariance = 10
+        em.stop()
+        em.start(Ticker.shared)
+      }
 
       // Reset positions
       if (w1ColumnRef.current) w1ColumnRef.current.y = W1_START_Y
@@ -177,6 +208,7 @@ export default function TubeWater({ active, idle = false }: Props) {
       }
     } else {
       s.running = false
+      waterEmitter.current?.stop()
       if (splashRef.current) { splashRef.current.visible = false; splashRef.current.stop() }
       // Don't hide gotas here — idle drip may need it
     }
@@ -242,6 +274,14 @@ export default function TubeWater({ active, idle = false }: Props) {
     g1.clear()
     g1.rect(cx, W1_CLIP_Y, Math.max(cw, 0), W1_CLIP_H)
     g1.fill(0xffffff)
+
+    /* ── Water particle: switch to slower params after 2.555s ─── */
+    if (!s.particleSwitched && e >= PARTICLE_SWITCH_DELAY) {
+      s.particleSwitched = true
+      waterCfg.current.speed = 200
+      waterCfg.current.startSize = 12
+      if (waterEmitter.current) waterEmitter.current.emitterXVariance = 16
+    }
 
     /* ── Water2: horizontal scroll ─── */
     const scroll = w2ScrollRef.current
@@ -313,8 +353,20 @@ export default function TubeWater({ active, idle = false }: Props) {
     }
   }, [])
 
+  // Water particle container setup — add emitter's Container to display tree
+  const setupParticle = useCallback((c: Container | null) => {
+    if (c && waterEmitter.current) c.addChild(waterEmitter.current.container)
+  }, [])
+
+  // Cleanup particle emitter on unmount
+  useEffect(() => {
+    return () => { waterEmitter.current?.destroy(); waterEmitter.current = null }
+  }, [])
+
   return (
     <pixiContainer>
+      {/* Water particle: spray at pipe exit (AS3: particlesContainer1, behind water) */}
+      <pixiContainer ref={setupParticle} />
       {/* Water1: vertical liquid column with animated mask */}
       <pixiContainer ref={setupW1}>
         <pixiContainer ref={w1ColumnRef} x={W1_COL_X} alpha={W1_ALPHA} y={W1_START_Y}>

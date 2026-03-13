@@ -21,6 +21,7 @@ export const mentonManifest: AssetsManifest = {
         { alias: 'menton_pipoqueira_bbl', src: '/assets/menton/particles/menton_pipoqueira_bbl.png' },
         { alias: 'menton_chip_xplosion', src: '/assets/menton/particles/menton_chip_xplosion.png' },
         { alias: 'menton_lemon_xplosion', src: '/assets/menton/particles/menton_lemon_xplosion.png' },
+        { alias: 'menton_water', src: '/assets/menton/particles/menton_water.png' },
       ],
     },
     {
