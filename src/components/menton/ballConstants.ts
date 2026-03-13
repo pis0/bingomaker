@@ -31,8 +31,9 @@ export const IDLE_LEMON_X = 38
 export const IDLE_LEMON_Y = 48
 
 // BallCounter
-export const COUNTER_X = 18
-export const COUNTER_Y = 20
+// AS3: addComp(BallCounter, {x:18, y:20}) + addText(10,10) internal offset
+export const COUNTER_X = 28
+export const COUNTER_Y = 30
 export const COUNTER_FONT = '"Iowan Old Style Black", Georgia, serif'
 export const COUNTER_SIZE = 25
 export const COUNTER_COLOR = 0xc1c0ae
