@@ -3219,6 +3219,46 @@
         "w": 313,
         "h": 40
       }
+    },
+    "liqu_col0009": {
+      "frame": {
+        "x": 1651,
+        "y": 1592,
+        "w": 58,
+        "h": 130
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 58,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 58,
+        "h": 130
+      }
+    },
+    "liqu_col0013": {
+      "frame": {
+        "x": 1709,
+        "y": 1592,
+        "w": 58,
+        "h": 130
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 58,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 58,
+        "h": 130
+      }
     }
   },
   "meta": {

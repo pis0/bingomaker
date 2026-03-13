@@ -15,7 +15,7 @@ import type { Round } from '../../engine/Round'
 import type { Pattern } from '../../engine/Pattern'
 import type { SlotSymbol } from '../../engine/SlotBonusSession'
 import { FruitBombBonusSession, type BombPosition } from '../../engine/FruitBombBonusSession'
-import { COLS, STAKE_LEVELS } from '../../engine/constants'
+import { COLS, STAKE_LEVELS, DEFAULT_BALLS } from '../../engine/constants'
 import { SLOT_X2, SLOT_FRUIT } from '../../engine/SlotBonusSession'
 import { INTERVAL_PATTERNS, INTERVAL_PATTERN_DELAY, PATTERN_TO_CARD_INDEX } from './payoutConstants'
 import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
@@ -124,6 +124,7 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
   const activeIdleCard = idlePattern ? (PATTERN_TO_CARD_INDEX.get(idlePattern) ?? -1) : -1
 
   const currentPayout = round?.totalPayout ?? 0
+  const isExtraPhase = (round?.currentBallIndex ?? 0) > DEFAULT_BALLS
 
   // Detect new pattern completions → trigger chip fly
   const drawCount = round?.draws.length ?? 0
@@ -230,12 +231,13 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
             onSpinComplete={handleSlotComplete}
           />
           <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
-          <Payout value={currentPayout} />
+          <Payout value={currentPayout} collecting={!!chipFlyPositions} />
           <CardPanel
             round={round}
             stakeIndex={stakeIndex}
             idlePattern={idlePattern}
             shakeOffset={cardShake}
+            shouldBlink={isExtraPhase}
           />
           {/* Overlay animations (above cards, not clipped) */}
           {chipFlyPositions && (

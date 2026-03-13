@@ -27,9 +27,11 @@ interface Props {
   y?: number
   /** Card shake offset driven by FruitBombAnimation */
   shakeOffset?: { x: number; y: number }
+  /** Enable blinkMarkExtra on slots (extras/super extras phase) */
+  shouldBlink?: boolean
 }
 
-export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y, shakeOffset }: Props) {
+export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y, shakeOffset, shouldBlink = false }: Props) {
   const offsetX = (x ?? CARD_PANEL_X) + (shakeOffset?.x ?? 0)
   const offsetY = (y ?? CARD_PANEL_Y) + (shakeOffset?.y ?? 0)
 
@@ -64,7 +66,7 @@ export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x
     <pixiContainer x={offsetX} y={offsetY}>
       {round.cards.map((card, i) => (
         <pixiContainer key={card.index} x={positions[i].x} y={positions[i].y} visible={cardsVisible}>
-          <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} idlePattern={idlePattern} />
+          <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} idlePattern={idlePattern} shouldBlink={shouldBlink} />
         </pixiContainer>
       ))}
       <BingoMovie

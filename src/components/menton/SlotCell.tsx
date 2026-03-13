@@ -69,6 +69,10 @@ interface CycleState {
 }
 
 // ── Component ────────────────────────────────────────────────
+// AS3: blinkMarkExtra — white↔purple toggle at 0.1s, ~3 cycles (6 toggles)
+const BLINK_INTERVAL = 100
+const BLINK_TOGGLES = 6
+
 interface Props {
   card: Card
   row: number
@@ -77,9 +81,10 @@ interface Props {
   y: number
   hasBell?: boolean
   idleHighlighted?: boolean
+  shouldBlink?: boolean
 }
 
-export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighted = false }: Props) {
+export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighted = false, shouldBlink = false }: Props) {
   const matched = card.matches[row][col]
   const inPattern = card.inPattern[row][col]
   const priority = card.patternPriority[row][col]
@@ -97,6 +102,12 @@ export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighte
   // 1 = text settled (white bg, matched text) — at ~0.2s
   // 2 = fully settled (matched bg + text) — when animation ends
   const [settlePhase, setSettlePhase] = useState(2)
+
+  // blinkMarkExtra state (AS3: white↔purple toggle after marking, extras only)
+  const blinkActiveRef = useRef(false)
+  const blinkTimerRef = useRef(0)
+  const blinkCountRef = useRef(0)
+  const blinkWhiteRef = useRef(false)
 
   // Pattern color cycling state
   const bgRef = useRef<Graphics | null>(null)
@@ -119,6 +130,7 @@ export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighte
   if (!matched && wasMatched.current) {
     wasMatched.current = false
     isAnimating.current = false
+    blinkActiveRef.current = false
     setSettlePhase(2)
   }
 
@@ -147,7 +159,7 @@ export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighte
   }
 
   // Tick: marking animation + pattern color cycling
-  useTick(() => {
+  useTick((ticker) => {
     // Marking animation phases
     if (isAnimating.current && animRef.current) {
       if (settlePhase < 1) {
@@ -155,9 +167,44 @@ export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighte
         if (elapsed >= 0.2) setSettlePhase(1)
       }
       if (!animRef.current.playing) {
+        // Paint purple bg BEFORE hiding animation to avoid 1-frame white flash
+        if (bgRef.current) {
+          bgRef.current.clear()
+          bgRef.current.rect(0, 0, SLOT_W, SLOT_H)
+          bgRef.current.fill(COLORS.bgMatched)
+        }
         isAnimating.current = false
         animRef.current.visible = false
+        // Start blinkMarkExtra if in extra/super phase
+        if (shouldBlink) {
+          blinkActiveRef.current = true
+          blinkTimerRef.current = 0
+          blinkCountRef.current = 0
+          blinkWhiteRef.current = false
+        }
         setSettlePhase(2)
+      }
+    }
+
+    // blinkMarkExtra — white↔purple toggle (AS3: extras/super extras only)
+    if (blinkActiveRef.current && bgRef.current) {
+      blinkTimerRef.current += ticker.deltaMS
+      if (blinkTimerRef.current >= BLINK_INTERVAL) {
+        blinkTimerRef.current = 0
+        blinkCountRef.current++
+        if (blinkCountRef.current >= BLINK_TOGGLES) {
+          // Settle on purple
+          blinkActiveRef.current = false
+          bgRef.current.clear()
+          bgRef.current.rect(0, 0, SLOT_W, SLOT_H)
+          bgRef.current.fill(COLORS.bgMatched)
+        } else {
+          blinkWhiteRef.current = !blinkWhiteRef.current
+          const color = blinkWhiteRef.current ? COLORS.bgDefault : COLORS.bgMatched
+          bgRef.current.clear()
+          bgRef.current.rect(0, 0, SLOT_W, SLOT_H)
+          bgRef.current.fill(color)
+        }
       }
     }
 

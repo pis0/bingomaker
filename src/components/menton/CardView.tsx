@@ -21,9 +21,10 @@ interface Props {
   stakeIndex?: number
   bellPosition?: BellPosition
   idlePattern?: Pattern | null
+  shouldBlink?: boolean
 }
 
-export default function CardView({ card, stakeIndex = 0, bellPosition, idlePattern = null }: Props) {
+export default function CardView({ card, stakeIndex = 0, bellPosition, idlePattern = null, shouldBlink = false }: Props) {
   const cardTex = useMemo(() => tex('card'), [])
   const betTex = useMemo(() => tex(`cardbet${stakeIndex + 1}`), [stakeIndex])
 
@@ -92,6 +93,7 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
               y={Y_O + row * CELL_H}
               hasBell={bellPosition?.row === row && bellPosition?.col === col}
               idleHighlighted={!!idlePattern && idlePattern.mask[row * COLS + col]}
+              shouldBlink={shouldBlink}
             />
           )
         }),
@@ -114,6 +116,7 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
               y={Y_O + row * CELL_H}
               hasBell={bellPosition?.row === row && bellPosition?.col === col}
               idleHighlighted={!!idlePattern && idlePattern.mask[row * COLS + col]}
+              shouldBlink={shouldBlink}
             />
           )
         }),
@@ -128,25 +131,25 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
         />
       )}
 
-      {/* Payout */}
-      {card.payout > 0 && (
+      {/* Payout — debug overlay, uncomment when needed */}
+      {/* {card.payout > 0 && (
         <pixiText
           text={`+${card.payout}`}
           style={payoutStyle}
           x={CARD_W - 40}
           y={4}
         />
-      )}
+      )} */}
 
-      {/* Pattern names */}
-      {patternNames && (
+      {/* Pattern names — debug overlay, uncomment when needed */}
+      {/* {patternNames && (
         <pixiText
           text={patternNames}
           style={patternLabelStyle}
           x={X_O}
           y={CARD_H - 14}
         />
-      )}
+      )} */}
     </pixiContainer>
   )
 }

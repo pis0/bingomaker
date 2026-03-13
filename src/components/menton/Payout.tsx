@@ -40,7 +40,7 @@ const COIN_SCALE = 0.75
 const COIN_H = 37
 
 // Label position relative to coin — Composer: x:42
-const LABEL_OFFSET_X = 42
+const LABEL_OFFSET_X = 46
 
 // AS3: Payout.align() — y offset +12
 const ALIGN_Y_OFFSET = 12
@@ -52,9 +52,8 @@ const FONT_FAMILY = '"Myriad Pro", Arial, sans-serif'
 const FONT_SIZE = 43
 
 // AS3: blinkWonMoney — 0.2s interval, 0.4s duration
-// Extended to 1.2s until chip fly animation provides the longer collecting blink
 const WON_BLINK_INTERVAL = 200
-const WON_BLINK_DURATION = 1200
+const WON_BLINK_DURATION = 400
 // AS3: blinkCollectMoney — 0.1s interval, continuous
 const COLLECT_BLINK_INTERVAL = 100
 
@@ -228,8 +227,8 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
             style={{
               fontFamily: FONT_FAMILY,
               fontSize: FONT_SIZE,
-              fill: labelColor,
               fontWeight: '600',
+              fill: labelColor,
             }}
             anchor={{ x: 0, y: 0.5 }}
             x={LABEL_OFFSET_X}

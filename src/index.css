@@ -1,5 +1,12 @@
 @font-face {
   font-family: 'Myriad Pro';
+  src: url('/assets/fonts/MyriadPro-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Myriad Pro';
   src: url('/assets/fonts/MyriadPro-Bold.otf') format('opentype');
   font-weight: bold;
   font-style: normal;
