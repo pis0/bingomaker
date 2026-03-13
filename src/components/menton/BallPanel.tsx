@@ -83,13 +83,23 @@ export default function BallPanel({ round, onBallArrive }: Props) {
   const processedCountRef = useRef(0)
   const queueRef = useRef<number[]>([])
 
-  // Detect new draws / undo / reset
+  // Synchronous reset on round change — eliminates 1-frame stale `drawing` state
+  // (React "adjusting state during render" pattern)
+  const prevRoundRef = useRef<Round | null>(null)
+  if (round !== prevRoundRef.current) {
+    prevRoundRef.current = round
+    processedCountRef.current = 0
+    queueRef.current = []
+    if (launchedIndices.length > 0) {
+      setLaunchedIndices([])
+    }
+  }
+
+  // Detect new draws / undo
   useEffect(() => {
     if (drawCount === 0) {
-      // Reset (new round or no round)
-      processedCountRef.current = 0
-      queueRef.current = []
-      setLaunchedIndices([])
+      // Already reset synchronously above
+      return
     } else if (drawCount > processedCountRef.current) {
       // New draws → queue them
       for (let i = processedCountRef.current; i < drawCount; i++) {

@@ -208,9 +208,22 @@ export default function TubeWater({ active, idle = false }: Props) {
       }
     } else {
       s.running = false
-      waterEmitter.current?.stop()
+      // Kill all particles immediately (stop() would let them linger for 1.4s)
+      waterEmitter.current?.reset()
       if (splashRef.current) { splashRef.current.visible = false; splashRef.current.stop() }
-      // Don't hide gotas here — idle drip may need it
+      if (gotasRef.current) { gotasRef.current.visible = false; gotasRef.current.stop() }
+      // Reset Water1 mask to full state (avoid stale ripple frame)
+      const g1 = w1Mask.current
+      g1.clear()
+      g1.rect(W1_CLIP_X, W1_CLIP_Y, W1_CLIP_W, W1_CLIP_H)
+      g1.fill(0xffffff)
+      // Reset Water1 column position
+      if (w1ColumnRef.current) w1ColumnRef.current.y = W1_START_Y
+      // Reset Water2 scroll
+      if (w2ScrollRef.current) {
+        w2ScrollRef.current.x = -s.texW
+        w2ScrollRef.current.y = W2_Y0
+      }
     }
   }, [active, tankTex])
 
