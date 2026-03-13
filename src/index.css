@@ -12,6 +12,20 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Iowan Old Style Black';
+  src: url('/assets/fonts/IowanOldStyle-Black.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Iowan Old Style Bold';
+  src: url('/assets/fonts/IowanOldStyle-Bold.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 * {
   margin: 0;
   padding: 0;

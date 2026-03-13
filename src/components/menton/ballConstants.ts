@@ -33,7 +33,7 @@ export const IDLE_LEMON_Y = 48
 // BallCounter
 export const COUNTER_X = 18
 export const COUNTER_Y = 20
-export const COUNTER_FONT = '"Iowan Old Style Black", "Iowan Old Style", Georgia, serif'
+export const COUNTER_FONT = '"Iowan Old Style Black", Georgia, serif'
 export const COUNTER_SIZE = 25
 export const COUNTER_COLOR = 0xc1c0ae
 export const COUNTER_SHADOW = 0x37393c
@@ -51,7 +51,9 @@ export const BALL_SPACING = 45
 export const BALL_ROW_SIZE = 15
 
 // Ball text
-export const BALL_FONT = '"Iowan Old Style Black", "Iowan Old Style", Georgia, serif'
+// AS3 uses bitmap font at 33/39px — PixiJS vector font renders larger,
+// so we scale down to achieve visual parity with the 45×44 ball texture.
+export const BALL_FONT = '"Iowan Old Style Black", Georgia, serif'
 export const BALL_TEXT_COLOR = 0x4d371e
-export const BALL_NORMAL_SIZE = 33
-export const BALL_EXTRA_SIZE = 39
+export const BALL_NORMAL_SIZE = 24
+export const BALL_EXTRA_SIZE = 29
