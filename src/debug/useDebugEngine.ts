@@ -137,13 +137,19 @@ export function useDebugEngine(): DebugEngine {
     const round = roundRef.current;
     if (!round || round.currentBallIndex === 0) return;
     const replayCount = round.currentBallIndex - 1;
+    // Preserve slot bonus trigger state across undo
+    const slotWasTriggered = round.slotBonus.triggered;
     const fresh = buildRound(lastForceRef.current);
     for (let i = 0; i < replayCount; i++) {
       fresh.drawNext(stake);
     }
+    // Re-trigger slot if it was triggered before undo
+    if (slotWasTriggered && !fresh.slotBonus.triggered) {
+      fresh.slotBonus.forceAllHits(makeSeededRandom(seed + Date.now()));
+    }
     roundRef.current = fresh;
     rerender();
-  }, [stake, buildRound, rerender]);
+  }, [stake, seed, buildRound, rerender]);
 
   const drawExtra = useCallback(() => {
     const round = roundRef.current;

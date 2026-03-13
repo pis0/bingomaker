@@ -1,0 +1,855 @@
+{
+  "frames": {
+    "gota_abacaxiD": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 220,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 220,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 220,
+        "h": 48
+      }
+    },
+    "gota_uvaD": {
+      "frame": {
+        "x": 222,
+        "y": 0,
+        "w": 220,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 220,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 220,
+        "h": 48
+      }
+    },
+    "gota_abacaxiC": {
+      "frame": {
+        "x": 444,
+        "y": 0,
+        "w": 200,
+        "h": 59
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 59
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 59
+      }
+    },
+    "gota_uvaC": {
+      "frame": {
+        "x": 646,
+        "y": 0,
+        "w": 200,
+        "h": 59
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 59
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 59
+      }
+    },
+    "abacaxi": {
+      "frame": {
+        "x": 848,
+        "y": 0,
+        "w": 110,
+        "h": 170
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 110,
+        "h": 170
+      },
+      "sourceSize": {
+        "w": 110,
+        "h": 170
+      }
+    },
+    "gota_macaD": {
+      "frame": {
+        "x": 0,
+        "y": 172,
+        "w": 167,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 167,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 167,
+        "h": 48
+      }
+    },
+    "gota_morangoD": {
+      "frame": {
+        "x": 169,
+        "y": 172,
+        "w": 167,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 167,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 167,
+        "h": 48
+      }
+    },
+    "gota_macaC": {
+      "frame": {
+        "x": 338,
+        "y": 172,
+        "w": 152,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 152,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 152,
+        "h": 62
+      }
+    },
+    "gota_morangoC": {
+      "frame": {
+        "x": 492,
+        "y": 172,
+        "w": 152,
+        "h": 63
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 152,
+        "h": 63
+      },
+      "sourceSize": {
+        "w": 152,
+        "h": 63
+      }
+    },
+    "gota_abacaxiB": {
+      "frame": {
+        "x": 646,
+        "y": 172,
+        "w": 141,
+        "h": 79
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 141,
+        "h": 79
+      },
+      "sourceSize": {
+        "w": 141,
+        "h": 79
+      }
+    },
+    "gota_uvaB": {
+      "frame": {
+        "x": 789,
+        "y": 172,
+        "w": 136,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 136,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 136,
+        "h": 64
+      }
+    },
+    "abacaxiA": {
+      "frame": {
+        "x": 927,
+        "y": 172,
+        "w": 95,
+        "h": 124
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 95,
+        "h": 124
+      },
+      "sourceSize": {
+        "w": 95,
+        "h": 124
+      }
+    },
+    "marcador_morango": {
+      "frame": {
+        "x": 0,
+        "y": 298,
+        "w": 117,
+        "h": 69
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 117,
+        "h": 69
+      },
+      "sourceSize": {
+        "w": 117,
+        "h": 69
+      }
+    },
+    "marcador_abacaxi": {
+      "frame": {
+        "x": 119,
+        "y": 298,
+        "w": 115,
+        "h": 75
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 115,
+        "h": 75
+      },
+      "sourceSize": {
+        "w": 115,
+        "h": 75
+      }
+    },
+    "marcador_uva": {
+      "frame": {
+        "x": 236,
+        "y": 298,
+        "w": 109,
+        "h": 68
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 109,
+        "h": 68
+      },
+      "sourceSize": {
+        "w": 109,
+        "h": 68
+      }
+    },
+    "marcador_maca": {
+      "frame": {
+        "x": 347,
+        "y": 298,
+        "w": 108,
+        "h": 74
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 108,
+        "h": 74
+      },
+      "sourceSize": {
+        "w": 108,
+        "h": 74
+      }
+    },
+    "uva": {
+      "frame": {
+        "x": 457,
+        "y": 298,
+        "w": 105,
+        "h": 87
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 105,
+        "h": 87
+      },
+      "sourceSize": {
+        "w": 105,
+        "h": 87
+      }
+    },
+    "gota_macaB": {
+      "frame": {
+        "x": 564,
+        "y": 298,
+        "w": 103,
+        "h": 63
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 103,
+        "h": 63
+      },
+      "sourceSize": {
+        "w": 103,
+        "h": 63
+      }
+    },
+    "gota_morangoB": {
+      "frame": {
+        "x": 669,
+        "y": 298,
+        "w": 103,
+        "h": 63
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 103,
+        "h": 63
+      },
+      "sourceSize": {
+        "w": 103,
+        "h": 63
+      }
+    },
+    "uvaC": {
+      "frame": {
+        "x": 774,
+        "y": 298,
+        "w": 102,
+        "h": 87
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 102,
+        "h": 87
+      },
+      "sourceSize": {
+        "w": 102,
+        "h": 87
+      }
+    },
+    "morango": {
+      "frame": {
+        "x": 878,
+        "y": 298,
+        "w": 98,
+        "h": 100
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 98,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 98,
+        "h": 100
+      }
+    },
+    "macaA": {
+      "frame": {
+        "x": 0,
+        "y": 400,
+        "w": 64,
+        "h": 86
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 86
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 86
+      }
+    },
+    "abacaxiE": {
+      "frame": {
+        "x": 66,
+        "y": 400,
+        "w": 83,
+        "h": 75
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 83,
+        "h": 75
+      },
+      "sourceSize": {
+        "w": 83,
+        "h": 75
+      }
+    },
+    "abacaxiD": {
+      "frame": {
+        "x": 151,
+        "y": 400,
+        "w": 80,
+        "h": 57
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 57
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 57
+      }
+    },
+    "morangoE": {
+      "frame": {
+        "x": 233,
+        "y": 400,
+        "w": 79,
+        "h": 79
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 79,
+        "h": 79
+      },
+      "sourceSize": {
+        "w": 79,
+        "h": 79
+      }
+    },
+    "macaB": {
+      "frame": {
+        "x": 314,
+        "y": 400,
+        "w": 44,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 44,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 44,
+        "h": 64
+      }
+    },
+    "gota_abacaxiA": {
+      "frame": {
+        "x": 360,
+        "y": 400,
+        "w": 58,
+        "h": 61
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 58,
+        "h": 61
+      },
+      "sourceSize": {
+        "w": 58,
+        "h": 61
+      }
+    },
+    "morangoB": {
+      "frame": {
+        "x": 420,
+        "y": 400,
+        "w": 61,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 61,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 61,
+        "h": 40
+      }
+    },
+    "gota_uvaA": {
+      "frame": {
+        "x": 483,
+        "y": 400,
+        "w": 55,
+        "h": 43
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 55,
+        "h": 43
+      },
+      "sourceSize": {
+        "w": 55,
+        "h": 43
+      }
+    },
+    "morangoC": {
+      "frame": {
+        "x": 540,
+        "y": 400,
+        "w": 41,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 41,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 41,
+        "h": 52
+      }
+    },
+    "macaD": {
+      "frame": {
+        "x": 583,
+        "y": 400,
+        "w": 38,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 38,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 38,
+        "h": 48
+      }
+    },
+    "morangoA": {
+      "frame": {
+        "x": 623,
+        "y": 400,
+        "w": 40,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 40,
+        "h": 46
+      }
+    },
+    "gota_macaA": {
+      "frame": {
+        "x": 665,
+        "y": 400,
+        "w": 42,
+        "h": 43
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 42,
+        "h": 43
+      },
+      "sourceSize": {
+        "w": 42,
+        "h": 43
+      }
+    },
+    "gota_morangoA": {
+      "frame": {
+        "x": 709,
+        "y": 400,
+        "w": 42,
+        "h": 43
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 42,
+        "h": 43
+      },
+      "sourceSize": {
+        "w": 42,
+        "h": 43
+      }
+    },
+    "abacaxiB": {
+      "frame": {
+        "x": 753,
+        "y": 400,
+        "w": 37,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 37,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 37,
+        "h": 32
+      }
+    },
+    "morangoD": {
+      "frame": {
+        "x": 792,
+        "y": 400,
+        "w": 35,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 35,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 35,
+        "h": 36
+      }
+    },
+    "macaC": {
+      "frame": {
+        "x": 829,
+        "y": 400,
+        "w": 33,
+        "h": 30
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 30
+      }
+    },
+    "uvaD": {
+      "frame": {
+        "x": 864,
+        "y": 400,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      }
+    },
+    "abacaxiC": {
+      "frame": {
+        "x": 898,
+        "y": 400,
+        "w": 24,
+        "h": 31
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 31
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 31
+      }
+    },
+    "uvaA": {
+      "frame": {
+        "x": 924,
+        "y": 400,
+        "w": 30,
+        "h": 31
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 31
+      },
+      "sourceSize": {
+        "w": 30,
+        "h": 31
+      }
+    },
+    "uvaB": {
+      "frame": {
+        "x": 956,
+        "y": 400,
+        "w": 31,
+        "h": 29
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 31,
+        "h": 29
+      },
+      "sourceSize": {
+        "w": 31,
+        "h": 29
+      }
+    },
+    "macaE": {
+      "frame": {
+        "x": 989,
+        "y": 400,
+        "w": 29,
+        "h": 29
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 29,
+        "h": 29
+      },
+      "sourceSize": {
+        "w": 29,
+        "h": 29
+      }
+    }
+  },
+  "meta": {
+    "app": "pack-atlas.mjs",
+    "version": "1.0",
+    "image": "menton_fruit.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1024,
+      "h": 512
+    },
+    "scale": "1"
+  }
+}

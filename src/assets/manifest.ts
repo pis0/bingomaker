@@ -28,6 +28,7 @@ export const mentonManifest: AssetsManifest = {
       assets: [
         { alias: 'menton_bingo', src: '/assets/menton/menton_bingo.json' },
         { alias: 'menton_bell', src: '/assets/menton/menton_bell.json' },
+        { alias: 'menton_fruit', src: '/assets/menton/menton_fruit.json' },
       ],
     },
     // Future bundles:

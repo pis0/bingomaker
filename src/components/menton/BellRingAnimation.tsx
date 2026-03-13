@@ -3,18 +3,22 @@ import { Container, Sprite, AnimatedSprite } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { texFrom, texturesFrom } from '../../assets/atlas'
 import { CARD_PANEL_X, CARD_PANEL_Y, BELL_PANEL_CENTER_X, BELL_PANEL_CENTER_Y } from './layoutConstants'
+import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
 
 extend({ Container })
 
 const BELL_ATLAS = 'menton_bell'
 
-// AS3: bellAnima at (256, 96) in CardPanel local space
-const ANIM_X = CARD_PANEL_X + 256
-const ANIM_Y = CARD_PANEL_Y + 96
+// Center of the 2×2 card grid in Menton space
+const CARDS_CENTER_X = CARD_PANEL_X + (CARD_W * 2 + CARD_GAP) / 2
+const CARDS_CENTER_Y = CARD_PANEL_Y + (CARD_H * 2 + CARD_GAP) / 2
 
-// AS3: bellImage at (320, 130) in CardPanel local space, rotation 0.4
-const IMAGE_START_X = CARD_PANEL_X + 320
-const IMAGE_START_Y = CARD_PANEL_Y + 130
+const ANIM_X = CARDS_CENTER_X
+const ANIM_Y = CARDS_CENTER_Y
+
+// Bell image starts near center, flies to BellPanel
+const IMAGE_START_X = CARDS_CENTER_X
+const IMAGE_START_Y = CARDS_CENTER_Y
 
 // Fly destination: BellPanel center
 const IMAGE_END_X = BELL_PANEL_CENTER_X

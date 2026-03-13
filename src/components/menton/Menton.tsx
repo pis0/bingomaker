@@ -9,13 +9,47 @@ import BellFlyAnimation from './BellFlyAnimation'
 import BellRingAnimation from './BellRingAnimation'
 import MultiplierCollect from './MultiplierCollect'
 import FruitBombAnimation from './FruitBombAnimation'
+import ChipFlyAnimation, { type ChipPosition } from './ChipFlyAnimation'
+import Payout from './Payout'
 import type { Round } from '../../engine/Round'
+import type { Pattern } from '../../engine/Pattern'
 import type { SlotSymbol } from '../../engine/SlotBonusSession'
-import { STAKE_LEVELS } from '../../engine/constants'
+import { FruitBombBonusSession, type BombPosition } from '../../engine/FruitBombBonusSession'
+import { COLS, STAKE_LEVELS } from '../../engine/constants'
 import { SLOT_X2, SLOT_FRUIT } from '../../engine/SlotBonusSession'
 import { INTERVAL_PATTERNS, INTERVAL_PATTERN_DELAY, PATTERN_TO_CARD_INDEX } from './payoutConstants'
+import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
+import { CARD_W, CARD_H, CARD_GAP, X_O, Y_O, CELL_W, CELL_H, SLOT_W, SLOT_H } from './cardConstants'
 
 extend({ Container })
+
+// Card positions in 2x2 grid (relative to CARD_PANEL)
+const CARD_OFFSETS = [
+  { x: 0, y: 0 },
+  { x: CARD_W + CARD_GAP, y: 0 },
+  { x: 0, y: CARD_H + CARD_GAP },
+  { x: CARD_W + CARD_GAP, y: CARD_H + CARD_GAP },
+]
+
+/** Compute cell centers in Menton space for a pattern on a given card */
+function patternChipPositions(cardIndex: number, pattern: Pattern): ChipPosition[] {
+  const card = CARD_OFFSETS[cardIndex]
+  const baseX = CARD_PANEL_X + card.x
+  const baseY = CARD_PANEL_Y + card.y
+  const positions: ChipPosition[] = []
+
+  for (let i = 0; i < pattern.mask.length; i++) {
+    if (pattern.mask[i]) {
+      const row = Math.floor(i / COLS)
+      const col = i % COLS
+      positions.push({
+        x: baseX + X_O + col * CELL_W + SLOT_W / 2,
+        y: baseY + Y_O + row * CELL_H + SLOT_H / 2,
+      })
+    }
+  }
+  return positions
+}
 
 interface Props {
   round: Round | null
@@ -41,6 +75,24 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
   const [multiplierActive, setMultiplierActive] = useState(false)
   const [fruitBombActive, setFruitBombActive] = useState(false)
 
+  // Fruit bomb engine + positions
+  const fruitBombRef = useRef<FruitBombBonusSession | null>(null)
+  const [bombPositions, setBombPositions] = useState<BombPosition[]>([])
+
+  // Card shake offset (driven by FruitBombAnimation)
+  const [cardShake, setCardShake] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+
+  // Force re-render after fruit bomb marks cells (Card is mutable)
+  const [, setTick] = useState(0)
+
+  // Payout display
+  const prevPayoutRef = useRef(0)
+
+  // Chip fly animation — fichas voam do pattern até o Payout
+  const [chipFlyPositions, setChipFlyPositions] = useState<ChipPosition[] | null>(null)
+  const prevDrawCountRef = useRef(0)
+  const prevPatternsRef = useRef<number[]>([0, 0, 0, 0])
+
   // Reset all bonus states on round change
   const prevRoundRef = useRef<Round | null>(null)
   if (round !== prevRoundRef.current) {
@@ -51,6 +103,12 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
     if (bellRingActive) setBellRingActive(false)
     if (releasedSpinSymbols) setReleasedSpinSymbols(null)
     prevSpinSymbolsRef.current = null
+    fruitBombRef.current = null
+    if (bombPositions.length > 0) setBombPositions([])
+    prevPayoutRef.current = 0
+    prevDrawCountRef.current = 0
+    prevPatternsRef.current = [0, 0, 0, 0]
+    if (chipFlyPositions) setChipFlyPositions(null)
   }
 
   useTick((ticker) => {
@@ -64,6 +122,34 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
 
   const idlePattern = !drawing ? INTERVAL_PATTERNS[idlePatternIndex] : null
   const activeIdleCard = idlePattern ? (PATTERN_TO_CARD_INDEX.get(idlePattern) ?? -1) : -1
+
+  const currentPayout = round?.totalPayout ?? 0
+
+  // Detect new pattern completions → trigger chip fly
+  const drawCount = round?.draws.length ?? 0
+  if (drawCount > prevDrawCountRef.current && round && !chipFlyPositions) {
+    for (let i = prevDrawCountRef.current; i < drawCount; i++) {
+      const draw = round.draws[i]
+      if (draw.additionalPayout > 0 && draw.affectedCard >= 0) {
+        const card = round.cards[draw.affectedCard]
+        const prevCount = prevPatternsRef.current[draw.affectedCard]
+        if (card.completedPatterns.size > prevCount) {
+          // Find the newest pattern (last in Set iteration = insertion order)
+          const patterns = [...card.completedPatterns]
+          const newPattern = patterns[patterns.length - 1]
+          setChipFlyPositions(patternChipPositions(draw.affectedCard, newPattern))
+          break
+        }
+      }
+    }
+    // Update tracking refs
+    prevDrawCountRef.current = drawCount
+    if (round) {
+      for (let ci = 0; ci < round.cards.length; ci++) {
+        prevPatternsRef.current[ci] = round.cards[ci].completedPatterns.size
+      }
+    }
+  }
 
   // Detect when spinSymbols first appears → start bell ring animation
   const rawSpinSymbols = round?.slotBonus.symbols ?? null
@@ -93,18 +179,41 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
     if (prize === SLOT_X2) {
       setMultiplierActive(true)
     } else if (prize === SLOT_FRUIT) {
+      // AS3: FruitBombBonusSession — select positions BEFORE animation
+      const session = new FruitBombBonusSession()
+      session.selectPositions(round.cards)
+      fruitBombRef.current = session
+      setBombPositions([...session.positions])
       setFruitBombActive(true)
     }
     // SLOT_BONUS → future: Fête du Citron bonus game
   }, [round])
 
+  const handleChipFlyComplete = useCallback(() => {
+    setChipFlyPositions(null)
+  }, [])
+
   const handleMultiplierComplete = useCallback(() => {
     setMultiplierActive(false)
   }, [])
 
-  const handleFruitBombComplete = useCallback(() => {
-    setFruitBombActive(false)
+  // AS3: cardShake callback from FruitBombAnimation
+  const handleFruitShake = useCallback((dx: number, dy: number) => {
+    setCardShake({ x: dx, y: dy })
   }, [])
+
+  // AS3: after fruit animation complete → mark cells, update visual
+  const handleFruitBombComplete = useCallback(() => {
+    // Process bomb — marks cells on cards (mutates Card objects)
+    if (fruitBombRef.current && round) {
+      fruitBombRef.current.process(round, stake)
+    }
+    setFruitBombActive(false)
+    setBombPositions([])
+    setCardShake({ x: 0, y: 0 })
+    // Force re-render so cards show newly marked cells
+    setTick(t => t + 1)
+  }, [round, stake])
 
   const bellsRevealed = round?.slotBonus.hits ?? 0
   const bellPositions = round?.slotBonus.positions ?? []
@@ -121,12 +230,26 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
             onSpinComplete={handleSlotComplete}
           />
           <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
-          <CardPanel round={round} stakeIndex={stakeIndex} idlePattern={idlePattern} />
+          <Payout value={currentPayout} />
+          <CardPanel
+            round={round}
+            stakeIndex={stakeIndex}
+            idlePattern={idlePattern}
+            shakeOffset={cardShake}
+          />
           {/* Overlay animations (above cards, not clipped) */}
+          {chipFlyPositions && (
+            <ChipFlyAnimation chips={chipFlyPositions} onComplete={handleChipFlyComplete} />
+          )}
           <BellFlyAnimation positions={bellPositions} />
           <BellRingAnimation active={bellRingActive} onComplete={handleBellRingComplete} />
           <MultiplierCollect active={multiplierActive} onComplete={handleMultiplierComplete} />
-          <FruitBombAnimation active={fruitBombActive} onComplete={handleFruitBombComplete} />
+          <FruitBombAnimation
+            active={fruitBombActive}
+            bombPositions={bombPositions}
+            onShake={handleFruitShake}
+            onComplete={handleFruitBombComplete}
+          />
         </>
       )}
     </pixiContainer>

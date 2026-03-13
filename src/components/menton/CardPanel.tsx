@@ -25,11 +25,13 @@ interface Props {
   idlePattern?: Pattern | null
   x?: number
   y?: number
+  /** Card shake offset driven by FruitBombAnimation */
+  shakeOffset?: { x: number; y: number }
 }
 
-export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y }: Props) {
-  const offsetX = x ?? CARD_PANEL_X
-  const offsetY = y ?? CARD_PANEL_Y
+export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y, shakeOffset }: Props) {
+  const offsetX = (x ?? CARD_PANEL_X) + (shakeOffset?.x ?? 0)
+  const offsetY = (y ?? CARD_PANEL_Y) + (shakeOffset?.y ?? 0)
 
   const [cardsVisible, setCardsVisible] = useState(true)
   const [bingoCardIndex, setBingoCardIndex] = useState<number | null>(null)

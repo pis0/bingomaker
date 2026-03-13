@@ -3139,6 +3139,86 @@
         "w": 9,
         "h": 9
       }
+    },
+    "ficha78_sk": {
+      "frame": {
+        "x": 0,
+        "y": 1946,
+        "w": 50,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 50,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 50,
+        "h": 49
+      }
+    },
+    "liqu_horizontal0015": {
+      "frame": {
+        "x": 0,
+        "y": 1996,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
+    },
+    "liqu_horizontal0019": {
+      "frame": {
+        "x": 313,
+        "y": 1996,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
+    },
+    "liqu_horizontal0021": {
+      "frame": {
+        "x": 626,
+        "y": 1996,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
     }
   },
   "meta": {
