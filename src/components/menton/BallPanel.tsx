@@ -97,8 +97,8 @@ export default function BallPanel({ round }: Props) {
       })}
       {/* 4. ballpipe */}
       <pixiSprite texture={tex('ballpipe')} x={PIPE_X} />
-      {/* 5. BallCounter */}
-      <BallCounter count={ballCount} x={COUNTER_X} y={COUNTER_Y} />
+      {/* 5. BallCounter — hidden during idle */}
+      {drawing && <BallCounter count={ballCount} x={COUNTER_X} y={COUNTER_Y} />}
       {/* 6. ballcontainer1 — front tube */}
       <pixiSprite texture={tex('ballcontainer1')} y={TUBING_Y} />
       {/* 7. Extra front container (pipoqueira) */}
