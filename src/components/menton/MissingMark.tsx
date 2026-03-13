@@ -11,22 +11,22 @@ const FONT_FAMILY = '"Iowan Old Style Black", "Iowan Old Style", Georgia, serif'
 
 // --- Shared text styles (matching AS3 MissingMarkMovie) ---
 const titleStyleGreen = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 30, fontWeight: 'bold',
+  fontFamily: FONT_FAMILY, fontSize: 30,
   fill: COLORS.missingTitle,
 })
 
 const titleStyleDark = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 30, fontWeight: 'bold',
+  fontFamily: FONT_FAMILY, fontSize: 30,
   fill: COLORS.textDefault,
 })
 
 const priceStyle = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 18, fontWeight: 'bold',
+  fontFamily: FONT_FAMILY, fontSize: 18,
   fill: 0xffffff,
 })
 
 const bonusStyle = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 14, fontWeight: 'bold',
+  fontFamily: FONT_FAMILY, fontSize: 14,
   fill: 0xfff770,
 })
 

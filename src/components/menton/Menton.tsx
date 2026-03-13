@@ -83,6 +83,10 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
   // Card shake offset (driven by FruitBombAnimation)
   const [cardShake, setCardShake] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
 
+  // Ball arrival tracking — cards mark only when ball settles in tube
+  const arrivedBallsRef = useRef<Set<number>>(new Set())
+  const [, setArrivalTick] = useState(0)
+
   // Force re-render after fruit bomb marks cells (Card is mutable)
   const [, setTick] = useState(0)
 
@@ -97,6 +101,7 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
   // Reset all bonus states on round change
   const prevRoundRef = useRef<Round | null>(null)
   if (round !== prevRoundRef.current) {
+    const isUndo = prevRoundRef.current && round && round.draws.length > 0
     prevRoundRef.current = round
     if (slotBlinking) setSlotBlinking(false)
     if (multiplierActive) setMultiplierActive(false)
@@ -106,10 +111,27 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
     prevSpinSymbolsRef.current = null
     fruitBombRef.current = null
     if (bombPositions.length > 0) setBombPositions([])
-    prevPayoutRef.current = 0
-    prevDrawCountRef.current = 0
-    prevPatternsRef.current = [0, 0, 0, 0]
     if (chipFlyPositions) setChipFlyPositions(null)
+
+    if (isUndo) {
+      // Undo: keep arrivedBalls for balls still in draws, remove undone
+      const currentBalls = new Set(round.draws.map(d => d.ball))
+      for (const ball of arrivedBallsRef.current) {
+        if (!currentBalls.has(ball)) arrivedBallsRef.current.delete(ball)
+      }
+      // Sync tracking refs to current state so chip fly doesn't retrigger
+      prevDrawCountRef.current = round.draws.length
+      prevPayoutRef.current = round.totalPayout
+      for (let ci = 0; ci < round.cards.length; ci++) {
+        prevPatternsRef.current[ci] = round.cards[ci].completedPatterns.size
+      }
+    } else {
+      // New round or no round: full reset
+      prevPayoutRef.current = 0
+      prevDrawCountRef.current = 0
+      prevPatternsRef.current = [0, 0, 0, 0]
+      arrivedBallsRef.current = new Set()
+    }
   }
 
   useTick((ticker) => {
@@ -191,6 +213,11 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
     // SLOT_BONUS → future: Fête du Citron bonus game
   }, [round])
 
+  const handleBallArrive = useCallback((ball: number) => {
+    arrivedBallsRef.current.add(ball)
+    setArrivalTick(t => t + 1)
+  }, [])
+
   const handleChipFlyComplete = useCallback(() => {
     setChipFlyPositions(null)
   }, [])
@@ -209,6 +236,16 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
     // Process bomb — marks cells on cards (mutates Card objects)
     if (fruitBombRef.current && round) {
       fruitBombRef.current.process(round, stake)
+      // Add fruit bomb cell numbers to arrivedBalls so SlotCell shows marks
+      for (const pos of fruitBombRef.current.positions) {
+        const card = round.cards[pos.cardIndex]
+        // 2×2 block from top-left (row, col)
+        for (let dr = 0; dr < 2; dr++) {
+          for (let dc = 0; dc < 2; dc++) {
+            arrivedBallsRef.current.add(card.numbers[pos.row + dr][pos.col + dc])
+          }
+        }
+      }
     }
     setFruitBombActive(false)
     setBombPositions([])
@@ -223,9 +260,9 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
   return (
     <pixiContainer>
       <Scenery />
-      <BallPanel round={round} />
       {round && (
         <>
+          <BallPanel round={round} onBallArrive={handleBallArrive} />
           <BellPanel
             bellsRevealed={bellsRevealed}
             spinSymbols={releasedSpinSymbols}
@@ -240,6 +277,7 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
             idlePattern={idlePattern}
             shakeOffset={cardShake}
             shouldBlink={isExtraPhase}
+            arrivedBalls={arrivedBallsRef.current}
           />
           {/* Overlay animations (above cards, not clipped) */}
           {chipFlyPositions && (

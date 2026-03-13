@@ -22,9 +22,10 @@ interface Props {
   bellPosition?: BellPosition
   idlePattern?: Pattern | null
   shouldBlink?: boolean
+  arrivedBalls?: Set<number>
 }
 
-export default function CardView({ card, stakeIndex = 0, bellPosition, idlePattern = null, shouldBlink = false }: Props) {
+export default function CardView({ card, stakeIndex = 0, bellPosition, idlePattern = null, shouldBlink = false, arrivedBalls }: Props) {
   const cardTex = useMemo(() => tex('card'), [])
   const betTex = useMemo(() => tex(`cardbet${stakeIndex + 1}`), [stakeIndex])
 
@@ -94,6 +95,7 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
               hasBell={bellPosition?.row === row && bellPosition?.col === col}
               idleHighlighted={!!idlePattern && idlePattern.mask[row * COLS + col]}
               shouldBlink={shouldBlink}
+              arrivedBalls={arrivedBalls}
             />
           )
         }),
@@ -117,6 +119,7 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
               hasBell={bellPosition?.row === row && bellPosition?.col === col}
               idleHighlighted={!!idlePattern && idlePattern.mask[row * COLS + col]}
               shouldBlink={shouldBlink}
+              arrivedBalls={arrivedBalls}
             />
           )
         }),

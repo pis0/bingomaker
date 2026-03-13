@@ -1,5 +1,5 @@
-import { useCallback } from 'react'
-import { Sprite, Container, TextStyle } from 'pixi.js'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Sprite, Container, TextStyle, Ticker } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { BALL_PANEL_X, BALL_PANEL_Y } from './layoutConstants'
@@ -21,7 +21,7 @@ import {
   BALL_FONT, BALL_TEXT_COLOR,
 } from './ballConstants'
 import BallCounter from './BallCounter'
-import Ball from './Ball'
+import AnimatedBall from './AnimatedBall'
 import IdleLemon from './IdleLemon'
 import { DEFAULT_BALLS } from '../../engine/constants'
 import type { Round } from '../../engine/Round'
@@ -45,17 +45,21 @@ function ballPosition(index: number): { x: number; y: number } {
   return { x: startX - BALL_SPACING * col, y }
 }
 
+/** Frames between consecutive ball launches */
+const LAUNCH_INTERVAL = 5
+
 interface Props {
   round: Round | null
+  onBallArrive?: (ball: number) => void
 }
 
 /**
- * AS3: BallPanelMenton — Fase 1+2
+ * AS3: BallPanelMenton — Fase 1+2+3 (structure + balls + animation)
  *
  * Layers (render order):
  * 1. bgextraball — background for extra area
  * 2. ballcontainer2 — rear tube
- * 3. Ball sprites (drawn balls in 2 rows)
+ * 3. AnimatedBall sprites (drawn balls with path animation)
  * 4. ballpipe — pipe tip
  * 5. BallCounter — "00"..."30"
  * 6. ballcontainer1 — front tube
@@ -66,17 +70,61 @@ interface Props {
  *    - Large ball (current ball number)
  *    - bigballpipe2 (cover, closed)
  */
-export default function BallPanel({ round }: Props) {
-  const ballCount = round?.currentBallIndex ?? 0
+export default function BallPanel({ round, onBallArrive }: Props) {
   const isIdle = !round || (round.draws.length === 0)
-  const drawing = round && round.draws.length > 0
 
   // Regular draws only (first 30 balls)
   const regularDraws = round?.draws.filter((_d, i) => i < DEFAULT_BALLS) ?? []
+  const drawCount = regularDraws.length
 
-  // Current ball number (last drawn)
-  const currentBall = round && round.draws.length > 0
-    ? round.draws[round.draws.length - 1].ball
+  // ── Animation queue ──────────────────────────────────────────────
+  const [launchedIndices, setLaunchedIndices] = useState<number[]>([])
+  const processedCountRef = useRef(0)
+  const queueRef = useRef<number[]>([])
+
+  // Detect new draws / undo / reset
+  useEffect(() => {
+    if (drawCount === 0) {
+      // Reset (new round or no round)
+      processedCountRef.current = 0
+      queueRef.current = []
+      setLaunchedIndices([])
+    } else if (drawCount > processedCountRef.current) {
+      // New draws → queue them
+      for (let i = processedCountRef.current; i < drawCount; i++) {
+        queueRef.current.push(i)
+      }
+      processedCountRef.current = drawCount
+    } else if (drawCount < processedCountRef.current) {
+      // Undo → remove excess
+      processedCountRef.current = drawCount
+      queueRef.current = queueRef.current.filter(i => i < drawCount)
+      setLaunchedIndices(prev => prev.filter(i => i < drawCount))
+    }
+  }, [drawCount])
+
+  // Process queue via ticker — launch balls with inter-ball delay
+  useEffect(() => {
+    let framesSinceLaunch = LAUNCH_INTERVAL // pre-fill so first ball launches immediately
+    const ticker = Ticker.shared
+    const onTick = () => {
+      if (queueRef.current.length === 0) return
+      framesSinceLaunch++
+      if (framesSinceLaunch >= LAUNCH_INTERVAL) {
+        framesSinceLaunch = 0
+        const next = queueRef.current.shift()!
+        setLaunchedIndices(prev => [...prev, next])
+      }
+    }
+    ticker.add(onTick)
+    return () => { ticker.remove(onTick) }
+  }, [])
+
+  // ── Derived state from animation ────────────────────────────────
+  const drawing = launchedIndices.length > 0
+  const ballCount = launchedIndices.length
+  const currentBall = drawing
+    ? regularDraws[launchedIndices[launchedIndices.length - 1]]?.ball ?? 0
     : 0
 
   // Ref callback to set pivot on cover sprite
@@ -90,10 +138,21 @@ export default function BallPanel({ round }: Props) {
       <pixiSprite texture={tex('bgextraball')} x={BG_EXTRA_X} y={EXTRA_FRONT_Y} />
       {/* 2. ballcontainer2 — rear tube */}
       <pixiSprite texture={tex('ballcontainer2')} y={TUBING_Y} />
-      {/* 3. Ball sprites — drawn regular balls in final positions */}
-      {regularDraws.map((draw, i) => {
+      {/* 3. Animated Ball sprites — launched from pipe, roll to final position */}
+      {launchedIndices.map(i => {
+        const draw = regularDraws[i]
+        if (!draw) return null
         const pos = ballPosition(i)
-        return <Ball key={i} number={draw.ball} x={pos.x} y={pos.y} />
+        return (
+          <AnimatedBall
+            key={i}
+            number={draw.ball}
+            finalX={pos.x}
+            y={pos.y}
+            index={i}
+            onArrive={() => onBallArrive?.(draw.ball)}
+          />
+        )
       })}
       {/* 4. ballpipe */}
       <pixiSprite texture={tex('ballpipe')} x={PIPE_X} />

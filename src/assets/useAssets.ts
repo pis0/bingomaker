@@ -16,9 +16,16 @@ export function useAssets() {
     async function load() {
       try {
         await AssetManager.init(mentonManifest)
-        await AssetManager.loadBundle(BUNDLES_TO_LOAD, (p) => {
-          if (!cancelled) setProgress(p)
-        })
+        await Promise.all([
+          AssetManager.loadBundle(BUNDLES_TO_LOAD, (p) => {
+            if (!cancelled) setProgress(p)
+          }),
+          // Force font download — browser won't fetch @font-face until used in DOM
+          document.fonts.load('normal 24px "Iowan Old Style Black"'),
+          document.fonts.load('normal 24px "Iowan Old Style Bold"'),
+          document.fonts.load('600 24px "Myriad Pro"'),
+          document.fonts.load('bold 24px "Myriad Pro"'),
+        ])
         if (!cancelled) setStatus('ready')
       } catch (err) {
         console.error('[AssetManager] Failed to load assets:', err)

@@ -25,21 +25,21 @@ const FONT_FAMILY = '"Iowan Old Style Black", "Iowan Old Style", Georgia, serif'
 const FONT_SIZE = 28
 
 const styleDefault = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE, fontWeight: 'bold',
-  fill: COLORS.textDefault, letterSpacing: -1,
+  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE,
+  fill: COLORS.textDefault, letterSpacing: -1, padding: 4,
 })
 const styleMatched = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE, fontWeight: 'bold',
-  fill: COLORS.textMatched, letterSpacing: -1,
+  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE,
+  fill: COLORS.textMatched, letterSpacing: -1, padding: 4,
 })
 const styleInPattern = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE, fontWeight: 'bold',
-  fill: COLORS.textInPattern, letterSpacing: -1,
+  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE,
+  fill: COLORS.textInPattern, letterSpacing: -1, padding: 4,
 })
 // AS3: setMark with intervalMark=true → MARKED_NUMBER_COLORS_BY_STAKE_INDEX[0]
 const styleIdleHighlight = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE, fontWeight: 'bold',
-  fill: COLORS.textMatched, letterSpacing: -1, // 0x852f96
+  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE,
+  fill: COLORS.textMatched, letterSpacing: -1, padding: 4, // 0x852f96
 })
 
 // ── Color interpolation (matching AS3 Slot.enterFrame) ───────
@@ -82,10 +82,13 @@ interface Props {
   hasBell?: boolean
   idleHighlighted?: boolean
   shouldBlink?: boolean
+  arrivedBalls?: Set<number>
 }
 
-export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighted = false, shouldBlink = false }: Props) {
-  const matched = card.matches[row][col]
+export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighted = false, shouldBlink = false, arrivedBalls }: Props) {
+  const rawMatched = card.matches[row][col]
+  // Only show match visually when the ball has arrived in the tube
+  const matched = rawMatched && (!arrivedBalls || arrivedBalls.has(card.numbers[row][col]))
   const inPattern = card.inPattern[row][col]
   const priority = card.patternPriority[row][col]
   const num = String(card.numbers[row][col])
