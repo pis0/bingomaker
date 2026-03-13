@@ -8,6 +8,10 @@ export const CARD_PANEL_Y = 255
 export const BELL_PANEL_X = 555
 export const BELL_PANEL_Y = 75
 
+// AS3: addComp(BallPanelMenton, {x: 0, y: 220})
+export const BALL_PANEL_X = 0
+export const BALL_PANEL_Y = 220
+
 // BellPanel visible area: clipRect(-5, 0, 200, 150)
 export const BELL_PANEL_W = 200
 export const BELL_PANEL_H = 150

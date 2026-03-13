@@ -4,6 +4,7 @@ import { extend, useTick } from '@pixi/react'
 import Scenery from './Scenery'
 import CardPanel from './CardPanel'
 import PayoutTable from './PayoutTable'
+import BallPanel from './BallPanel'
 import BellPanel from './BellPanel'
 import BellFlyAnimation from './BellFlyAnimation'
 import BellRingAnimation from './BellRingAnimation'
@@ -222,6 +223,7 @@ export default function Menton({ round, stakeIndex = 0 }: Props) {
   return (
     <pixiContainer>
       <Scenery />
+      <BallPanel round={round} />
       {round && (
         <>
           <BellPanel
