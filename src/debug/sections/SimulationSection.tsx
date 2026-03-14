@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DEFAULT_BALLS, NUM_CARDS, STAKE_LEVELS } from '../../engine/constants';
+import { NUM_CARDS, STAKE_LEVELS } from '../../engine/constants';
 import { SORTED_PATTERNS } from '../../engine/Pattern';
 import type { DebugEngine } from '../useDebugEngine';
 
@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function SimulationSection({ engine }: Props) {
-  const { round, seed, stakeIndex, setSeed, setStakeIndex, newRound, shuffle, forceNow, drawNext, drawAll, drawExtra, drawSuperExtra, undoDraw, setPreview } = engine;
+  const { round, seed, stakeIndex, setSeed, setStakeIndex, newRound, shuffle, forceNow, advance, advanceLabel, canAdvance, canEnd, endRound, isSettling, undoDraw, setPreview } = engine;
 
   const [forceEnabled, setForceEnabled] = useState(false);
   const [patternIndex, setPatternIndex] = useState(0);
@@ -16,8 +16,6 @@ export default function SimulationSection({ engine }: Props) {
 
   const drawn = round?.currentBallIndex ?? 0;
   const payout = round?.totalPayout ?? 0;
-  const canDraw = round !== null && drawn < (round.ballSequence.length);
-  const canDrawBase = round !== null && drawn < DEFAULT_BALLS;
   const canExtra = round?.extraAvailable ?? false;
   const canSuperExtra = round?.superExtraAvailable ?? false;
   const pattern = SORTED_PATTERNS[patternIndex];
@@ -140,26 +138,29 @@ export default function SimulationSection({ engine }: Props) {
             Force Now
           </button>
         )}
-        <button className="debug-btn" onClick={shuffle} disabled={!round}>
+        <button className="debug-btn" onClick={shuffle} disabled={!round || isSettling}>
           Shuffle
         </button>
-        <button className="debug-btn" onClick={undoDraw} disabled={!round || drawn === 0}>
+        <button className="debug-btn" onClick={undoDraw} disabled={!round || drawn === 0 || isSettling}>
           Undo
         </button>
-        <button className="debug-btn" onClick={drawNext} disabled={!canDraw}>
-          Draw Next
-        </button>
-        <button className="debug-btn" onClick={drawAll} disabled={!canDrawBase}>
-          Draw All 30
-        </button>
       </div>
+
+      {/* Unified advance button — changes label based on game phase */}
       <div className="debug-btn-row">
-        <button className="debug-btn" onClick={drawExtra} disabled={!canExtra || !canDraw}>
-          Draw Extra
+        <button
+          className="debug-btn debug-btn--primary"
+          style={{ minWidth: 120 }}
+          onClick={advance}
+          disabled={!round || !canAdvance}
+        >
+          {advanceLabel}
         </button>
-        <button className="debug-btn" onClick={drawSuperExtra} disabled={!canSuperExtra || !canDraw}>
-          Draw Super Extra
-        </button>
+        {canEnd && (
+          <button className="debug-btn" onClick={endRound}>
+            End
+          </button>
+        )}
       </div>
 
       {round && (

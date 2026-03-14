@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Card } from '../engine/Card';
 import { distributeCards } from '../engine/CardDistributor';
 import { DEFAULT_BALLS, NUM_CARDS, STAKE_LEVELS } from '../engine/constants';
+import type { Draw } from '../engine/Draw';
 import type { Pattern } from '../engine/Pattern';
 import { Round } from '../engine/Round';
 import type { SlotSymbol } from '../engine/SlotBonusSession';
@@ -26,17 +27,37 @@ export interface DebugEngine {
   seed: number;
   stake: number;
   stakeIndex: number;
+  /** How many balls BallPanel should launch (visual target) */
+  targetBallCount: number;
+  /** True while balls are in flight (launched but not yet arrived/processed) */
+  isSettling: boolean;
+  /** Current game phase label for the unified advance button */
+  advanceLabel: string;
+  /** Whether the advance button should be enabled */
+  canAdvance: boolean;
+  /** Whether the End button should be shown (extras/super available but skippable) */
+  canEnd: boolean;
+  /** True during end-of-round payout collect animation */
+  isCollecting: boolean;
+  /** Previous round's payout — shown in idle state */
+  lastPayout: number;
+  /** Skip remaining extras — triggers payout collect then auto new round */
+  endRound: () => void;
   patternPreview: { pattern: Pattern; cardIndex: number } | null;
   setSeed: (seed: number) => void;
   setStakeIndex: (index: number) => void;
   newRound: (force?: ForceConfig) => void;
   shuffle: () => void;
   forceNow: (config: ForceConfig) => void;
+  /** Unified advance: starts discharge, resumes after halt, draws extra/super */
+  advance: () => void;
   drawNext: () => void;
   drawAll: () => void;
   drawExtra: () => void;
   drawSuperExtra: () => void;
   undoDraw: () => void;
+  /** Process one ball draw (called by Menton when ball arrives in tube) */
+  processNextBall: () => Draw | null;
   setPreview: (pattern: Pattern | null, cardIndex: number) => void;
   forceSlotPrize: SlotSymbol | null;
   setForceSlotPrize: (prize: SlotSymbol | null) => void;
@@ -49,8 +70,11 @@ export function useDebugEngine(): DebugEngine {
   const stake = STAKE_LEVELS[stakeIndex];
   const [, setTick] = useState(0);
   const [patternPreview, setPatternPreview] = useState<{ pattern: Pattern; cardIndex: number } | null>(null);
+  const [isCollecting, setIsCollecting] = useState(false);
+  const [lastPayout, setLastPayout] = useState(0);
   const [forceSlotPrize, setForceSlotPrize] = useState<SlotSymbol | null>(null);
   const roundRef = useRef<Round | null>(null);
+  const targetBallCountRef = useRef(0);
   const lastForceRef = useRef<ForceConfig | undefined>(undefined);
   const forceSlotRef = useRef<SlotSymbol | null>(null);
 
@@ -80,8 +104,12 @@ export function useDebugEngine(): DebugEngine {
   }, [seed]);
 
   const newRound = useCallback((force?: ForceConfig) => {
+    // Cancel any pending auto-end timer
+    if (autoEndTimerRef.current) { clearTimeout(autoEndTimerRef.current); autoEndTimerRef.current = null; }
+    setIsCollecting(false);
     const round = buildRound(force);
     roundRef.current = round;
+    targetBallCountRef.current = 0;
     lastForceRef.current = force;
     setPatternPreview(null);
     logNewRound(round, seed);
@@ -109,6 +137,7 @@ export function useDebugEngine(): DebugEngine {
     const round = new Round(cards, ballSequence, random);
     round.slotBonus.forcedPrize = forceSlotRef.current;
     roundRef.current = round;
+    targetBallCountRef.current = 0;
     setPatternPreview(null);
     logNewRound(round, nextSeed);
     rerender();
@@ -117,20 +146,34 @@ export function useDebugEngine(): DebugEngine {
   const drawNext = useCallback(() => {
     const round = roundRef.current;
     if (!round) return;
-    const draw = round.drawNext(stake);
-    if (draw) logDraw(draw, round);
+    targetBallCountRef.current = Math.min(
+      targetBallCountRef.current + 1,
+      round.ballSequence.length,
+    );
     rerender();
-  }, [stake, rerender]);
+  }, [rerender]);
 
   const drawAll = useCallback(() => {
     const round = roundRef.current;
     if (!round) return;
-    const remaining = DEFAULT_BALLS - round.currentBallIndex;
-    for (let i = 0; i < remaining; i++) {
-      const draw = round.drawNext(stake);
-      if (draw) logDraw(draw, round);
+    targetBallCountRef.current = DEFAULT_BALLS;
+    rerender();
+  }, [rerender]);
+
+  /** Called by Menton when a ball arrives in the tube — process the actual draw */
+  const processNextBall = useCallback((): Draw | null => {
+    const round = roundRef.current;
+    if (!round) return null;
+    // Skip if engine already caught up (undo replay scenario)
+    if (round.currentBallIndex >= targetBallCountRef.current) return null;
+    const draw = round.drawNext(stake);
+    if (draw) logDraw(draw, round);
+    // AS3: halt for user — cap target when high-priority pattern detected
+    if (round.shouldHalt) {
+      targetBallCountRef.current = round.currentBallIndex;
     }
     rerender();
+    return draw;
   }, [stake, rerender]);
 
   const undoDraw = useCallback(() => {
@@ -148,14 +191,17 @@ export function useDebugEngine(): DebugEngine {
       fresh.slotBonus.forceAllHits(makeSeededRandom(seed + Date.now()));
     }
     roundRef.current = fresh;
+    targetBallCountRef.current = replayCount;
     rerender();
   }, [stake, seed, buildRound, rerender]);
 
+  // Extras are processed immediately (no BallPanel animation for them yet)
   const drawExtra = useCallback(() => {
     const round = roundRef.current;
     if (!round) return;
     const draw = round.drawExtra(stake);
     if (draw) logDraw(draw, round);
+    targetBallCountRef.current = round.currentBallIndex;
     rerender();
   }, [stake, rerender]);
 
@@ -164,6 +210,7 @@ export function useDebugEngine(): DebugEngine {
     if (!round) return;
     const draw = round.drawSuperExtra(stake);
     if (draw) logDraw(draw, round);
+    targetBallCountRef.current = round.currentBallIndex;
     rerender();
   }, [stake, rerender]);
 
@@ -194,22 +241,162 @@ export function useDebugEngine(): DebugEngine {
     rerender();
   }, [seed, rerender]);
 
+  // ── Unified advance button state machine ──────────────────────
+  const round = roundRef.current;
+  const drawn = round?.currentBallIndex ?? 0;
+  const isSettling = round ? drawn < targetBallCountRef.current : false;
+  const halted = round?.shouldHalt ?? false;
+
+  let advanceLabel = 'Play';
+  let canAdvance = false;
+
+  if (!round) {
+    advanceLabel = 'Play';
+    canAdvance = false;
+  } else if (isSettling) {
+    // Balls in flight — always disabled
+    advanceLabel = drawn < DEFAULT_BALLS ? 'Play' : 'Extra';
+    canAdvance = false;
+  } else if (drawn === 0) {
+    // Round ready, not started
+    advanceLabel = 'Play';
+    canAdvance = true;
+  } else if (drawn < DEFAULT_BALLS && halted) {
+    // Halted during initial 30 — user presses to resume
+    advanceLabel = 'Next';
+    canAdvance = true;
+  } else if (drawn < DEFAULT_BALLS) {
+    // Mid-discharge but not settling and not halted (shouldn't happen normally)
+    advanceLabel = 'Play';
+    canAdvance = true;
+  } else if (round.extraAvailable) {
+    advanceLabel = 'Extra';
+    canAdvance = true;
+  } else if (round.superExtraAvailable) {
+    advanceLabel = 'Super Extra';
+    canAdvance = true;
+  } else {
+    advanceLabel = 'Done';
+    canAdvance = false;
+  }
+
+  // End button — available whenever extras/super are offered, or when round is done
+  const canEnd = !!round && !isSettling && !isCollecting && drawn >= DEFAULT_BALLS &&
+    (round.extraAvailable || round.superExtraAvailable || advanceLabel === 'Done');
+
+  // Auto-end ref to track/cancel pending auto-new-round timer
+  const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Start new round (shared helper) */
+  const autoNewRound = useCallback(() => {
+    // Save last payout for idle display
+    const prevPayout = roundRef.current?.totalPayout ?? 0;
+    if (prevPayout > 0) setLastPayout(prevPayout);
+    setIsCollecting(false);
+    const nextSeed = seed + 1;
+    setSeed(nextSeed);
+    const random = makeSeededRandom(nextSeed);
+    const dist = distributeCards(random);
+    const cards: Card[] = [];
+    for (let i = 0; i < NUM_CARDS; i++) {
+      const card = new Card(i);
+      card.setNumbers(dist.cardNumbers[i]);
+      cards.push(card);
+    }
+    const r = new Round(cards, dist.ballSequence, random);
+    r.slotBonus.forcedPrize = forceSlotRef.current;
+    roundRef.current = r;
+    targetBallCountRef.current = 0;
+    lastForceRef.current = undefined;
+    setPatternPreview(null);
+    logNewRound(r, nextSeed);
+    rerender();
+  }, [seed, rerender]);
+
+  /** Manual End — skip extras, collect if payout, then new round */
+  const endRound = useCallback(() => {
+    const r = roundRef.current;
+    if (!r) return;
+    targetBallCountRef.current = r.currentBallIndex;
+    if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+    if (r.totalPayout > 0) {
+      setIsCollecting(true);
+      rerender();
+      // Collect animation then new round
+      autoEndTimerRef.current = setTimeout(autoNewRound, 1500);
+    } else {
+      // No payout — new round after brief transition
+      autoEndTimerRef.current = setTimeout(autoNewRound, 300);
+    }
+  }, [autoNewRound, rerender]);
+
+  // Auto-end: when "Done" (no extras), wait 10s for review then new round
+  const autoEndFiredRef = useRef(false);
+  if (!round || drawn === 0) {
+    autoEndFiredRef.current = false;
+  }
+  if (advanceLabel === 'Done' && !isCollecting && !autoEndFiredRef.current && !isSettling) {
+    autoEndFiredRef.current = true;
+    const r = roundRef.current!;
+    if (r.totalPayout > 0) {
+      setIsCollecting(true);
+    }
+    // 10s review period then new round
+    if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+    autoEndTimerRef.current = setTimeout(autoNewRound, 10000);
+  }
+
+  const advance = useCallback(() => {
+    const r = roundRef.current;
+    if (!r) return;
+    const idx = r.currentBallIndex;
+
+    if (idx === 0 || (idx < DEFAULT_BALLS && !r.shouldHalt)) {
+      // Start or resume auto-discharge → target = 30
+      targetBallCountRef.current = DEFAULT_BALLS;
+    } else if (idx < DEFAULT_BALLS && r.shouldHalt) {
+      // Halted → resume discharge (will halt again if needed)
+      targetBallCountRef.current = DEFAULT_BALLS;
+    } else if (r.extraAvailable) {
+      // Extra — process immediately (no BallPanel animation yet)
+      const draw = r.drawExtra(stake);
+      if (draw) logDraw(draw, r);
+      targetBallCountRef.current = r.currentBallIndex;
+    } else if (r.superExtraAvailable) {
+      // Super extra — process immediately
+      const draw = r.drawSuperExtra(stake);
+      if (draw) logDraw(draw, r);
+      targetBallCountRef.current = r.currentBallIndex;
+    }
+    rerender();
+  }, [stake, rerender]);
+
   return {
-    round: roundRef.current,
+    round,
     seed,
     stake,
     stakeIndex,
+    targetBallCount: targetBallCountRef.current,
+    isSettling,
+    advanceLabel,
+    canAdvance,
+    canEnd,
+    isCollecting,
+    lastPayout,
+    endRound,
     patternPreview,
     setSeed,
     setStakeIndex: (i: number) => setStakeIndex(Math.max(0, Math.min(i, STAKE_LEVELS.length - 1))),
     newRound,
     shuffle,
     forceNow,
+    advance,
     drawNext,
     drawAll,
     drawExtra,
     drawSuperExtra,
     undoDraw,
+    processNextBall,
     setPreview,
     forceSlotPrize,
     setForceSlotPrize: handleSetForceSlotPrize,

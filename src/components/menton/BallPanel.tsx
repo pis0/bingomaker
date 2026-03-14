@@ -46,12 +46,16 @@ function ballPosition(index: number): { x: number; y: number } {
   return { x: startX - BALL_SPACING * col, y }
 }
 
-/** Frames between consecutive ball launches */
-const LAUNCH_INTERVAL = 5
+/** Default frames between consecutive ball launches (60fps) */
+const DEFAULT_INTERVAL = 6
 
 interface Props {
   round: Round | null
-  onBallArrive?: (ball: number) => void
+  /** How many balls to launch (visual target, may outpace engine processing) */
+  targetBallCount: number
+  /** Current max pattern priority — drives dynamic launch interval */
+  launchInterval?: number
+  onBallArrive?: () => void
 }
 
 /**
@@ -71,15 +75,17 @@ interface Props {
  *    - Large ball (current ball number)
  *    - bigballpipe2 (cover, closed)
  */
-export default function BallPanel({ round, onBallArrive }: Props) {
-  const isIdle = !round || (round.draws.length === 0)
+export default function BallPanel({ round, targetBallCount, launchInterval = DEFAULT_INTERVAL, onBallArrive }: Props) {
+  const isIdle = !round || targetBallCount === 0
 
-  // Regular draws only (first 30 balls)
-  const regularDraws = round?.draws.filter((_d, i) => i < DEFAULT_BALLS) ?? []
-  const drawCount = regularDraws.length
+  // How many regular balls to launch (capped at DEFAULT_BALLS)
+  const regularTarget = Math.min(targetBallCount, DEFAULT_BALLS)
+  const drawCount = regularTarget
 
   // ── Animation queue ──────────────────────────────────────────────
   const [launchedIndices, setLaunchedIndices] = useState<number[]>([])
+  const [flowing, setFlowing] = useState(false)
+  const flowingRef = useRef(false)
   const processedCountRef = useRef(0)
   const queueRef = useRef<number[]>([])
 
@@ -114,17 +120,31 @@ export default function BallPanel({ round, onBallArrive }: Props) {
     }
   }, [drawCount])
 
-  // Process queue via ticker — launch balls with inter-ball delay
+  // Process queue via ticker — launch balls with dynamic inter-ball delay
+  // Engine draw happens at LAUNCH time (not arrival) so marks appear ball-by-ball
+  const intervalRef = useRef(launchInterval)
+  intervalRef.current = launchInterval
+  const onBallArriveRef = useRef(onBallArrive)
+  onBallArriveRef.current = onBallArrive
   useEffect(() => {
-    let framesSinceLaunch = LAUNCH_INTERVAL // pre-fill so first ball launches immediately
+    let framesSinceLaunch = 999 // pre-fill so first ball launches immediately
     const ticker = Ticker.shared
     const onTick = () => {
-      if (queueRef.current.length === 0) return
+      const hasItems = queueRef.current.length > 0
+      // Track flowing state — drives TubeWater active prop
+      if (hasItems !== flowingRef.current) {
+        flowingRef.current = hasItems
+        setFlowing(hasItems)
+      }
+      if (!hasItems) return
       framesSinceLaunch++
-      if (framesSinceLaunch >= LAUNCH_INTERVAL) {
+      if (framesSinceLaunch >= intervalRef.current) {
         framesSinceLaunch = 0
         const next = queueRef.current.shift()!
         setLaunchedIndices(prev => [...prev, next])
+        // Process engine draw at launch — balls arrive in clusters due to
+        // distance convergence, but we want marks to appear at launch cadence
+        onBallArriveRef.current?.()
       }
     }
     ticker.add(onTick)
@@ -135,7 +155,7 @@ export default function BallPanel({ round, onBallArrive }: Props) {
   const drawing = launchedIndices.length > 0
   const ballCount = launchedIndices.length
   const currentBall = drawing
-    ? regularDraws[launchedIndices[launchedIndices.length - 1]]?.ball ?? 0
+    ? round?.ballSequence[launchedIndices[launchedIndices.length - 1]] ?? 0
     : 0
 
   // Ref callback to set pivot on cover sprite
@@ -151,22 +171,21 @@ export default function BallPanel({ round, onBallArrive }: Props) {
       <pixiSprite texture={tex('ballcontainer2')} y={TUBING_Y} />
       {/* 3. Animated Ball sprites — launched from pipe, roll to final position */}
       {launchedIndices.map(i => {
-        const draw = regularDraws[i]
-        if (!draw) return null
+        const ball = round?.ballSequence[i]
+        if (ball == null) return null
         const pos = ballPosition(i)
         return (
           <AnimatedBall
             key={i}
-            number={draw.ball}
+            number={ball}
             finalX={pos.x}
             y={pos.y}
             index={i}
-            onArrive={() => onBallArrive?.(draw.ball)}
           />
         )
       })}
       {/* 4. Water effects — above balls (AS3: water1+water2 over ballContainer) */}
-      <TubeWater active={drawing} idle={isIdle} />
+      <TubeWater active={drawing} flowing={flowing} idle={isIdle} />
       {/* 5. ballpipe */}
       <pixiSprite texture={tex('ballpipe')} x={PIPE_X} />
       {/* 5. BallCounter — hidden during idle */}

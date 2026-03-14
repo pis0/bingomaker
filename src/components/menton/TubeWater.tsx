@@ -60,7 +60,10 @@ const PARTICLE_Y = 77
 const PARTICLE_SWITCH_DELAY = 2555 // 2.555s before param switch
 
 interface Props {
+  /** One-shot trigger: starts the full water cascade (water1 descent, water2 scroll, splash) */
   active: boolean
+  /** Continuous flag: particle emitter runs while true. Gotas plays when transitions to false. */
+  flowing?: boolean
   idle?: boolean
 }
 
@@ -72,7 +75,7 @@ interface Props {
  * Splash: 12-frame animation at tank entry (0.3s delay, 10 loops)
  * Gotas:  15-frame water drops at pipe exit (plays at Water1 descent end)
  */
-export default function TubeWater({ active, idle = false }: Props) {
+export default function TubeWater({ active, flowing = active, idle = false }: Props) {
   // Textures
   const tankTex = useMemo(() => tex('liquido_tanque_loop'), [])
   const splashFrames = useMemo(() => getTextures('splash'), [])
@@ -163,7 +166,7 @@ export default function TubeWater({ active, idle = false }: Props) {
     }
   }, [idle, active])
 
-  // Trigger / reset
+  // Trigger cascade (one-shot) — water1 descent, water2 scroll, splash
   useEffect(() => {
     const s = st.current
     if (active) {
@@ -181,17 +184,6 @@ export default function TubeWater({ active, idle = false }: Props) {
       s.gotasTarget = Math.random() < 0.5 ? 2 : 1
       s.particleSwitched = false
 
-      // Reset particle config to initial AS3 values
-      const cfg = waterCfg.current
-      cfg.speed = 700
-      cfg.startSize = 50
-      const em = waterEmitter.current
-      if (em) {
-        em.emitterXVariance = 10
-        em.stop()
-        em.start(Ticker.shared)
-      }
-
       // Reset positions
       if (w1ColumnRef.current) w1ColumnRef.current.y = W1_START_Y
       if (w2ScrollRef.current) {
@@ -208,24 +200,74 @@ export default function TubeWater({ active, idle = false }: Props) {
       }
     } else {
       s.running = false
-      // Kill all particles immediately (stop() would let them linger for 1.4s)
+      // Full reset on round end — kill everything
       waterEmitter.current?.reset()
       if (splashRef.current) { splashRef.current.visible = false; splashRef.current.stop() }
       if (gotasRef.current) { gotasRef.current.visible = false; gotasRef.current.stop() }
-      // Reset Water1 mask to full state (avoid stale ripple frame)
+      // Reset Water1 mask
       const g1 = w1Mask.current
       g1.clear()
       g1.rect(W1_CLIP_X, W1_CLIP_Y, W1_CLIP_W, W1_CLIP_H)
       g1.fill(0xffffff)
-      // Reset Water1 column position
       if (w1ColumnRef.current) w1ColumnRef.current.y = W1_START_Y
-      // Reset Water2 scroll
       if (w2ScrollRef.current) {
         w2ScrollRef.current.x = -s.texW
         w2ScrollRef.current.y = W2_Y0
       }
     }
   }, [active, tankTex])
+
+  // Particle emitter + gotas — driven by flowing prop
+  const cascadeStartedRef = useRef(false)
+  useEffect(() => {
+    const em = waterEmitter.current
+    if (flowing) {
+      if (!cascadeStartedRef.current) {
+        // First discharge — full particle spray (cascade handles water1/water2/splash)
+        cascadeStartedRef.current = true
+        const cfg = waterCfg.current
+        cfg.speed = 700
+        cfg.startSize = 50
+        if (em) {
+          em.emitterXVariance = 10
+          em.stop()
+          em.start(Ticker.shared)
+        }
+        st.current.particleSwitched = false
+      } else {
+        // Resume after halt — only light ending particles + gotas
+        const cfg = waterCfg.current
+        cfg.speed = 200
+        cfg.startSize = 12
+        if (em) {
+          em.emitterXVariance = 16
+          em.stop()
+          em.start(Ticker.shared)
+        }
+        const gotas = gotasRef.current
+        if (gotas) {
+          gotas.visible = true
+          gotas.gotoAndPlay(0)
+        }
+      }
+    } else if (active) {
+      // Halt/pause — stop emitting (existing particles fade), play gotas
+      em?.stop()
+      const gotas = gotasRef.current
+      if (gotas) {
+        gotas.visible = true
+        gotas.gotoAndPlay(0)
+        st.current.gotasFired = true
+        st.current.gotasLoops = 0
+        st.current.gotasTarget = 1
+      }
+    }
+  }, [flowing, active])
+
+  // Reset cascade flag when round ends
+  useEffect(() => {
+    if (!active) cascadeStartedRef.current = false
+  }, [active])
 
   // Per-frame animation
   useTick(() => {

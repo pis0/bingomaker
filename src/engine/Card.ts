@@ -27,6 +27,9 @@ export class Card {
   /** Max priority among missing-one patterns */
   maxMissingPriority = 0;
 
+  /** Max priority among completed patterns */
+  maxCompletedPriority = 0;
+
   constructor(index: number) {
     this.index = index;
     for (let row = 0; row < ROWS; row++) {
@@ -56,6 +59,7 @@ export class Card {
   reset(cardsByBall: Map<number, Card>): void {
     this.payout = 0;
     this.maxMissingPriority = 0;
+    this.maxCompletedPriority = 0;
     this.lastMatch = null;
     this.completedPatterns.clear();
 
@@ -101,6 +105,9 @@ export class Card {
 
     // Mark cells in pattern with priority
     const priority = pattern.group.priority;
+    if (priority > this.maxCompletedPriority) {
+      this.maxCompletedPriority = priority;
+    }
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         if (pattern.getMaskIndex(row, col)) {

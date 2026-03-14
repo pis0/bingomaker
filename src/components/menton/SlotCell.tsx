@@ -82,13 +82,10 @@ interface Props {
   hasBell?: boolean
   idleHighlighted?: boolean
   shouldBlink?: boolean
-  arrivedBalls?: Set<number>
 }
 
-export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighted = false, shouldBlink = false, arrivedBalls }: Props) {
-  const rawMatched = card.matches[row][col]
-  // Only show match visually when the ball has arrived in the tube
-  const matched = rawMatched && (!arrivedBalls || arrivedBalls.has(card.numbers[row][col]))
+export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighted = false, shouldBlink = false }: Props) {
+  const matched = card.matches[row][col]
   const inPattern = card.inPattern[row][col]
   const priority = card.patternPriority[row][col]
   const num = String(card.numbers[row][col])
@@ -134,6 +131,18 @@ export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighte
     wasMatched.current = false
     isAnimating.current = false
     blinkActiveRef.current = false
+    // Hide marking animation sprite (may be mid-play showing a purple frame)
+    if (animRef.current) {
+      animRef.current.visible = false
+      animRef.current.stop()
+    }
+    // Force bg repaint — useTick may have painted purple that drawBg won't clear
+    // (bgColor might be unchanged: bgDefault during animation → bgDefault on reset)
+    if (bgRef.current) {
+      bgRef.current.clear()
+      bgRef.current.rect(0, 0, SLOT_W, SLOT_H)
+      bgRef.current.fill(COLORS.bgDefault)
+    }
     setSettlePhase(2)
   }
 

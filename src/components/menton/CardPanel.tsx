@@ -29,11 +29,9 @@ interface Props {
   shakeOffset?: { x: number; y: number }
   /** Enable blinkMarkExtra on slots (extras/super extras phase) */
   shouldBlink?: boolean
-  /** Ball numbers that have arrived at their position in the tube */
-  arrivedBalls?: Set<number>
 }
 
-export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y, shakeOffset, shouldBlink = false, arrivedBalls }: Props) {
+export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y, shakeOffset, shouldBlink = false }: Props) {
   const offsetX = (x ?? CARD_PANEL_X) + (shakeOffset?.x ?? 0)
   const offsetY = (y ?? CARD_PANEL_Y) + (shakeOffset?.y ?? 0)
 
@@ -68,7 +66,7 @@ export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x
     <pixiContainer x={offsetX} y={offsetY}>
       {round.cards.map((card, i) => (
         <pixiContainer key={card.index} x={positions[i].x} y={positions[i].y} visible={cardsVisible}>
-          <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} idlePattern={idlePattern} shouldBlink={shouldBlink} arrivedBalls={arrivedBalls} />
+          <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} idlePattern={idlePattern} shouldBlink={shouldBlink} />
         </pixiContainer>
       ))}
       <BingoMovie

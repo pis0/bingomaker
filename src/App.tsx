@@ -33,7 +33,7 @@ export default function App() {
         height={GAME_HEIGHT}
         background="#000000"
       >
-        <Menton round={engine.round} stakeIndex={engine.stakeIndex} />
+        <Menton round={engine.round} stakeIndex={engine.stakeIndex} targetBallCount={engine.targetBallCount} processNextBall={engine.processNextBall} isCollecting={engine.isCollecting} lastPayout={engine.lastPayout} />
       </Application>
       {showDevtools && <DebugPanel engine={engine} />}
     </>

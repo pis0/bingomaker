@@ -16,7 +16,12 @@
  *
  * BgPayout blink modes (from AS3):
  *   blinkWonMoney(): toggle GLOW↔ON every 0.2s for 0.4s, triggered on payout increase
- *   blinkCollectMoney(): continuous toggle GLOW↔ON every 0.1s, during chip fly
+ *   blinkCollectMoney(): continuous toggle GLOW↔ON every 0.1s, during collection
+ *
+ * Collection animation (AS3: AutoCollector):
+ *   Value decrements from current → 0 in loops, blinking during decrement.
+ *   After collection: idle shows lastPayout (previous round's win).
+ *   Blank when no payout at all.
  */
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { Container, Sprite, Text } from 'pixi.js'
@@ -57,6 +62,11 @@ const WON_BLINK_DURATION = 400
 // AS3: blinkCollectMoney — 0.1s interval, continuous
 const COLLECT_BLINK_INTERVAL = 100
 
+// AS3: AutoCollector timing
+const COLLECTION_TIME_BASE = 80
+const MIN_INTERVAL = 33 // ms
+const MIN_LOOPS = 12
+
 // Content padding inside bg
 const PADDING = 8
 
@@ -67,15 +77,17 @@ function formatNumber(value: number): string {
 
 interface Props {
   value: number
+  stake?: number
+  lastPayout?: number
   tween?: boolean
   collecting?: boolean
 }
 
-export default function Payout({ value, tween = false, collecting = false }: Props) {
+export default function Payout({ value, stake = 1, lastPayout = 0, tween = false, collecting = false }: Props) {
   // BgPayout state
   const [bgTexture, setBgTexture] = useState(BG_OFF)
 
-  // Tween animation state
+  // Tween animation state (fade in after collection)
   const [tweenAlpha, setTweenAlpha] = useState(1)
   const tweenActiveRef = useRef(false)
   const tweenTimeRef = useRef(0)
@@ -87,6 +99,23 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
   const blinkTimerRef = useRef(0)
   const blinkToggleRef = useRef(false)
 
+  // Collection decrement animation state
+  const collectRef = useRef({
+    active: false,
+    startValue: 0,
+    remaining: 0,
+    loops: 0,
+    loopsLeft: 0,
+    perLoop: 0,
+    perLoopRemainder: 0,
+    interval: 0,
+    elapsed: 0,
+    done: false, // decrement finished, showing "last win" fade
+  })
+
+  // Displayed value — either real value, decrementing value, or lastPayout
+  const [displayValue, setDisplayValue] = useState(0)
+
   // Detect payout increase → trigger won blink (AS3: blinkWonMoney)
   if (value > prevValueRef.current && value > 0) {
     prevValueRef.current = value
@@ -94,9 +123,9 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
     wonTimerRef.current = 0
     blinkTimerRef.current = 0
     blinkToggleRef.current = false
-    setBgTexture(BG_GLOW) // Start glow immediately — AS3: blinkCollectMoney(true)
+    setBgTexture(BG_GLOW)
   }
-  if (value === 0) {
+  if (value === 0 && !collecting && !collectRef.current.active) {
     prevValueRef.current = 0
     wonBlinkRef.current = false
   }
@@ -110,20 +139,97 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
     }
   }, [tween, value])
 
-  // Handle collecting mode start/stop
+  // Start/stop collection decrement
   useEffect(() => {
-    if (collecting) {
-      wonBlinkRef.current = false // collecting overrides won blink
+    const c = collectRef.current
+    if (collecting && value > 0 && !c.active) {
+      // AS3: AutoCollector — compute loops and interval
+      const ratio = Math.max(value / stake, 1)
+      const time = Math.round(COLLECTION_TIME_BASE * Math.pow(ratio, 0.67))
+      const objects = value
+      let intervalLength = Math.floor(time / objects)
+      if (intervalLength < MIN_INTERVAL) intervalLength = MIN_INTERVAL
+      let loops = Math.floor(time / intervalLength)
+      if (loops < MIN_LOOPS) loops = MIN_LOOPS
+
+      const perLoop = Math.floor(objects / loops)
+      const remainder = objects % loops
+
+      c.active = true
+      c.startValue = value
+      c.remaining = value
+      c.loops = loops
+      c.loopsLeft = loops
+      c.perLoop = perLoop
+      c.perLoopRemainder = remainder
+      c.interval = intervalLength
+      c.elapsed = 0
+      c.done = false
+
+      wonBlinkRef.current = false
       blinkTimerRef.current = 0
       blinkToggleRef.current = false
       setBgTexture(BG_GLOW)
-    } else if (value > 0) {
-      setBgTexture(BG_ON)
+      setDisplayValue(value)
+    } else if (collecting && value <= 0) {
+      // Collecting but no value — just blink
+      blinkTimerRef.current = 0
+      blinkToggleRef.current = false
+      setBgTexture(BG_GLOW)
+    } else if (!collecting) {
+      const wasActive = c.active
+      c.active = false
+      if (wasActive) {
+        // Collection ended externally (new round) — clean up
+        c.done = false
+        setDisplayValue(0)
+      }
     }
-  }, [collecting, value])
+  }, [collecting, value, stake])
 
   useTick((ticker) => {
-    // Won blink — brief GLOW↔ON toggle (AS3: blinkWonMoney, 0.2s for 0.4s)
+    const c = collectRef.current
+
+    // ── Collection decrement ──
+    if (c.active && !c.done) {
+      c.elapsed += ticker.deltaMS
+      if (c.elapsed >= c.interval && c.loopsLeft > 0) {
+        c.elapsed = 0
+        let step = c.perLoop
+        if (c.perLoopRemainder > 0) {
+          step += 1
+          c.perLoopRemainder--
+        }
+        c.remaining = Math.max(0, c.remaining - step)
+        c.loopsLeft--
+        setDisplayValue(c.remaining)
+
+        if (c.remaining <= 0 || c.loopsLeft <= 0) {
+          // Decrement done → show "last win" fade in
+          c.done = true
+          c.remaining = 0
+          setDisplayValue(c.startValue) // Show last won value
+          setBgTexture(BG_ON)
+          // Trigger fade-in tween for last win display
+          tweenActiveRef.current = true
+          tweenTimeRef.current = 0
+          setTweenAlpha(0)
+        }
+      }
+
+      // Collect blink during decrement (0.1s toggle)
+      if (!c.done) {
+        blinkTimerRef.current += ticker.deltaMS
+        if (blinkTimerRef.current >= COLLECT_BLINK_INTERVAL) {
+          blinkTimerRef.current = 0
+          blinkToggleRef.current = !blinkToggleRef.current
+          setBgTexture(blinkToggleRef.current ? BG_ON : BG_GLOW)
+        }
+      }
+      return // Skip other blink logic during collection
+    }
+
+    // ── Won blink — brief GLOW↔ON toggle (0.2s for 0.4s) ──
     if (wonBlinkRef.current && !collecting) {
       wonTimerRef.current += ticker.deltaMS
       blinkTimerRef.current += ticker.deltaMS
@@ -138,8 +244,8 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
       }
     }
 
-    // Collecting blink — continuous fast GLOW↔ON (AS3: blinkCollectMoney, 0.1s)
-    if (collecting) {
+    // ── Chip fly collecting blink (no decrement, just blink) ──
+    if (collecting && !c.active) {
       blinkTimerRef.current += ticker.deltaMS
       if (blinkTimerRef.current >= COLLECT_BLINK_INTERVAL) {
         blinkTimerRef.current = 0
@@ -148,7 +254,7 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
       }
     }
 
-    // Tween alpha animation (AS3: label alpha 0→1 over 0.8s)
+    // ── Tween alpha animation (label alpha 0→1 over 0.8s) ──
     if (tweenActiveRef.current) {
       tweenTimeRef.current += ticker.deltaMS
       const progress = Math.min(tweenTimeRef.current / 800, 1)
@@ -159,18 +265,37 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
     }
   })
 
-  // Base bg state — OFF when no value, ON when value > 0
+  // Sync displayValue with value when not collecting
   useEffect(() => {
-    if (value === 0) {
-      setBgTexture(BG_OFF)
-    } else if (!collecting && !wonBlinkRef.current) {
-      setBgTexture(BG_ON)
+    if (!collecting && !collectRef.current.active && !collectRef.current.done) {
+      setDisplayValue(value)
     }
   }, [value, collecting])
 
-  const labelColor = (tween && tweenActiveRef.current) ? COLOR_TWEEN : COLOR_NORMAL
-  const displayAlpha = tween ? tweenAlpha : 1
-  const labelText = value > 0 ? formatNumber(value) : ''
+  // Base bg state
+  useEffect(() => {
+    if (!collecting && !collectRef.current.active) {
+      if (value === 0 && lastPayout === 0) {
+        setBgTexture(BG_OFF)
+      } else if (value > 0 && !wonBlinkRef.current) {
+        setBgTexture(BG_ON)
+      } else if (value === 0 && lastPayout > 0) {
+        setBgTexture(BG_ON)
+      }
+    }
+  }, [value, collecting, lastPayout])
+
+  // Determine what to show
+  const c = collectRef.current
+  const showValue = c.active
+    ? displayValue  // decrementing or "last win" fade
+    : value > 0
+      ? value       // active round payout
+      : lastPayout  // idle: previous round's win (0 = blank)
+
+  const labelColor = tweenActiveRef.current ? COLOR_TWEEN : COLOR_NORMAL
+  const displayAlpha = tweenActiveRef.current ? tweenAlpha : 1
+  const labelText = showValue > 0 ? formatNumber(showValue) : ''
 
   // Dynamic centering — AS3: Payout.align()
   const contentContainerRef = useRef<Container>(null)
@@ -178,29 +303,25 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
   const [contentScale, setContentScale] = useState(1)
 
   const updateAlign = useCallback(() => {
-    const c = contentContainerRef.current
-    if (!c) return
-    // Measure at scale 1 to get true content size
-    c.scale.set(1)
-    const bounds = c.getLocalBounds()
+    const cont = contentContainerRef.current
+    if (!cont) return
+    cont.scale.set(1)
+    const bounds = cont.getLocalBounds()
     const maxW = PAYOUT_W - PADDING * 2
-    // Scale down if content wider than available area
     const scale = bounds.width > maxW ? maxW / bounds.width : 1
     const scaledW = bounds.width * scale
-    // X: center scaled content
     const cx = Math.floor(PAYOUT_W / 2 - scaledW / 2 - bounds.x * scale)
-    // Y: match AS3 align() — Starling TextField has fixed h:60 (vAlign:center)
     const cy = Math.floor(PAYOUT_H / 2 - AS3_CONTAINER_H / 2 + ALIGN_Y_OFFSET)
     setContentScale(scale)
     setContainerPos({ x: cx, y: cy })
   }, [])
 
-  // Re-align when value changes
+  // Re-align when displayed value changes
   useEffect(() => {
-    if (value > 0) {
+    if (showValue > 0) {
       requestAnimationFrame(updateAlign)
     }
-  }, [value, updateAlign])
+  }, [showValue, updateAlign])
 
   return (
     <pixiContainer x={PAYOUT_X} y={PAYOUT_Y}>
@@ -208,7 +329,7 @@ export default function Payout({ value, tween = false, collecting = false }: Pro
       <pixiSprite texture={tex(bgTexture)} x={0} y={0} />
 
       {/* Content: coin + label, centered via align() */}
-      {value > 0 && (
+      {showValue > 0 && (
         <pixiContainer
           ref={contentContainerRef}
           x={containerPos.x}
