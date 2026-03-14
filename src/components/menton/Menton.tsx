@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { Container } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import Scenery from './Scenery'
@@ -64,9 +64,11 @@ interface Props {
   isCollecting?: boolean
   /** Previous round's payout — shown in idle state */
   lastPayout?: number
+  /** Report bonus animation active state to parent */
+  onBonusActiveChange?: (active: boolean) => void
 }
 
-export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0 }: Props) {
+export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange }: Props) {
   const stake = STAKE_LEVELS[stakeIndex]
 
   // AS3: IntervalCardPatternController — cycles individual patterns during idle
@@ -103,29 +105,20 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const roundGenRef = useRef(0)
   const prevRoundRef = useRef<Round | null>(null)
   if (round !== prevRoundRef.current) {
-    const isUndo = prevRoundRef.current && round && round.draws.length > 0
     prevRoundRef.current = round
-
-    if (isUndo) {
-      // Sync tracking refs to current state so chip fly doesn't retrigger
-      for (let ci = 0; ci < round.cards.length; ci++) {
-        prevPatternsRef.current[ci] = round.cards[ci].completedPatterns.size
-      }
-    } else {
-      // New round: bump generation → full unmount/remount of all children
-      roundGenRef.current++
-      // Reset Menton-level state
-      if (slotBlinking) setSlotBlinking(false)
-      if (multiplierActive) setMultiplierActive(false)
-      if (fruitBombActive) setFruitBombActive(false)
-      if (bellRingActive) setBellRingActive(false)
-      if (releasedSpinSymbols) setReleasedSpinSymbols(null)
-      prevSpinSymbolsRef.current = null
-      fruitBombRef.current = null
-      if (bombPositions.length > 0) setBombPositions([])
-      if (chipFlyPositions) setChipFlyPositions(null)
-      prevPatternsRef.current = [0, 0, 0, 0]
-    }
+    // New round: bump generation → full unmount/remount of all children
+    roundGenRef.current++
+    // Reset Menton-level state
+    if (slotBlinking) setSlotBlinking(false)
+    if (multiplierActive) setMultiplierActive(false)
+    if (fruitBombActive) setFruitBombActive(false)
+    if (bellRingActive) setBellRingActive(false)
+    if (releasedSpinSymbols) setReleasedSpinSymbols(null)
+    prevSpinSymbolsRef.current = null
+    fruitBombRef.current = null
+    if (bombPositions.length > 0) setBombPositions([])
+    if (chipFlyPositions) setChipFlyPositions(null)
+    prevPatternsRef.current = [0, 0, 0, 0]
   }
 
   useTick((ticker) => {
@@ -143,6 +136,18 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   // Payout and extra phase derive from engine state (advances incrementally)
   const currentPayout = round?.totalPayout ?? 0
   const isExtraPhase = (round?.currentBallIndex ?? 0) > DEFAULT_BALLS
+
+  // AS3: RoundMotion pauses ball discharge during bonus animations
+  const bonusActive = bellRingActive
+    || (releasedSpinSymbols !== null && !slotBlinking) // slot spinning
+    || multiplierActive
+    || fruitBombActive
+    || !!chipFlyPositions // pattern celebration
+
+  // Report bonus state to parent (disables advance/end buttons)
+  useEffect(() => {
+    onBonusActiveChange?.(bonusActive)
+  }, [bonusActive, onBonusActiveChange])
 
   // AS3: dynamic ball trigger interval based on maxPatternPriority
   // Values doubled from AS3 30fps → 60fps (original: [3,3,4,5,6,7,8,12,15,20,30])
@@ -245,7 +250,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
       <Scenery />
       {round && (
         <pixiContainer key={roundGenRef.current}>
-          <BallPanel round={round} targetBallCount={targetBallCount} launchInterval={launchInterval} onBallArrive={handleBallArrive} />
+          <BallPanel round={round} targetBallCount={targetBallCount} launchInterval={launchInterval} paused={bonusActive} onBallArrive={handleBallArrive} />
           <BellPanel
             bellsRevealed={bellsRevealed}
             spinSymbols={releasedSpinSymbols}

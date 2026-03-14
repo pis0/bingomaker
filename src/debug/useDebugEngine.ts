@@ -7,7 +7,7 @@ import type { Pattern } from '../engine/Pattern';
 import { Round } from '../engine/Round';
 import type { SlotSymbol } from '../engine/SlotBonusSession';
 import { logDraw, logNewRound } from './helpers/formatters';
-import { prioritizePatternBalls, forcePatternMidRound } from './helpers/patternForcer';
+import { prioritizePatternBalls, forcePatternMidRound, forceBellBalls } from './helpers/patternForcer';
 
 function makeSeededRandom(seed: number) {
   let s = seed;
@@ -41,6 +41,10 @@ export interface DebugEngine {
   isCollecting: boolean;
   /** Previous round's payout — shown in idle state */
   lastPayout: number;
+  /** True when bonus animations are playing (bell ring, slot spin, prize anims) */
+  bonusActive: boolean;
+  /** Called by Menton to report bonus animation state */
+  setBonusActive: (active: boolean) => void;
   /** Skip remaining extras — triggers payout collect then auto new round */
   endRound: () => void;
   patternPreview: { pattern: Pattern; cardIndex: number } | null;
@@ -55,7 +59,6 @@ export interface DebugEngine {
   drawAll: () => void;
   drawExtra: () => void;
   drawSuperExtra: () => void;
-  undoDraw: () => void;
   /** Process one ball draw (called by Menton when ball arrives in tube) */
   processNextBall: () => Draw | null;
   setPreview: (pattern: Pattern | null, cardIndex: number) => void;
@@ -72,8 +75,20 @@ export function useDebugEngine(): DebugEngine {
   const [patternPreview, setPatternPreview] = useState<{ pattern: Pattern; cardIndex: number } | null>(null);
   const [isCollecting, setIsCollecting] = useState(false);
   const [lastPayout, setLastPayout] = useState(0);
+  const [bonusActive, setBonusActive] = useState(false);
   const [forceSlotPrize, setForceSlotPrize] = useState<SlotSymbol | null>(null);
-  const roundRef = useRef<Round | null>(null);
+  const initialRound = useState(() => {
+    const random = makeSeededRandom(seed);
+    const dist = distributeCards(random);
+    const cards: Card[] = [];
+    for (let i = 0; i < NUM_CARDS; i++) {
+      const card = new Card(i);
+      card.setNumbers(dist.cardNumbers[i]);
+      cards.push(card);
+    }
+    return new Round(cards, dist.ballSequence, random);
+  })[0];
+  const roundRef = useRef<Round | null>(initialRound);
   const targetBallCountRef = useRef(0);
   const lastForceRef = useRef<ForceConfig | undefined>(undefined);
   const forceSlotRef = useRef<SlotSymbol | null>(null);
@@ -176,25 +191,6 @@ export function useDebugEngine(): DebugEngine {
     return draw;
   }, [stake, rerender]);
 
-  const undoDraw = useCallback(() => {
-    const round = roundRef.current;
-    if (!round || round.currentBallIndex === 0) return;
-    const replayCount = round.currentBallIndex - 1;
-    // Preserve slot bonus trigger state across undo
-    const slotWasTriggered = round.slotBonus.triggered;
-    const fresh = buildRound(lastForceRef.current);
-    for (let i = 0; i < replayCount; i++) {
-      fresh.drawNext(stake);
-    }
-    // Re-trigger slot if it was triggered before undo
-    if (slotWasTriggered && !fresh.slotBonus.triggered) {
-      fresh.slotBonus.forceAllHits(makeSeededRandom(seed + Date.now()));
-    }
-    roundRef.current = fresh;
-    targetBallCountRef.current = replayCount;
-    rerender();
-  }, [stake, seed, buildRound, rerender]);
-
   // Extras are processed immediately (no BallPanel animation for them yet)
   const drawExtra = useCallback(() => {
     const round = roundRef.current;
@@ -237,9 +233,22 @@ export function useDebugEngine(): DebugEngine {
   const triggerSlot = useCallback(() => {
     const round = roundRef.current;
     if (!round || round.slotBonus.triggered) return;
-    round.slotBonus.forceAllHits(makeSeededRandom(seed + Date.now()));
+    // Reorder remaining balls so unhit bell balls come next → natural trigger
+    const extraBalls = forceBellBalls(round);
+    if (extraBalls > 0) {
+      // If idle (0 drawn), start full discharge with bells prioritized at the front
+      if (round.currentBallIndex === 0) {
+        targetBallCountRef.current = DEFAULT_BALLS;
+      } else {
+        // Mid-round: just extend to cover the bell balls
+        targetBallCountRef.current = Math.max(
+          targetBallCountRef.current,
+          round.currentBallIndex + extraBalls,
+        );
+      }
+    }
     rerender();
-  }, [seed, rerender]);
+  }, [rerender]);
 
   // ── Unified advance button state machine ──────────────────────
   const round = roundRef.current;
@@ -253,8 +262,8 @@ export function useDebugEngine(): DebugEngine {
   if (!round) {
     advanceLabel = 'Play';
     canAdvance = false;
-  } else if (isSettling) {
-    // Balls in flight — always disabled
+  } else if (isSettling || bonusActive) {
+    // Balls in flight or bonus animation active — always disabled
     advanceLabel = drawn < DEFAULT_BALLS ? 'Play' : 'Extra';
     canAdvance = false;
   } else if (drawn === 0) {
@@ -281,7 +290,7 @@ export function useDebugEngine(): DebugEngine {
   }
 
   // End button — available whenever extras/super are offered, or when round is done
-  const canEnd = !!round && !isSettling && !isCollecting && drawn >= DEFAULT_BALLS &&
+  const canEnd = !!round && !isSettling && !isCollecting && !bonusActive && drawn >= DEFAULT_BALLS &&
     (round.extraAvailable || round.superExtraAvailable || advanceLabel === 'Done');
 
   // Auto-end ref to track/cancel pending auto-new-round timer
@@ -341,9 +350,9 @@ export function useDebugEngine(): DebugEngine {
     if (r.totalPayout > 0) {
       setIsCollecting(true);
     }
-    // 10s review period then new round
+    // 8s review period then new round
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
-    autoEndTimerRef.current = setTimeout(autoNewRound, 10000);
+    autoEndTimerRef.current = setTimeout(autoNewRound, 8000);
   }
 
   const advance = useCallback(() => {
@@ -383,6 +392,8 @@ export function useDebugEngine(): DebugEngine {
     canEnd,
     isCollecting,
     lastPayout,
+    bonusActive,
+    setBonusActive,
     endRound,
     patternPreview,
     setSeed,
@@ -395,7 +406,6 @@ export function useDebugEngine(): DebugEngine {
     drawAll,
     drawExtra,
     drawSuperExtra,
-    undoDraw,
     processNextBall,
     setPreview,
     forceSlotPrize,

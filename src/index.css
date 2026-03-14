@@ -42,5 +42,12 @@ html, body, #root {
 #root {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
 }
+
+/* Scale canvas to fit viewport height, centered horizontally */
+#root canvas {
+  transform: scale(var(--game-scale, 1));
+  transform-origin: center top;
+}
+

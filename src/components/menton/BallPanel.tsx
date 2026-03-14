@@ -24,6 +24,7 @@ import BallCounter from './BallCounter'
 import AnimatedBall from './AnimatedBall'
 import TubeWater from './TubeWater'
 import IdleLemon from './IdleLemon'
+import SliceMovie from './SliceMovie'
 import { DEFAULT_BALLS } from '../../engine/constants'
 import type { Round } from '../../engine/Round'
 
@@ -55,6 +56,8 @@ interface Props {
   targetBallCount: number
   /** Current max pattern priority — drives dynamic launch interval */
   launchInterval?: number
+  /** Pause ball launching (bonus animations active) */
+  paused?: boolean
   onBallArrive?: () => void
 }
 
@@ -75,8 +78,9 @@ interface Props {
  *    - Large ball (current ball number)
  *    - bigballpipe2 (cover, closed)
  */
-export default function BallPanel({ round, targetBallCount, launchInterval = DEFAULT_INTERVAL, onBallArrive }: Props) {
+export default function BallPanel({ round, targetBallCount, launchInterval = DEFAULT_INTERVAL, paused = false, onBallArrive }: Props) {
   const isIdle = !round || targetBallCount === 0
+  const isExtraPhase = (round?.currentBallIndex ?? 0) > DEFAULT_BALLS
 
   // How many regular balls to launch (capped at DEFAULT_BALLS)
   const regularTarget = Math.min(targetBallCount, DEFAULT_BALLS)
@@ -124,6 +128,8 @@ export default function BallPanel({ round, targetBallCount, launchInterval = DEF
   // Engine draw happens at LAUNCH time (not arrival) so marks appear ball-by-ball
   const intervalRef = useRef(launchInterval)
   intervalRef.current = launchInterval
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
   const onBallArriveRef = useRef(onBallArrive)
   onBallArriveRef.current = onBallArrive
   useEffect(() => {
@@ -136,7 +142,7 @@ export default function BallPanel({ round, targetBallCount, launchInterval = DEF
         flowingRef.current = hasItems
         setFlowing(hasItems)
       }
-      if (!hasItems) return
+      if (!hasItems || pausedRef.current) return
       framesSinceLaunch++
       if (framesSinceLaunch >= intervalRef.current) {
         framesSinceLaunch = 0
@@ -165,8 +171,9 @@ export default function BallPanel({ round, targetBallCount, launchInterval = DEF
 
   return (
     <pixiContainer x={BALL_PANEL_X} y={BALL_PANEL_Y}>
-      {/* 1. bgextraball */}
+      {/* 1. bgextraball + slice decorations */}
       <pixiSprite texture={tex('bgextraball')} x={BG_EXTRA_X} y={EXTRA_FRONT_Y} />
+      <SliceMovie active={!isExtraPhase} x={BG_EXTRA_X + 3} y={EXTRA_FRONT_Y + 3} />
       {/* 2. ballcontainer2 — rear tube */}
       <pixiSprite texture={tex('ballcontainer2')} y={TUBING_Y} />
       {/* 3. Animated Ball sprites — launched from pipe, roll to final position */}

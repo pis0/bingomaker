@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function SimulationSection({ engine }: Props) {
-  const { round, seed, stakeIndex, setSeed, setStakeIndex, newRound, shuffle, forceNow, advance, advanceLabel, canAdvance, canEnd, endRound, isSettling, undoDraw, setPreview } = engine;
+  const { round, seed, stakeIndex, setSeed, setStakeIndex, newRound, shuffle, forceNow, advance, advanceLabel, canAdvance, canEnd, endRound, isSettling, setPreview } = engine;
 
   const [forceEnabled, setForceEnabled] = useState(false);
   const [patternIndex, setPatternIndex] = useState(0);
@@ -140,9 +140,6 @@ export default function SimulationSection({ engine }: Props) {
         )}
         <button className="debug-btn" onClick={shuffle} disabled={!round || isSettling}>
           Shuffle
-        </button>
-        <button className="debug-btn" onClick={undoDraw} disabled={!round || drawn === 0 || isSettling}>
-          Undo
         </button>
       </div>
 

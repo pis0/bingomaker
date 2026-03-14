@@ -1,15 +1,31 @@
+import { useEffect } from 'react'
 import { Application } from '@pixi/react'
 import Menton from './components/menton/Menton'
 import { GAME_WIDTH, GAME_HEIGHT } from './components/menton/Scenery'
 import DebugPanel from './debug/DebugPanel'
+import PixiStats, { PixiStatsBridge } from './debug/PixiStats'
 import { useAssets } from './assets/useAssets'
 import { useDebugEngine } from './debug/useDebugEngine'
 
 const showDevtools = new URLSearchParams(window.location.search).has('devtools')
 
+/** Set CSS custom property for canvas scaling (height-fit, centered) */
+function useViewportScale() {
+  useEffect(() => {
+    const update = () => {
+      const s = Math.min(1, window.innerHeight / GAME_HEIGHT)
+      document.documentElement.style.setProperty('--game-scale', String(s))
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+}
+
 export default function App() {
   const { status, progress } = useAssets()
   const engine = useDebugEngine()
+  useViewportScale()
 
   if (status === 'error') {
     return <div style={errorStyle}>Failed to load assets. Check console.</div>
@@ -32,9 +48,12 @@ export default function App() {
         width={GAME_WIDTH}
         height={GAME_HEIGHT}
         background="#000000"
+        preference="webgpu"
       >
-        <Menton round={engine.round} stakeIndex={engine.stakeIndex} targetBallCount={engine.targetBallCount} processNextBall={engine.processNextBall} isCollecting={engine.isCollecting} lastPayout={engine.lastPayout} />
+        <Menton round={engine.round} stakeIndex={engine.stakeIndex} targetBallCount={engine.targetBallCount} processNextBall={engine.processNextBall} isCollecting={engine.isCollecting} lastPayout={engine.lastPayout} onBonusActiveChange={engine.setBonusActive} />
+        {showDevtools && <PixiStatsBridge />}
       </Application>
+      {showDevtools && <PixiStats />}
       {showDevtools && <DebugPanel engine={engine} />}
     </>
   )

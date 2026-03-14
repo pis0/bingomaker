@@ -30,9 +30,8 @@ export const IDLE_CONTAINER_Y = 23
 export const IDLE_LEMON_X = 38
 export const IDLE_LEMON_Y = 48
 
-// BallCounter
-// AS3: addComp(BallCounter, {x:18, y:20}) + addText(10,10) internal offset
-export const COUNTER_X = 28
+// BallCounter — centered with pipe exit (pipe texture bottom center = x:39, + PIPE_X=-6 → 33)
+export const COUNTER_X = 33
 export const COUNTER_Y = 30
 export const COUNTER_FONT = '"Iowan Old Style Black", Georgia, serif'
 export const COUNTER_SIZE = 25

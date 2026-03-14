@@ -12,8 +12,8 @@ const normalStyle = new TextStyle({
   fill: BALL_TEXT_COLOR,
 })
 
-/** Pipe exit X — center of ballpipe */
-const PIPE_EXIT_X = 35
+/** Pipe exit X — center of ballpipe bottom opening (texture center at row 60-76 = x:39, pipe at PIPE_X=-6) */
+const PIPE_EXIT_X = 33
 
 /** Pipe bottom Y — where balls emerge (ballpipe at y=0, height=77) */
 const PIPE_BOTTOM_Y = 77

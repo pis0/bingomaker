@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function BonusSection({ engine }: Props) {
-  const { round, forceSlotPrize, setForceSlotPrize, triggerSlot } = engine;
+  const { round, forceSlotPrize, setForceSlotPrize, triggerSlot, bonusActive, isSettling } = engine;
   const slot = round?.slotBonus;
 
   return (
@@ -40,7 +40,7 @@ export default function BonusSection({ engine }: Props) {
         <button
           className="debug-btn"
           onClick={triggerSlot}
-          disabled={!round || (slot?.triggered ?? false)}
+          disabled={!round || (slot?.triggered ?? false) || bonusActive || isSettling}
         >
           Trigger Slot
         </button>
