@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Sprite, Container, Text, TextStyle, Ticker, MeshPlane } from 'pixi.js'
+import { Sprite, Container, Text, TextStyle, Ticker, MeshPlane, Assets, Texture } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { BALL_PANEL_X, BALL_PANEL_Y } from './layoutConstants'
@@ -34,6 +34,8 @@ import IdleLemon from './IdleLemon'
 import SliceMovie from './SliceMovie'
 import { DEFAULT_BALLS, EXTRA_BALLS } from '../../engine/constants'
 import type { Round } from '../../engine/Round'
+import { ParticleEmitter } from '../../particles/ParticleEmitter'
+import { mentonExtraWater } from '../../particles/configs/menton_extra_water'
 
 extend({ Sprite, Container, Text })
 
@@ -260,14 +262,54 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
     }
   }, [nextExtraPrice, nextExtraStake])
 
+  // ── Extra water spray (AS3: extraWaterParticle) ─────────────────
+  // Small burst of water particles at chute exit when extra ball launches
+  const extraWaterRef = useRef<ParticleEmitter | null>(null)
+  if (!extraWaterRef.current) {
+    const waterTex = Assets.get<Texture>('menton_water') ?? Texture.WHITE
+    extraWaterRef.current = new ParticleEmitter({ ...mentonExtraWater }, waterTex)
+    // AS3: pos(145, -85) in BallPanel space
+    extraWaterRef.current.emitterX = 145
+    extraWaterRef.current.emitterY = -85
+  }
+
+  // Fire spray when a new extra/super ball is launched
+  const prevLaunchedCountRef = useRef(0)
+  useEffect(() => {
+    const extraCount = launchedIndices.filter(i => i >= DEFAULT_BALLS).length
+    if (extraCount > prevLaunchedCountRef.current) {
+      prevLaunchedCountRef.current = extraCount
+      const em = extraWaterRef.current
+      if (em) {
+        // AS3: pos(145, -85 + uint(50 * Math.random()))
+        em.emitterY = -85 + Math.floor(50 * Math.random())
+        em.stop()
+        em.start(Ticker.shared)
+        // AS3: start(0.166 * random) — short burst, particles fade naturally
+        setTimeout(() => em.stop(), 166)
+      }
+    }
+  }, [launchedIndices])
+
+  // Reset on round end
+  useEffect(() => {
+    if (!round) {
+      extraWaterRef.current?.reset()
+      prevLaunchedCountRef.current = 0
+    }
+  }, [round])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { extraWaterRef.current?.destroy(); extraWaterRef.current = null }
+  }, [])
+
   // ── 3D beat on extra grid (AS3: beatExtraBallContainer) ────────
   // Simulates 3D tilt with skewX/skewY when an extra ball lands.
   // Direction depends on slot: odd/even → skewY sign, upper/lower → skewX sign
   const extraGridRef = useRef<Container>(null)
   const meshRef = useRef<MeshPlane>(null)
   const beatRef = useRef({ active: false, t0: 0, direction: 0 }) // direction: -1 left, +1 right
-  const lastExtraCountRef = useRef(0)
-
   // Shake tick — increments on each extra ball land, propagates to settled balls
   const [shakeTick, setShakeTick] = useState(0)
 
@@ -500,7 +542,10 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
 
       {/* 5. Water effects */}
       <TubeWater active={drawing} flowing={flowing} idle={isIdle} />
-
+      {/* Extra water spray — AS3: particlesContainer1 (behind pipe) */}
+      <pixiContainer ref={useCallback((c: Container | null) => {
+        if (c && extraWaterRef.current) c.addChild(extraWaterRef.current.container)
+      }, [])} />
       {/* 6. ballpipe */}
       <pixiSprite texture={tex('ballpipe')} x={PIPE_X} />
 
@@ -566,6 +611,7 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
           x={COVER_X}
           y={COVER_Y}
         />
+
       </pixiContainer>
 
       {/* 10. Text overlay — "EXTRA" / "SUPER" announcement */}

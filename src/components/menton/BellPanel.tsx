@@ -26,7 +26,6 @@ const SYMBOL_TEXTURES: Record<string, [string, string, string]> = {
 const STRIPE_DIRECTION = [-1, 1, -1]
 
 const RANDOM_BEFORE = 5
-const RANDOM_AFTER = 1
 const BLINK_INTERVAL_MS = 200
 
 function easeOutQuint(t: number): number {

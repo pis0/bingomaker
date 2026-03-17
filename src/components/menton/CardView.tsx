@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, useCallback } from 'react'
-import { Graphics, Text, TextStyle, Sprite, Container } from 'pixi.js'
+import { Graphics, Text, Sprite, Container } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { COLS, ROWS } from '../../engine/constants'
 import type { Card } from '../../engine/Card'
@@ -28,11 +28,7 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
   const cardTex = useMemo(() => tex('card'), [])
   const betTex = useMemo(() => tex(`cardbet${stakeIndex + 1}`), [stakeIndex])
 
-  const patternNames = useMemo(
-    () => [...card.completedPatterns].map((p) => p.name).join(', '),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [card.completedPatterns.size],
-  )
+
 
   // Track which patterns have already been animated
   const animatedRef = useRef<Set<string>>(new Set())
@@ -154,10 +150,3 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
   )
 }
 
-const payoutStyle = new TextStyle({
-  fontFamily: 'Arial', fontSize: 11, fontWeight: 'bold', fill: 0x4caf50,
-})
-
-const patternLabelStyle = new TextStyle({
-  fontFamily: 'Arial', fontSize: 9, fontWeight: 'bold', fill: 0xbb86fc,
-})

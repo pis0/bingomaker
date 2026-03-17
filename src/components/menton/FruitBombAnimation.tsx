@@ -133,7 +133,6 @@ export default function FruitBombAnimation({ active, bombPositions, onShake, onC
 
       for (const pos of bombPositions) {
         const fruitName = pickRandomFruit()
-        const cfg = FRUIT_CONFIGS[fruitName]
         const data = bytesCache.current.get(fruitName)
 
         // Card top-left in Menton space
