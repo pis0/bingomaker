@@ -165,6 +165,7 @@ export default function SimulationSection({ engine }: Props) {
           {drawn}/{round.ballSequence.length} drawn | Payout: {payout}
           {canExtra && ' | Extra available'}
           {canSuperExtra && ' | Super available'}
+          {engine.isPeeling && ' | Peel'}
         </div>
       )}
     </div>

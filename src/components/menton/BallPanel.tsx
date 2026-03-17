@@ -11,8 +11,8 @@ import {
   FUNDO_Y,
   TAMPA_Y,
   COVER_X, COVER_Y, COVER_PIVOT_X, COVER_PIVOT_Y,
-  COVER_ROTATION_CLOSED, COVER_ROTATION_OPEN,
-  COVER_OPEN_DURATION, COVER_CLOSE_DURATION,
+  COVER_ROTATION_CLOSED,
+  COVER_CLOSE_DURATION,
   IDLE_CONTAINER_X, IDLE_CONTAINER_Y,
   IDLE_LEMON_X, IDLE_LEMON_Y,
   COUNTER_X, COUNTER_Y,
@@ -20,11 +20,14 @@ import {
   ROW_0_Y, ROW_1_Y,
   ROW_0_START_X, ROW_1_START_X,
   BALL_SPACING, BALL_ROW_SIZE,
-  BALL_FONT, BALL_TEXT_COLOR,
+  BALL_FONT, BALL_TEXT_COLOR, BALL_EXTRA_SIZE,
   EXTRA_GRID_START_X, EXTRA_GRID_COL_SPACING, EXTRA_GRID_ROW_SPACING, EXTRA_GRID_BASE_Y,
   EXTRA_TEXT_COLOR, EXTRA_TEXT_SIZE,
   SUPER_TEXT_COLOR, SUPER_TEXT_SIZE,
   TEXT_FADE_IN, TEXT_HOLD, TEXT_FADE_OUT,
+  PEEL_STEP_TWEEN, PEEL_FLING_TWEEN,
+  PEEL_COVER_ROTATIONS, PEEL_WOBBLE_AMPLITUDE, PEEL_WOBBLE_SPEED,
+  PEEL_BALL_X, PEEL_BALL_Y, PEEL_BALL_SCALE,
 } from './ballConstants'
 import BallCounter from './BallCounter'
 import AnimatedBall from './AnimatedBall'
@@ -32,7 +35,7 @@ import type { BallType } from './AnimatedBall'
 import TubeWater from './TubeWater'
 import IdleLemon from './IdleLemon'
 import SliceMovie from './SliceMovie'
-import { DEFAULT_BALLS, EXTRA_BALLS } from '../../engine/constants'
+import { DEFAULT_BALLS, EXTRA_BALLS, HALT_PRIORITY } from '../../engine/constants'
 import type { Round } from '../../engine/Round'
 import { ParticleEmitter } from '../../particles/ParticleEmitter'
 import { mentonExtraWater } from '../../particles/configs/menton_extra_water'
@@ -67,6 +70,13 @@ const superOverlayStyle = new TextStyle({
   fontFamily: BALL_FONT,
   fontSize: SUPER_TEXT_SIZE,
   fill: SUPER_TEXT_COLOR,
+})
+
+// Peel ball text style (same as AnimatedBall extra style)
+const peelBallStyle = new TextStyle({
+  fontFamily: BALL_FONT,
+  fontSize: BALL_EXTRA_SIZE,
+  fill: BALL_TEXT_COLOR,
 })
 
 const MAX_EXTRA_INDEX = DEFAULT_BALLS + EXTRA_BALLS
@@ -105,9 +115,6 @@ function superPosition(index: number): { superPos: number } {
 
 /** Default frames between consecutive ball launches (60fps) */
 const DEFAULT_INTERVAL = 6
-/** Extra balls launch faster — 1 per advance press, no queue delay needed */
-const EXTRA_INTERVAL = 1
-
 // ── Easing ──────────────────────────────────────────────────────
 function easeOutElastic(t: number): number {
   if (t === 0 || t === 1) return t
@@ -117,6 +124,10 @@ function easeOutBack(t: number): number {
   const s = 1.70158
   const t1 = t - 1
   return t1 * t1 * ((s + 1) * t1 + s) + 1
+}
+function easeOutCubic(t: number): number {
+  const t1 = t - 1
+  return t1 * t1 * t1 + 1
 }
 
 interface Props {
@@ -129,7 +140,11 @@ interface Props {
   launchInterval?: number
   /** Pause ball launching (bonus animations active) */
   paused?: boolean
+  /** Increments to advance one peel step (user-driven) */
+  peelAdvanceTick?: number
   onBallArrive?: () => void
+  /** Reports when peel animation starts/ends (for halt-for-user) */
+  onPeelChange?: (peeling: boolean) => void
 }
 
 /**
@@ -147,7 +162,7 @@ interface Props {
  * 9. Extra front container (pipoqueira): fundo, lemon, tampa, large ball, cover
  * 10. Text overlay ("EXTRA" / "SUPER")
  */
-export default function BallPanel({ round, targetBallCount, stake = 1, launchInterval = DEFAULT_INTERVAL, paused = false, onBallArrive }: Props) {
+export default function BallPanel({ round, targetBallCount, stake = 1, launchInterval = DEFAULT_INTERVAL, paused = false, peelAdvanceTick = 0, onBallArrive, onPeelChange }: Props) {
   const isIdle = !round || targetBallCount === 0
 
   // ── Animation queue ──────────────────────────────────────────────
@@ -156,6 +171,24 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
   const flowingRef = useRef(false)
   const processedCountRef = useRef(0)
   const queueRef = useRef<number[]>([])
+  const roundRef = useRef(round)
+  roundRef.current = round
+
+  // ── Peel animation state (extra/super ball launch buildup) ─────
+  const peelRef = useRef({
+    active: false,
+    ballNumber: 0,
+    step: 3,
+    stepStartTime: 0,
+    rotation: 0,
+    dispatchReady: false,
+  })
+  const [peelVisible, setPeelVisible] = useState(false)
+  const [peelBallNumber, setPeelBallNumber] = useState(0)
+  const peelBallContainerRef = useRef<Container>(null)
+  const onPeelChangeRef = useRef(onPeelChange)
+  onPeelChangeRef.current = onPeelChange
+  const prevPeelTickRef = useRef(0)
 
   // Synchronous reset on round change
   const prevRoundRef = useRef<Round | null>(null)
@@ -165,6 +198,11 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
     queueRef.current = []
     if (launchedIndices.length > 0) {
       setLaunchedIndices([])
+    }
+    peelRef.current.active = false
+    peelRef.current.dispatchReady = false
+    if (peelVisible) {
+      setPeelVisible(false)
     }
   }
 
@@ -203,10 +241,88 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
       }
       if (!hasItems || pausedRef.current) return
       framesSinceLaunch++
-      // Extra/super balls launch immediately (1 at a time via advance button)
       const nextIndex = queueRef.current[0]
-      const interval = nextIndex != null && nextIndex >= DEFAULT_BALLS ? EXTRA_INTERVAL : intervalRef.current
-      if (framesSinceLaunch >= interval) {
+
+      // ── Extra/super ball handling ──
+      if (nextIndex != null && nextIndex >= DEFAULT_BALLS) {
+        const peel = peelRef.current
+        if (peel.active) return // peel in progress, wait
+
+        const priority = roundRef.current?.maxPatternPriority ?? 0
+        const shouldPeel = priority >= HALT_PRIORITY
+
+        if (shouldPeel && !peel.dispatchReady) {
+          // Start peel — high priority, build tension
+          const ballNum = roundRef.current?.ballSequence[nextIndex] ?? 0
+          peel.active = true
+          peel.ballNumber = ballNum
+          peel.step = 3
+          peel.stepStartTime = performance.now()
+          peel.rotation = Math.PI * Math.random()
+          peel.dispatchReady = false
+          setPeelBallNumber(ballNum)
+          setPeelVisible(true)
+          // Set cover to step 3 rotation
+          const ca = coverAnimRef.current
+          ca.current = coverRef.current?.rotation ?? ca.current
+          ca.target = PEEL_COVER_ROTATIONS[3]
+          ca.t0 = performance.now()
+          ca.duration = PEEL_STEP_TWEEN
+          ca.wobble = true
+          ca.wobbleCenter = PEEL_COVER_ROTATIONS[3]
+          ca.wobbleAmplitude = PEEL_WOBBLE_AMPLITUDE
+          // Water spray at step 3
+          const em = extraWaterRef.current
+          if (em) {
+            em.emitterY = -85 + Math.floor(50 * Math.random())
+            em.stop()
+            em.start(Ticker.shared)
+            setTimeout(() => em.stop(), 166)
+          }
+          // Signal peel halt — user must click to advance steps
+          onPeelChangeRef.current?.(true)
+          return
+        }
+
+        if (peel.dispatchReady) {
+          // Peel complete — dispatch ball
+          peel.dispatchReady = false
+        }
+
+        // Dispatch extra (after peel, or direct if low priority)
+        framesSinceLaunch = 0
+        const next = queueRef.current.shift()!
+        setLaunchedIndices(prev => [...prev, next])
+        onBallArriveRef.current?.()
+        // Water spray on every extra dispatch
+        const em = extraWaterRef.current
+        if (em) {
+          em.emitterY = -85 + Math.floor(50 * Math.random())
+          em.stop()
+          em.start(Ticker.shared)
+          setTimeout(() => em.stop(), 166)
+        }
+        // Cover fling open + check if should close
+        const ca = coverAnimRef.current
+        ca.wobble = false
+        if (!shouldPeel) {
+          // No peel — quick fling open
+          ca.current = coverRef.current?.rotation ?? ca.current
+          ca.target = PEEL_COVER_ROTATIONS[0]
+          ca.t0 = performance.now()
+          ca.duration = PEEL_FLING_TWEEN
+        }
+        // Check if more extras available (round updated after processNextBall)
+        const r = roundRef.current
+        const moreExtras = r?.extraAvailable || r?.superExtraAvailable
+        if (!moreExtras) {
+          ca.pendingClose = true
+        }
+        return
+      }
+
+      // Regular ball dispatch
+      if (framesSinceLaunch >= intervalRef.current) {
         framesSinceLaunch = 0
         const next = queueRef.current.shift()!
         setLaunchedIndices(prev => [...prev, next])
@@ -273,31 +389,59 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
     extraWaterRef.current.emitterY = -85
   }
 
-  // Fire spray when a new extra/super ball is launched
-  const prevLaunchedCountRef = useRef(0)
-  useEffect(() => {
-    const extraCount = launchedIndices.filter(i => i >= DEFAULT_BALLS).length
-    if (extraCount > prevLaunchedCountRef.current) {
-      prevLaunchedCountRef.current = extraCount
-      const em = extraWaterRef.current
-      if (em) {
-        // AS3: pos(145, -85 + uint(50 * Math.random()))
-        em.emitterY = -85 + Math.floor(50 * Math.random())
-        em.stop()
-        em.start(Ticker.shared)
-        // AS3: start(0.166 * random) — short burst, particles fade naturally
-        setTimeout(() => em.stop(), 166)
-      }
-    }
-  }, [launchedIndices])
+  // Water spray is handled by peel step transitions (see queue processor + peelAdvanceTick effect)
 
   // Reset on round end
   useEffect(() => {
     if (!round) {
       extraWaterRef.current?.reset()
-      prevLaunchedCountRef.current = 0
     }
   }, [round])
+
+  // ── Peel step advance (user-driven) ─────────────────────────────
+  // Each increment of peelAdvanceTick advances one peel step (3→2→1→0)
+  useEffect(() => {
+    if (peelAdvanceTick === prevPeelTickRef.current) return
+    prevPeelTickRef.current = peelAdvanceTick
+
+    const peel = peelRef.current
+    if (!peel.active || peel.step <= 0) return
+
+    // Advance one step
+    peel.step--
+    peel.rotation += Math.PI * Math.random()
+
+    // Update cover target (step 0 uses fast fling tween for force sensation)
+    const ca = coverAnimRef.current
+    ca.current = coverRef.current?.rotation ?? ca.current
+    ca.target = PEEL_COVER_ROTATIONS[peel.step]
+    ca.t0 = performance.now()
+    ca.duration = peel.step === 0 ? PEEL_FLING_TWEEN : PEEL_STEP_TWEEN
+    if (peel.step > 0) {
+      ca.wobble = true
+      ca.wobbleCenter = PEEL_COVER_ROTATIONS[peel.step]
+      ca.wobbleAmplitude = PEEL_WOBBLE_AMPLITUDE
+    } else {
+      ca.wobble = false
+    }
+
+    // Water spray
+    const em = extraWaterRef.current
+    if (em) {
+      em.emitterY = -85 + Math.floor(50 * Math.random())
+      em.stop()
+      em.start(Ticker.shared)
+      setTimeout(() => em.stop(), 166)
+    }
+
+    // Step 0: dispatch immediately (cover tween plays in parallel)
+    if (peel.step === 0) {
+      peel.active = false
+      peel.dispatchReady = true
+      setPeelVisible(false)
+      onPeelChangeRef.current?.(false)
+    }
+  }, [peelAdvanceTick])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -324,24 +468,35 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
 
   // ── Cover animation ───────────────────────────────────────────
   const coverRef = useRef<Sprite>(null)
-  const coverAnimRef = useRef({ target: COVER_ROTATION_CLOSED, current: COVER_ROTATION_CLOSED, t0: 0, duration: 0 })
-  const shouldCoverOpen = inExtraMode
+  const coverAnimRef = useRef({
+    target: COVER_ROTATION_CLOSED,
+    current: COVER_ROTATION_CLOSED,
+    t0: 0,
+    duration: 0,
+    wobble: false,
+    wobbleCenter: 0,
+    wobbleAmplitude: 0,
+    pendingClose: false,
+  })
 
   const setupCover = useCallback((sprite: Sprite | null) => {
     coverRef.current = sprite
     if (sprite) sprite.pivot.set(COVER_PIVOT_X, COVER_PIVOT_Y)
   }, [])
 
+  // Cover closes when leaving extra mode (round end) — opening is handled by peel
   useEffect(() => {
-    const a = coverAnimRef.current
-    const target = shouldCoverOpen ? COVER_ROTATION_OPEN : COVER_ROTATION_CLOSED
-    if (target !== a.target) {
-      a.current = coverRef.current?.rotation ?? a.current
-      a.target = target
-      a.t0 = performance.now()
-      a.duration = shouldCoverOpen ? COVER_OPEN_DURATION : COVER_CLOSE_DURATION
+    if (!inExtraMode) {
+      const a = coverAnimRef.current
+      if (a.target !== COVER_ROTATION_CLOSED) {
+        a.current = coverRef.current?.rotation ?? a.current
+        a.target = COVER_ROTATION_CLOSED
+        a.t0 = performance.now()
+        a.duration = COVER_CLOSE_DURATION
+        a.wobble = false
+      }
     }
-  }, [shouldCoverOpen])
+  }, [inExtraMode])
 
   // ── Text overlay state ────────────────────────────────────────
   const [overlayText, setOverlayText] = useState<'extra' | 'super' | null>(null)
@@ -380,22 +535,47 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
     if (overlayText) overlayT0Ref.current = performance.now()
   }, [overlayText])
 
-  // ── Per-frame animations (cover + overlay) ────────────────────
+  // ── Per-frame animations (peel + cover + overlay) ──────────────
   useTick(() => {
     const now = performance.now()
+
+    // ── Peel: visual update ───────────────────────────────────────
+    // Step advancement + dispatch are user-driven (peelAdvanceTick effect).
+    // Here we only update the stuck ball visual per frame.
+    const peel = peelRef.current
+    if (peel.active) {
+      const ball = peelBallContainerRef.current
+      if (ball) {
+        ball.x = PEEL_BALL_X[peel.step]
+        ball.y = PEEL_BALL_Y
+        ball.rotation = peel.rotation
+        ball.scale.set(PEEL_BALL_SCALE)
+      }
+    }
 
     // Cover rotation tween
     const cover = coverRef.current
     const ca = coverAnimRef.current
     if (cover && ca.duration > 0) {
       const t = Math.min(1, (now - ca.t0) / ca.duration)
-      const eased = ca.target === COVER_ROTATION_OPEN ? easeOutBack(t) : t // linear for close
+      const eased = ca.target === COVER_ROTATION_CLOSED ? easeOutCubic(t) : easeOutBack(t)
       cover.rotation = ca.current + (ca.target - ca.current) * eased
       if (t >= 1) {
         cover.rotation = ca.target
         ca.duration = 0
         ca.current = ca.target
+        // Chain: after open tween finishes, start close
+        if (ca.pendingClose) {
+          ca.pendingClose = false
+          ca.current = ca.target
+          ca.target = COVER_ROTATION_CLOSED
+          ca.t0 = now
+          ca.duration = COVER_CLOSE_DURATION
+        }
       }
+    } else if (cover && ca.wobble) {
+      // Wobble after tween completes (peel steps 3-1)
+      cover.rotation = ca.wobbleCenter + Math.sin(now / 1000 * PEEL_WOBBLE_SPEED) * ca.wobbleAmplitude
     }
 
     // Text overlay alpha
@@ -540,8 +720,16 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
         }
       })}
 
+      {/* 4b. Peel ball — stuck in chute during peel animation */}
+      {peelVisible && (
+        <pixiContainer ref={peelBallContainerRef} x={PEEL_BALL_X[3]} y={PEEL_BALL_Y} scale={PEEL_BALL_SCALE}>
+          <pixiSprite texture={tex('extraball')} anchor={0.5} />
+          <pixiText text={String(peelBallNumber)} style={peelBallStyle} anchor={0.5} />
+        </pixiContainer>
+      )}
+
       {/* 5. Water effects */}
-      <TubeWater active={drawing} flowing={flowing} idle={isIdle} />
+      <TubeWater active={drawing && !inExtraMode} flowing={flowing && !inExtraMode} idle={isIdle || inExtraMode} />
       {/* Extra water spray — AS3: particlesContainer1 (behind pipe) */}
       <pixiContainer ref={useCallback((c: Container | null) => {
         if (c && extraWaterRef.current) c.addChild(extraWaterRef.current.container)

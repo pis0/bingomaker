@@ -1,4 +1,4 @@
-import { DEFAULT_BALLS, EXTRA_BALLS, SUPER_EXTRA_BALLS } from './constants';
+import { DEFAULT_BALLS, EXTRA_BALLS, SUPER_EXTRA_BALLS, HALT_PRIORITY } from './constants';
 import type { Card } from './Card';
 import type { Draw } from './Draw';
 import { checkForPatterns } from './PatternResolver';
@@ -7,8 +7,7 @@ import { SlotBonusSession } from './SlotBonusSession';
 
 /** AS3: PatternGroup.EXTRA_MIN_PRIORITY */
 const EXTRA_MIN_PRIORITY = 2;
-/** AS3: PatternGroup.HALT_FOR_USER_MIN_PRIORITY — pauses auto-discharge */
-const HALT_FOR_USER_MIN_PRIORITY = 3;
+// HALT_PRIORITY imported from constants
 /** AS3: PatternGroup.SUPER_EXTRA_MIN_PRIORITY */
 const SUPER_EXTRA_MIN_PRIORITY = 4;
 /** Max ball index for extras (30 + 10) */
@@ -199,7 +198,7 @@ export class Round {
    * True when maxPatternPriority >= 3 during the initial 30 balls.
    */
   get shouldHalt(): boolean {
-    return this.ballIndex < DEFAULT_BALLS && this.maxPatternPriority >= HALT_FOR_USER_MIN_PRIORITY;
+    return this.ballIndex < DEFAULT_BALLS && this.maxPatternPriority >= HALT_PRIORITY;
   }
 
   /**

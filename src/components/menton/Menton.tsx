@@ -66,9 +66,13 @@ interface Props {
   lastPayout?: number
   /** Report bonus animation active state to parent */
   onBonusActiveChange?: (active: boolean) => void
+  /** Peel step advance tick (user-driven) */
+  peelAdvanceTick?: number
+  /** BallPanel peel state change callback */
+  onPeelChange?: (peeling: boolean) => void
 }
 
-export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange }: Props) {
+export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange, peelAdvanceTick = 0, onPeelChange }: Props) {
   const stake = STAKE_LEVELS[stakeIndex]
 
   // AS3: IntervalCardPatternController — cycles individual patterns during idle
@@ -250,7 +254,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
       <Scenery />
       {round && (
         <pixiContainer key={roundGenRef.current}>
-          <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} onBallArrive={handleBallArrive} />
+          <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} peelAdvanceTick={peelAdvanceTick} onBallArrive={handleBallArrive} onPeelChange={onPeelChange} />
           <BellPanel
             bellsRevealed={bellsRevealed}
             spinSymbols={releasedSpinSymbols}

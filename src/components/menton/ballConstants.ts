@@ -103,7 +103,7 @@ export const SUPER_FINAL_SNAP_DURATION = 0.2
 
 // ── Cover animation (AS3: BallPanelMenton.openExtraCover/closeExtraCover) ──
 export const COVER_OPEN_DURATION = 1000 // 1s
-export const COVER_CLOSE_DURATION = 200 // 0.2s
+export const COVER_CLOSE_DURATION = 600 // 0.6s — slow close after peel fling
 
 // ── Text overlay (AS3: BallPanelMenton.showText) ────────────────
 export const EXTRA_TEXT_COLOR = 0xfff000 // yellow
@@ -113,3 +113,21 @@ export const SUPER_TEXT_SIZE = 74
 export const TEXT_FADE_IN = 300 // 0.3s
 export const TEXT_HOLD = 500 // 0.5s
 export const TEXT_FADE_OUT = 200 // 0.2s
+
+// ── Peel animation (AS3: extra/super ball launch buildup) ───────
+// 3 visible steps (3→2→1) + final step 0 (full open → launch)
+export const PEEL_STEP_INTERVAL = 500    // ms between steps
+export const PEEL_STEP_TWEEN = 222       // ms per step cover tween (AS3: 0.222s easeOutBack)
+export const PEEL_FLING_TWEEN = 120      // ms — step 0 fast open (force sensation)
+
+// Cover rotation per step — indexed by step number [step0, step1, step2, step3]
+export const PEEL_COVER_ROTATIONS = [COVER_ROTATION_OPEN, -0.66, -0.55, -0.44]
+
+// Wobble on cover during steps 3-1 (after tween lands)
+export const PEEL_WOBBLE_AMPLITUDE = 0.05 // radians (±0.05)
+export const PEEL_WOBBLE_SPEED = 12       // radians/sec
+
+// Stuck ball position per step — indexed by step number [step0, step1, step2, step3]
+export const PEEL_BALL_X = [135, 135, 130, 126]
+export const PEEL_BALL_Y = -70
+export const PEEL_BALL_SCALE = 1.3

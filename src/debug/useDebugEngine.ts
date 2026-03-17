@@ -65,6 +65,12 @@ export interface DebugEngine {
   forceSlotPrize: SlotSymbol | null;
   setForceSlotPrize: (prize: SlotSymbol | null) => void;
   triggerSlot: () => void;
+  /** True when BallPanel peel animation is waiting for user input */
+  isPeeling: boolean;
+  /** Tick counter — increments advance peel one step in BallPanel */
+  peelAdvanceTick: number;
+  /** BallPanel calls this to report peel start/end */
+  handlePeelChange: (peeling: boolean) => void;
 }
 
 export function useDebugEngine(): DebugEngine {
@@ -77,6 +83,15 @@ export function useDebugEngine(): DebugEngine {
   const [lastPayout, setLastPayout] = useState(0);
   const [bonusActive, setBonusActive] = useState(false);
   const [forceSlotPrize, setForceSlotPrize] = useState<SlotSymbol | null>(null);
+  const [isPeeling, setIsPeeling] = useState(false);
+  const isPeelingRef = useRef(false);
+  const peelAdvanceTickRef = useRef(0);
+
+  const handlePeelChange = useCallback((peeling: boolean) => {
+    isPeelingRef.current = peeling;
+    setIsPeeling(peeling);
+    if (!peeling) peelAdvanceTickRef.current = 0;
+  }, []);
   const initialRound = useState(() => {
     const random = makeSeededRandom(seed);
     const dist = distributeCards(random);
@@ -258,6 +273,10 @@ export function useDebugEngine(): DebugEngine {
   if (!round) {
     advanceLabel = 'Play';
     canAdvance = false;
+  } else if (isPeeling) {
+    // Peel in progress — user clicks to advance each step
+    advanceLabel = 'Peel';
+    canAdvance = true;
   } else if (isSettling || bonusActive) {
     // Balls in flight or bonus animation active — always disabled
     advanceLabel = drawn < DEFAULT_BALLS ? 'Play' : 'Extra';
@@ -356,6 +375,13 @@ export function useDebugEngine(): DebugEngine {
     if (!r) return;
     const idx = r.currentBallIndex;
 
+    // If peeling, advance peel step instead of launching new ball
+    if (isPeelingRef.current) {
+      peelAdvanceTickRef.current++;
+      rerender();
+      return;
+    }
+
     if (idx === 0 || (idx < DEFAULT_BALLS && !r.shouldHalt)) {
       // Start or resume auto-discharge → target = 30
       targetBallCountRef.current = DEFAULT_BALLS;
@@ -363,10 +389,10 @@ export function useDebugEngine(): DebugEngine {
       // Halted → resume discharge (will halt again if needed)
       targetBallCountRef.current = DEFAULT_BALLS;
     } else if (r.extraAvailable) {
-      // Extra — animate through BallPanel
+      // Extra — animate through BallPanel (starts peel)
       targetBallCountRef.current = r.currentBallIndex + 1;
     } else if (r.superExtraAvailable) {
-      // Super extra — animate through BallPanel
+      // Super extra — animate through BallPanel (starts peel)
       targetBallCountRef.current = r.currentBallIndex + 1;
     }
     rerender();
@@ -403,5 +429,8 @@ export function useDebugEngine(): DebugEngine {
     forceSlotPrize,
     setForceSlotPrize: handleSetForceSlotPrize,
     triggerSlot,
+    isPeeling,
+    peelAdvanceTick: peelAdvanceTickRef.current,
+    handlePeelChange,
   };
 }
