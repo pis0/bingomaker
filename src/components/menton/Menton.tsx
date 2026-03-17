@@ -250,7 +250,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
       <Scenery />
       {round && (
         <pixiContainer key={roundGenRef.current}>
-          <BallPanel round={round} targetBallCount={targetBallCount} launchInterval={launchInterval} paused={bonusActive} onBallArrive={handleBallArrive} />
+          <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} onBallArrive={handleBallArrive} />
           <BellPanel
             bellsRevealed={bellsRevealed}
             spinSymbols={releasedSpinSymbols}

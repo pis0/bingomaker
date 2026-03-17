@@ -191,24 +191,20 @@ export function useDebugEngine(): DebugEngine {
     return draw;
   }, [stake, rerender]);
 
-  // Extras are processed immediately (no BallPanel animation for them yet)
+  // Extras now go through BallPanel animation pipeline — just increase targetBallCount
   const drawExtra = useCallback(() => {
     const round = roundRef.current;
     if (!round) return;
-    const draw = round.drawExtra(stake);
-    if (draw) logDraw(draw, round);
-    targetBallCountRef.current = round.currentBallIndex;
+    targetBallCountRef.current = round.currentBallIndex + 1;
     rerender();
-  }, [stake, rerender]);
+  }, [rerender]);
 
   const drawSuperExtra = useCallback(() => {
     const round = roundRef.current;
     if (!round) return;
-    const draw = round.drawSuperExtra(stake);
-    if (draw) logDraw(draw, round);
-    targetBallCountRef.current = round.currentBallIndex;
+    targetBallCountRef.current = round.currentBallIndex + 1;
     rerender();
-  }, [stake, rerender]);
+  }, [rerender]);
 
   const forceNow = useCallback((config: ForceConfig) => {
     const round = roundRef.current;
@@ -367,15 +363,11 @@ export function useDebugEngine(): DebugEngine {
       // Halted → resume discharge (will halt again if needed)
       targetBallCountRef.current = DEFAULT_BALLS;
     } else if (r.extraAvailable) {
-      // Extra — process immediately (no BallPanel animation yet)
-      const draw = r.drawExtra(stake);
-      if (draw) logDraw(draw, r);
-      targetBallCountRef.current = r.currentBallIndex;
+      // Extra — animate through BallPanel
+      targetBallCountRef.current = r.currentBallIndex + 1;
     } else if (r.superExtraAvailable) {
-      // Super extra — process immediately
-      const draw = r.drawSuperExtra(stake);
-      if (draw) logDraw(draw, r);
-      targetBallCountRef.current = r.currentBallIndex;
+      // Super extra — animate through BallPanel
+      targetBallCountRef.current = r.currentBallIndex + 1;
     }
     rerender();
   }, [stake, rerender]);

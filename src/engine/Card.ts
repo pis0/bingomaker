@@ -142,6 +142,21 @@ export class Card {
     }
   }
 
+  /**
+   * AS3: Card.calculateXp — sum of all missing-one expectations.
+   * Used to calculate extra ball price.
+   */
+  calculateXp(): number {
+    let sum = 0;
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const holder = this.expectations[row][col];
+        if (holder) sum += holder.expectation;
+      }
+    }
+    return sum;
+  }
+
   /** Clear all expectations (before re-evaluating patterns) */
   clearExpectations(): void {
     this.maxMissingPriority = 0;

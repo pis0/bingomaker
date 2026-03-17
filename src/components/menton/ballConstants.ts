@@ -57,3 +57,59 @@ export const BALL_FONT = '"Iowan Old Style Black", Georgia, serif'
 export const BALL_TEXT_COLOR = 0x4d371e
 export const BALL_NORMAL_SIZE = 24
 export const BALL_EXTRA_SIZE = 29
+
+// ── Extra ball path (AS3: BallPath.as) ──────────────────────────
+// Extra balls exit from the chute, not the pipe
+export const EXTRA_CHUTE_X = 130
+export const EXTRA_CHUTE_Y = -70
+export const EXTRA_WAYPOINT_X = 135
+export const EXTRA_WAYPOINT_Y = -70
+
+// Extra ball grid: 2 rows × 5 cols (AS3: BallPath stake positions)
+// Formula: x = 511 - 76 * floor((i-30)/2), y = -43 - 60 * ((i-30)%2)
+export const EXTRA_GRID_START_X = 511
+export const EXTRA_GRID_COL_SPACING = 76 // 61 + 15
+export const EXTRA_GRID_ROW_SPACING = 60
+export const EXTRA_GRID_BASE_Y = -43
+
+// Extra ball flight scale (AS3: BallPath scale 1.3)
+export const EXTRA_BALL_SCALE = 1.3
+
+// Extra ball speeds (AS3: BallPath — fraction per frame at 60fps)
+export const EXTRA_SPEED_PHASE1 = 0.25
+export const EXTRA_SPEED_PHASE2 = 0.16
+
+// Extra ball landing (AS3: Ball.fitToExtraStake)
+export const EXTRA_LAND_DURATION = 0.6 // seconds, easeOutBack
+export const EXTRA_LAND_SCALE_DURATION = 0.2 // seconds, easeOutBounce
+
+// ── Super extra ball path ───────────────────────────────────────
+// Super balls fly to far right then arc to vertical stack
+export const SUPER_TARGET_X = 730
+export const SUPER_TARGET_Y = 0
+export const SUPER_SPEED = 0.05
+
+// Super ball stack (AS3: Ball.fitToLastSuperPosition)
+export const SUPER_STACK_X = 36
+export const SUPER_STACK_BASE_Y = 320
+export const SUPER_STACK_BALL_HEIGHT = 56 // extraball texture height
+
+// Super arc (AS3: throwObject)
+export const SUPER_PHASE1_DURATION = 0.4
+export const SUPER_PHASE1_TARGET_X = 340
+export const SUPER_PHASE1_TARGET_Y = 365
+export const SUPER_ARC_PEAK_Y = 118 // 318 - 200
+export const SUPER_FINAL_SNAP_DURATION = 0.2
+
+// ── Cover animation (AS3: BallPanelMenton.openExtraCover/closeExtraCover) ──
+export const COVER_OPEN_DURATION = 1000 // 1s
+export const COVER_CLOSE_DURATION = 200 // 0.2s
+
+// ── Text overlay (AS3: BallPanelMenton.showText) ────────────────
+export const EXTRA_TEXT_COLOR = 0xfff000 // yellow
+export const EXTRA_TEXT_SIZE = 70
+export const SUPER_TEXT_COLOR = 0x00fcff // cyan
+export const SUPER_TEXT_SIZE = 74
+export const TEXT_FADE_IN = 300 // 0.3s
+export const TEXT_HOLD = 500 // 0.5s
+export const TEXT_FADE_OUT = 200 // 0.2s
