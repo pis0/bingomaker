@@ -171,7 +171,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const maxPriority = round?.maxPatternPriority ?? 0
   const launchInterval = TRIGGER_INTERVALS[Math.min(maxPriority, TRIGGER_INTERVALS.length - 1)]
 
-  // Detect new pattern completions → trigger chip fly + splash
+  // Detect new pattern completions → trigger chip fly
   // (runs on re-render after processNextBall advances engine state)
   if (round && !chipFlyPositions) {
     for (let ci = 0; ci < round.cards.length; ci++) {
@@ -180,29 +180,48 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
         const patterns = [...card.completedPatterns]
         const newPattern = patterns[patterns.length - 1]
         setChipFlyPositions(patternChipPositions(ci, newPattern))
-
-        // AS3: RoundMotion.checkSplashMovie — trigger MovieSplash for ≥ DOUBLE_LINE patterns
-        const group = newPattern.group
-        if (group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
-            group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3) {
-          const textMap: Record<string, string> = {
-            [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
-            [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
-            [PatternGroup.QUAD_COLUMN.name]: '4 COLUMNS',
-            [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
-          }
-          const ballNum = String(round.currentBallIndex > 0 ? round.draws[round.currentBallIndex - 1]?.ball ?? '' : '')
-          setSplashActive(true)
-          splashRef.current?.play(textMap[group.name] ?? group.name, ballNum, () => {
-            setSplashActive(false)
-          })
-        }
         break
       }
     }
     // Update tracking refs
     for (let ci = 0; ci < round.cards.length; ci++) {
       prevPatternsRef.current[ci] = round.cards[ci].completedPatterns.size
+    }
+  }
+
+  // Detect new splash-worthy patterns — separate from chipFly so it's not blocked
+  // AS3: RoundMotion.checkSplashMovie — triggers for DOUBLE_LINE, TRIPLE_COLUMN, QUAD_COLUMN, QUAD_COLUMN_3
+  const splashPatternsRef = useRef<number[]>([0, 0, 0, 0])
+  if (round && !splashActive) {
+    for (let ci = 0; ci < round.cards.length; ci++) {
+      const card = round.cards[ci]
+      if (card.completedPatterns.size > splashPatternsRef.current[ci]) {
+        // Check all NEW patterns since last check
+        const allPatterns = [...card.completedPatterns]
+        const newStart = splashPatternsRef.current[ci]
+        for (let pi = newStart; pi < allPatterns.length; pi++) {
+          const group = allPatterns[pi].group
+          if (group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
+              group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3) {
+            const textMap: Record<string, string> = {
+              [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
+              [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
+              [PatternGroup.QUAD_COLUMN.name]: '4 COLUMNS',
+              [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
+            }
+            const ballNum = String(round.currentBallIndex > 0 ? round.draws[round.currentBallIndex - 1]?.ball ?? '' : '')
+            setSplashActive(true)
+            splashRef.current?.play(textMap[group.name] ?? group.name, ballNum, () => {
+              setSplashActive(false)
+            })
+            break
+          }
+        }
+      }
+    }
+    // Update splash tracking
+    for (let ci = 0; ci < round.cards.length; ci++) {
+      splashPatternsRef.current[ci] = round.cards[ci].completedPatterns.size
     }
   }
 
