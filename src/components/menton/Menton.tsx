@@ -114,6 +114,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   // MovieSplash — prize celebration in BallPanel pipoqueira area
   const splashRef = useRef<MovieSplashHandle>(null)
   const [splashActive, setSplashActive] = useState(false)
+  const shownSplashPatternsRef = useRef<Set<string>>(new Set())
 
   // Round generation counter — drives key-based remount of ALL children
   const roundGenRef = useRef(0)
@@ -134,6 +135,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     if (bombPositions.length > 0) setBombPositions([])
     if (chipFlyPositions) setChipFlyPositions(null)
     prevPatternsRef.current = [0, 0, 0, 0]
+    shownSplashPatternsRef.current.clear()
   }
 
   useTick((ticker) => {
@@ -189,20 +191,22 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     }
   }
 
-  // Detect new splash-worthy patterns — separate from chipFly so it's not blocked
+  // Detect new splash-worthy patterns — checks every render, independent of chipFly
   // AS3: RoundMotion.checkSplashMovie — triggers for DOUBLE_LINE, TRIPLE_COLUMN, QUAD_COLUMN, QUAD_COLUMN_3
-  const splashPatternsRef = useRef<number[]>([0, 0, 0, 0])
+  // Uses prevPatternsRef (shared with chipFly) — only needs to find splash-worthy patterns among new ones
   if (round && !splashActive) {
+    outer:
     for (let ci = 0; ci < round.cards.length; ci++) {
       const card = round.cards[ci]
-      if (card.completedPatterns.size > splashPatternsRef.current[ci]) {
-        // Check all NEW patterns since last check
-        const allPatterns = [...card.completedPatterns]
-        const newStart = splashPatternsRef.current[ci]
-        for (let pi = newStart; pi < allPatterns.length; pi++) {
-          const group = allPatterns[pi].group
-          if (group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
-              group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3) {
+      const allPatterns = [...card.completedPatterns]
+      // Scan ALL completed patterns for any splash-worthy one we haven't shown yet
+      for (const pattern of allPatterns) {
+        const group = pattern.group
+        if (group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
+            group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3) {
+          // Check if we already showed this pattern (track by name)
+          if (!shownSplashPatternsRef.current.has(pattern.name)) {
+            shownSplashPatternsRef.current.add(pattern.name)
             const textMap: Record<string, string> = {
               [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
               [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
@@ -214,14 +218,10 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
             splashRef.current?.play(textMap[group.name] ?? group.name, ballNum, () => {
               setSplashActive(false)
             })
-            break
+            break outer
           }
         }
       }
-    }
-    // Update splash tracking
-    for (let ci = 0; ci < round.cards.length; ci++) {
-      splashPatternsRef.current[ci] = round.cards[ci].completedPatterns.size
     }
   }
 
