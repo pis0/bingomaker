@@ -10,19 +10,13 @@ extend({ AnimatedSprite, Container })
 let liqHFrames: Texture[] | null = null
 let liqColFrames: Texture[] | null = null
 
-// AS3 uses duplicate frames (pairs) for each animation step — replicate for timing
-function duplicateFrames(frames: Texture[]): Texture[] {
-  const out: Texture[] = []
-  for (const f of frames) out.push(f, f)
-  return out
-}
-
+// All 22 frames extracted from AS3 atlas (0001-0022) — no duplication needed
 function getLiqHFrames() {
-  if (!liqHFrames) liqHFrames = duplicateFrames(getTextures('liqu_horizontal'))
+  if (!liqHFrames) liqHFrames = getTextures('liqu_horizontal')
   return liqHFrames
 }
 function getLiqColFrames() {
-  if (!liqColFrames) liqColFrames = duplicateFrames(getTextures('liqu_col'))
+  if (!liqColFrames) liqColFrames = getTextures('liqu_col')
   return liqColFrames
 }
 
