@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useCallback } from 'react'
+import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { Graphics, Text, Sprite, Container } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { COLS, ROWS } from '../../engine/constants'
