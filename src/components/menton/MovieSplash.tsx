@@ -69,7 +69,6 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
   const reset = useCallback(() => {
     const ball = ballContainerRef.current
     const label = labelRef.current
-    const mask = maskRef.current
     if (ball) {
       ball.visible = false
       ball.x = -323
