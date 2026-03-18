@@ -19,13 +19,13 @@
  * Ball: bigball 138×138, scale 0.65, with number text (Iowan Black 75px)
  */
 import { useRef, useCallback, useImperativeHandle, forwardRef } from 'react'
-import { Container, Sprite, Text, TextStyle, Ticker, Graphics } from 'pixi.js'
+import { Container, Sprite, Text, TextStyle, Ticker } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 // TODO: integrate MovieBytesPlayer for juicesplash.bytes when needed
 // import { MovieBytesPlayer } from '../../animations/MovieBytesPlayer'
 
-extend({ Container, Sprite, Text, Graphics })
+extend({ Container, Sprite, Text })
 
 // AS3: label — Iowan Black 56px, dark brown, autoScale within 430×80
 const labelStyle = new TextStyle({
@@ -62,7 +62,7 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
   const ballContainerRef = useRef<Container>(null)
   const labelRef = useRef<Text>(null)
   const ballTextRef = useRef<Text>(null)
-  const maskRef = useRef<Graphics>(null)
+  // Label reveal: use scaleX on the label itself (0→1) instead of a separate mask Graphics
   const movieRef = useRef<{ play: () => void; stop: () => void } | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
 
@@ -82,9 +82,7 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
       label.alpha = 1
       label.x = -260
       label.scale.set(1)
-    }
-    if (mask) {
-      mask.scale.x = 0
+      label.scale.x = 0 // hidden via scaleX (mask reveal substitute)
     }
     movieRef.current?.stop()
   }, [])
@@ -96,18 +94,17 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
     const ball = ballContainerRef.current
     const label = labelRef.current
     const ballText = ballTextRef.current
-    const mask = maskRef.current
-    if (!ball || !label || !ballText || !mask) return
+    if (!ball || !label || !ballText) return
 
     // Setup
     reset()
     label.text = text
     // Auto-scale label if too wide
+    // Measure natural width at scale 1, then auto-scale if needed
     label.scale.set(1)
-    if (label.width > LABEL_MAX_W) {
-      const s = LABEL_MAX_W / label.width
-      label.scale.set(s)
-    }
+    const labelScale = label.width > LABEL_MAX_W ? LABEL_MAX_W / label.width : 1
+    label.scale.set(labelScale)
+    label.scale.x = 0 // start hidden, reveal via scaleX tween
     ballText.text = ballNumber
 
     const ticker = Ticker.shared
@@ -145,9 +142,9 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
       label.visible = true
       movieRef.current?.play()
 
-      // Mask reveal (0.1s delay, 0.2s duration)
+      // Label reveal via scaleX (0.1s delay, 0.2s duration)
       tween(0.3, 0.2, (t) => {
-        mask.scale.x = t
+        label.scale.x = labelScale * t
       })
 
       // Label drift (0.28s delay, 2s drift)
@@ -212,7 +209,7 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
       {/* Juice splash MovieBytes — plays behind the ball/text */}
       {/* TODO: integrate MovieBytesPlayer for juicesplash.bytes when manifest supports it */}
 
-      {/* Prize text label — masked with horizontal reveal */}
+      {/* Prize text label — revealed via scaleX 0→1 (AS3 used mask, we use scale) */}
       <pixiText
         ref={labelRef}
         text=""
@@ -220,12 +217,6 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
         x={-260}
         y={-45}
         visible={false}
-        mask={maskRef.current}
-      />
-      {/* Mask for label reveal — scaleX 0→1 */}
-      <pixiGraphics
-        ref={maskRef}
-        draw={(g) => { g.rect(-260, -45, 440, 80).fill(0xff00ff) }}
       />
 
       {/* Ball container — bigball + number text, centerPivots */}
