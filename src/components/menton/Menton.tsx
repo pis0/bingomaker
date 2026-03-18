@@ -191,20 +191,16 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     }
   }
 
-  // Detect new splash-worthy patterns — checks every render, independent of chipFly
+  // Detect new splash-worthy patterns — store in ref during render, fire in useEffect
   // AS3: RoundMotion.checkSplashMovie — triggers for DOUBLE_LINE, TRIPLE_COLUMN, QUAD_COLUMN, QUAD_COLUMN_3
-  // Uses prevPatternsRef (shared with chipFly) — only needs to find splash-worthy patterns among new ones
-  if (round && !splashActive) {
-    outer:
+  const pendingSplashRef = useRef<{ text: string; ballNum: string } | null>(null)
+  if (round && !splashActive && !pendingSplashRef.current) {
     for (let ci = 0; ci < round.cards.length; ci++) {
       const card = round.cards[ci]
-      const allPatterns = [...card.completedPatterns]
-      // Scan ALL completed patterns for any splash-worthy one we haven't shown yet
-      for (const pattern of allPatterns) {
+      for (const pattern of card.completedPatterns) {
         const group = pattern.group
         if (group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
             group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3) {
-          // Check if we already showed this pattern (track by name)
           if (!shownSplashPatternsRef.current.has(pattern.name)) {
             shownSplashPatternsRef.current.add(pattern.name)
             const textMap: Record<string, string> = {
@@ -214,16 +210,29 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
               [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
             }
             const ballNum = String(round.currentBallIndex > 0 ? round.draws[round.currentBallIndex - 1]?.ball ?? '' : '')
-            setSplashActive(true)
-            splashRef.current?.play(textMap[group.name] ?? group.name, ballNum, () => {
-              setSplashActive(false)
-            })
-            break outer
+            pendingSplashRef.current = { text: textMap[group.name] ?? group.name, ballNum }
+            break
           }
         }
       }
+      if (pendingSplashRef.current) break
     }
   }
+
+  // Fire pending splash in useEffect (side effects not allowed during render)
+  useEffect(() => {
+    const pending = pendingSplashRef.current
+    if (!pending) return
+    pendingSplashRef.current = null
+    setSplashActive(true)
+    if (splashRef.current) {
+      splashRef.current.play(pending.text, pending.ballNum, () => {
+        setSplashActive(false)
+      })
+    } else {
+      setSplashActive(false)
+    }
+  })
 
   // Detect when spinSymbols first appears → start bell ring animation
   const rawSpinSymbols = round?.slotBonus.symbols ?? null
