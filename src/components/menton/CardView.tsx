@@ -36,7 +36,7 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
 
   // Detect new completed patterns → trigger animation
   const currentPatterns = card.completedPatterns
-  // Detect next pattern to animate — recalculates when size changes OR when current anim completes (null)
+  // Detect next pattern to animate — recalculates when size changes OR when current anim completes
   const newPattern = useMemo(() => {
     for (const p of currentPatterns) {
       if (!animatedRef.current.has(p.name)) {
@@ -47,14 +47,24 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPatterns.size, activeAnim === null])
 
-  // Start animation — only when no animation is active (queue: one at a time, wait for completion)
+  // Start animation — only when no animation is active.
+  // IMPORTANT: do NOT mutate animatedRef during render (StrictMode double-render breaks it).
+  // Pattern is marked as animated in handleAnimComplete (visual) or useEffect (non-visual).
   if (newPattern && !activeAnim) {
     const configs = getPatternAnimConfigs(newPattern.name)
-    animatedRef.current.add(newPattern.name)
     if (configs.length > 0) {
       setActiveAnim({ pattern: newPattern, configs })
     }
   }
+
+  // Mark non-visual patterns as animated (in effect, not render — StrictMode safe)
+  useEffect(() => {
+    for (const p of currentPatterns) {
+      if (!animatedRef.current.has(p.name) && getPatternAnimConfigs(p.name).length === 0) {
+        animatedRef.current.add(p.name)
+      }
+    }
+  }, [currentPatterns.size])
 
   // Reset tracking when card clears
   if (currentPatterns.size === 0 && animatedRef.current.size > 0) {
@@ -62,9 +72,13 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
     if (activeAnim) setActiveAnim(null)
   }
 
+  // Mark visual pattern as animated AFTER completion (not during render)
   const handleAnimComplete = useCallback(() => {
+    if (activeAnim) {
+      animatedRef.current.add(activeAnim.pattern.name)
+    }
     setActiveAnim(null)
-  }, [])
+  }, [activeAnim])
 
   return (
     <pixiContainer>
