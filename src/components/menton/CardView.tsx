@@ -36,6 +36,7 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
 
   // Detect new completed patterns → trigger animation
   const currentPatterns = card.completedPatterns
+  // Detect next pattern to animate — recalculates when size changes OR when current anim completes (null)
   const newPattern = useMemo(() => {
     for (const p of currentPatterns) {
       if (!animatedRef.current.has(p.name)) {
@@ -44,10 +45,10 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
     }
     return null
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPatterns.size, activeAnim])
+  }, [currentPatterns.size, activeAnim === null])
 
-  // Start animation for new pattern
-  if (newPattern && (!activeAnim || activeAnim.pattern !== newPattern)) {
+  // Start animation — only when no animation is active (queue: one at a time, wait for completion)
+  if (newPattern && !activeAnim) {
     const configs = getPatternAnimConfigs(newPattern.name)
     animatedRef.current.add(newPattern.name)
     if (configs.length > 0) {
