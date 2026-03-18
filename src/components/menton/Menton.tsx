@@ -258,37 +258,50 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
       <Scenery />
       {round && (
         <pixiContainer key={roundGenRef.current} sortableChildren>
-          <BellPanel
-            bellsRevealed={bellsRevealed}
-            spinSymbols={releasedSpinSymbols}
-            blinking={slotBlinking}
-            onSpinComplete={handleSlotComplete}
-          />
-          <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
-          <Payout value={currentPayout} stake={stake} lastPayout={!drawing ? lastPayout : 0} collecting={isCollecting || !!chipFlyPositions} />
-          {/* AS3: BallPanel at index 4, CardPanel at index 6 — balls behind cards.
-              During super ball flight, BallPanel temporarily goes to top (zIndex toggle). */}
+          {/* Z-order matches AS3 Menton display list:
+              0: Scenery (outside this container)
+              1: PayoutTable
+              2: BellPanel
+              4: BallPanel (→ 100 during super ball flight)
+              6: CardPanel
+              9: Overlay animations (chips, bells, multiplier, fruit — always above cards) */}
+          <pixiContainer zIndex={2}>
+            <BellPanel
+              bellsRevealed={bellsRevealed}
+              spinSymbols={releasedSpinSymbols}
+              blinking={slotBlinking}
+              onSpinComplete={handleSlotComplete}
+            />
+          </pixiContainer>
+          <pixiContainer zIndex={1}>
+            <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
+            <Payout value={currentPayout} stake={stake} lastPayout={!drawing ? lastPayout : 0} collecting={isCollecting || !!chipFlyPositions} />
+          </pixiContainer>
           <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} peelAdvanceTick={peelAdvanceTick} onBallArrive={handleBallArrive} onPeelChange={onPeelChange} onSuperFlyingChange={setSuperFlying} zIndex={superFlying ? 100 : 4} />
-          <CardPanel
-            round={round}
-            stakeIndex={stakeIndex}
-            idlePattern={idlePattern}
-            shakeOffset={cardShake}
-            shouldBlink={isExtraPhase}
-          />
-          {/* Overlay animations (above cards, not clipped) */}
-          {chipFlyPositions && (
-            <ChipFlyAnimation chips={chipFlyPositions} onComplete={handleChipFlyComplete} />
-          )}
-          <BellFlyAnimation positions={bellPositions} />
-          <BellRingAnimation active={bellRingActive} onComplete={handleBellRingComplete} />
-          <MultiplierCollect active={multiplierActive} onComplete={handleMultiplierComplete} />
-          <FruitBombAnimation
-            active={fruitBombActive}
-            bombPositions={bombPositions}
-            onShake={handleFruitShake}
-            onComplete={handleFruitBombComplete}
-          />
+          <pixiContainer zIndex={6}>
+            <CardPanel
+              round={round}
+              stakeIndex={stakeIndex}
+              idlePattern={idlePattern}
+              shakeOffset={cardShake}
+              shouldBlink={isExtraPhase}
+            />
+          </pixiContainer>
+          {/* Overlay animations — z=9, always above cards (AS3: ParticlesLayer level) */}
+          <pixiContainer zIndex={9}>
+            {chipFlyPositions && (
+              <ChipFlyAnimation chips={chipFlyPositions} onComplete={handleChipFlyComplete} />
+            )}
+            <BellFlyAnimation positions={bellPositions} />
+            <BellRingAnimation active={bellRingActive} onComplete={handleBellRingComplete} />
+            <MultiplierCollect active={multiplierActive} onComplete={handleMultiplierComplete} />
+            <FruitBombAnimation
+              active={fruitBombActive}
+              bombPositions={bombPositions}
+              onShake={handleFruitShake}
+              onComplete={handleFruitBombComplete}
+            />
+          </pixiContainer>
         </pixiContainer>
       )}
     </pixiContainer>
