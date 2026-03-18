@@ -3020,9 +3020,49 @@
         "h": 56
       }
     },
-    "ball": {
+    "ficha78_sk": {
       "frame": {
         "x": 176,
+        "y": 1888,
+        "w": 50,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 50,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 50,
+        "h": 49
+      }
+    },
+    "dindin77_sk": {
+      "frame": {
+        "x": 228,
+        "y": 1888,
+        "w": 48,
+        "h": 29
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 29
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 29
+      }
+    },
+    "ball": {
+      "frame": {
+        "x": 278,
         "y": 1888,
         "w": 45,
         "h": 44
@@ -3042,7 +3082,7 @@
     },
     "extragratis": {
       "frame": {
-        "x": 223,
+        "x": 325,
         "y": 1888,
         "w": 40,
         "h": 42
@@ -3062,7 +3102,7 @@
     },
     "cardbell4": {
       "frame": {
-        "x": 265,
+        "x": 367,
         "y": 1888,
         "w": 32,
         "h": 35
@@ -3082,7 +3122,7 @@
     },
     "smallball": {
       "frame": {
-        "x": 299,
+        "x": 401,
         "y": 1888,
         "w": 23,
         "h": 22
@@ -3102,7 +3142,7 @@
     },
     "cardbell2": {
       "frame": {
-        "x": 324,
+        "x": 426,
         "y": 1888,
         "w": 19,
         "h": 19
@@ -3122,7 +3162,7 @@
     },
     "prizedot1": {
       "frame": {
-        "x": 345,
+        "x": 447,
         "y": 1888,
         "w": 9,
         "h": 9
@@ -3138,126 +3178,6 @@
       "sourceSize": {
         "w": 9,
         "h": 9
-      }
-    },
-    "ficha78_sk": {
-      "frame": {
-        "x": 0,
-        "y": 1946,
-        "w": 50,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 50,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 50,
-        "h": 49
-      }
-    },
-    "liqu_horizontal0015": {
-      "frame": {
-        "x": 0,
-        "y": 1996,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_horizontal0019": {
-      "frame": {
-        "x": 313,
-        "y": 1996,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_horizontal0021": {
-      "frame": {
-        "x": 626,
-        "y": 1996,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_col0009": {
-      "frame": {
-        "x": 1651,
-        "y": 1592,
-        "w": 58,
-        "h": 130
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 58,
-        "h": 130
-      },
-      "sourceSize": {
-        "w": 58,
-        "h": 130
-      }
-    },
-    "liqu_col0013": {
-      "frame": {
-        "x": 1709,
-        "y": 1592,
-        "w": 58,
-        "h": 130
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 58,
-        "h": 130
-      },
-      "sourceSize": {
-        "w": 58,
-        "h": 130
       }
     }
   },

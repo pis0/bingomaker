@@ -5,8 +5,10 @@ import { tex } from '../../assets/atlas'
 import {
   BALL_FONT, BALL_TEXT_COLOR, BALL_NORMAL_SIZE, BALL_EXTRA_SIZE,
   EXTRA_CHUTE_X, EXTRA_CHUTE_Y,
+  EXTRA_WAYPOINT_X, EXTRA_WAYPOINT_Y,
   EXTRA_SPEED_PHASE1, EXTRA_SPEED_PHASE2,
   EXTRA_BALL_SCALE, EXTRA_LAND_DURATION, EXTRA_LAND_SCALE_DURATION,
+  SUPER_TARGET_X, SUPER_TARGET_Y,
   SUPER_PHASE1_DURATION, SUPER_PHASE1_TARGET_X, SUPER_PHASE1_TARGET_Y,
   SUPER_ARC_PEAK_Y, SUPER_FINAL_SNAP_DURATION,
   SUPER_STACK_X, SUPER_STACK_BASE_Y, SUPER_STACK_BALL_HEIGHT,
@@ -69,6 +71,8 @@ interface Props {
   /** Increments when another extra ball lands — triggers micro-shake on settled balls */
   shakeTick?: number
   onArrive?: () => void
+  /** Fires when the full animation completes (all phases done, ball settled) */
+  onSettled?: () => void
 }
 
 /**
@@ -78,10 +82,12 @@ interface Props {
  * Extra:   chute (130,-70) → waypoint → grid position (easeOutBack + spin)
  * Super:   chute → phase1 (340,365) → arc → stack position → snap
  */
-export default function AnimatedBall({ number, finalX, finalY, type, index, superPos = 0, shakeTick = 0, onArrive }: Props) {
+export default function AnimatedBall({ number, finalX, finalY, type, index, superPos = 0, shakeTick = 0, onArrive, onSettled }: Props) {
   const containerRef = useRef<Container>(null)
   const onArriveRef = useRef(onArrive)
   onArriveRef.current = onArrive
+  const onSettledRef = useRef(onSettled)
+  onSettledRef.current = onSettled
   const settledRef = useRef(false)
 
   useEffect(() => {
@@ -94,7 +100,7 @@ export default function AnimatedBall({ number, finalX, finalY, type, index, supe
     } else if (type === 'extra') {
       return animateExtra(container, finalX, finalY, onArriveRef, settledRef)
     } else {
-      return animateSuper(container, superPos, onArriveRef)
+      return animateSuper(container, superPos, onArriveRef, onSettledRef)
     }
   }, [finalX, finalY, index, type, superPos])
 
@@ -312,93 +318,123 @@ function animateExtra(
 }
 
 // ── Super extra ball animation ────────────────────────────────────
-// AS3: BallPath → Ball.fitToLastSuperPosition (3-phase arc)
+// AS3: BallPath (chute→waypoint→730,0) → Ball.fitToLastSuperPosition (swoop→arc→snap)
+//
+// Phase 0: BallPath seg0 — chute (130,-70) → waypoint (135,-70), ~67ms
+// Phase 1: BallPath seg1 — waypoint → far right (730,0), ~104ms → onArrive
+// Phase 2: Swoop back — (730,0) → (340,365), 0.4s, linear X + easeInSine Y
+// Phase 3: Arc — (340,365) → near-final via parabolic, 0.5s
+// Phase 4: Snap — near-final → final, 0.2s, easeOutBounce
 
 function animateSuper(
   container: Container,
   pos: number,
   onArriveRef: React.RefObject<((()=> void) | undefined) | null>,
+  onSettledRef: React.RefObject<((()=> void) | undefined) | null>,
 ) {
   const finalX = SUPER_STACK_X
   const finalY = SUPER_STACK_BASE_Y - SUPER_STACK_BALL_HEIGHT * pos
 
-  let phase = 0 // 0=move-to-340,365  1=arc  2=snap
+  let phase = 0
   let elapsed = 0
-  const startX = EXTRA_CHUTE_X
-  const startY = EXTRA_CHUTE_Y
 
-  container.x = startX
-  container.y = startY
-  container.rotation = 0
-  container.scale.set(EXTRA_BALL_SCALE)
+  // BallPath segment durations — AS3 uses EXTRA speeds for super balls too
+  const seg0Duration = 1 / (EXTRA_SPEED_PHASE1 * 60) // ~0.067s (4 frames)
+  const seg1Duration = 1 / (EXTRA_SPEED_PHASE2 * 60) // ~0.104s (6.25 frames)
 
-  // Phase 1 targets
-  const p1x = SUPER_PHASE1_TARGET_X
-  const p1y = SUPER_PHASE1_TARGET_Y
+  // Waypoints
+  const wp0x = EXTRA_CHUTE_X, wp0y = EXTRA_CHUTE_Y           // 130, -70
+  const wp1x = EXTRA_WAYPOINT_X, wp1y = EXTRA_WAYPOINT_Y     // 135, -70
+  const wp2x = SUPER_TARGET_X, wp2y = SUPER_TARGET_Y         // 730, 0
+  const swoopX = SUPER_PHASE1_TARGET_X                        // 340
+  const swoopY = SUPER_PHASE1_TARGET_Y                        // 365
 
-  // Arc phase state
-  let arcElapsed = 0
+  // Arc parameters
   const arcDuration = SUPER_PHASE1_DURATION + 0.1 // 0.5s
   const riseRatio = 0.5 + 0.1 * pos
   const fallRatio = 0.5 - 0.1 * pos
+  const nearFinalX = finalX - 4
+  const nearFinalY = finalY - 10
 
-  // Snap phase state
-  let snapElapsed = 0
+  container.x = wp0x
+  container.y = wp0y
+  container.rotation = 0
+  container.scale.set(EXTRA_BALL_SCALE) // 1.3
 
   const ticker = Ticker.shared
   const onTick = () => {
     const dt = ticker.deltaMS / 1000
 
     if (phase === 0) {
-      // Phase 1: fly to (340, 365) with rotation
+      // BallPath seg0: chute → waypoint (barely moves, one full CW rotation)
       elapsed += dt
-      const t = Math.min(1, elapsed / SUPER_PHASE1_DURATION)
-      container.x = startX + (p1x - startX) * t
-      container.y = startY + (p1y - startY) * easeInSine(t)
-      container.rotation = -(Math.PI * 2) * t
+      const t = Math.min(1, elapsed / seg0Duration)
+      container.x = wp0x + (wp1x - wp0x) * t
+      container.y = wp0y + (wp1y - wp0y) * t
+      container.rotation = Math.PI * 2 * t
       if (t >= 1) {
         phase = 1
-        arcElapsed = 0
-        onArriveRef.current?.()
+        elapsed = 0
       }
     } else if (phase === 1) {
-      // Phase 2: arc trajectory — rise then fall
-      arcElapsed += dt
-      const t = Math.min(1, arcElapsed / arcDuration)
-      // Horizontal: linear from p1x to finalX-4
-      container.x = p1x + ((finalX - 4) - p1x) * t
-      // Vertical: parabolic arc
-      if (t < riseRatio) {
-        // Rise
-        const tUp = t / riseRatio
-        container.y = p1y + (SUPER_ARC_PEAK_Y - p1y) * easeOutSine(tUp)
-      } else {
-        // Fall
-        const tDown = (t - riseRatio) / fallRatio
-        container.y = SUPER_ARC_PEAK_Y + ((finalY - 10) - SUPER_ARC_PEAK_Y) * easeInSine(tDown)
-      }
-      // Rotation: full spin during arc
-      container.rotation = -(Math.PI * 2) * t
-      // Scale down during arc
-      const sT = Math.min(1, t * 2)
-      container.scale.set(EXTRA_BALL_SCALE + (1 - EXTRA_BALL_SCALE) * sT)
+      // BallPath seg1: waypoint → far right (730, 0) — one full CW rotation
+      elapsed += dt
+      const t = Math.min(1, elapsed / seg1Duration)
+      container.x = wp1x + (wp2x - wp1x) * t
+      container.y = wp1y + (wp2y - wp1y) * t
+      container.rotation = Math.PI * 2 * t
       if (t >= 1) {
+        // AS3: rotation = 0, scale = 1 at start of fitToLastSuperPosition
+        container.rotation = 0
+        container.scale.set(1)
         phase = 2
-        snapElapsed = 0
+        elapsed = 0
+        onArriveRef.current?.()
+      }
+    } else if (phase === 2) {
+      // Swoop: (730, 0) → (340, 365), 0.4s — AS3 fitToLastSuperPosition phase 1
+      elapsed += dt
+      const t = Math.min(1, elapsed / SUPER_PHASE1_DURATION)
+      container.x = wp2x + (swoopX - wp2x) * t  // linear
+      container.y = wp2y + (swoopY - wp2y) * easeInSine(t)
+      container.rotation = -(Math.PI * 2) * t    // full CCW spin
+      if (t >= 1) {
+        phase = 3
+        elapsed = 0
+      }
+    } else if (phase === 3) {
+      // Arc: (340, 365) → near-final via parabolic trajectory — AS3 throwObject
+      elapsed += dt
+      const t = Math.min(1, elapsed / arcDuration)
+      // X: linear from swoopX to nearFinalX
+      container.x = swoopX + (nearFinalX - swoopX) * t
+      // Y: parabolic — rise then fall
+      if (t < riseRatio) {
+        const tUp = t / riseRatio
+        container.y = swoopY + (SUPER_ARC_PEAK_Y - swoopY) * easeOutSine(tUp)
+      } else {
+        const tDown = (t - riseRatio) / fallRatio
+        container.y = SUPER_ARC_PEAK_Y + (nearFinalY - SUPER_ARC_PEAK_Y) * easeInSine(tDown)
+      }
+      // Rotation: full CCW spin during arc
+      container.rotation = -(Math.PI * 2) * t
+      if (t >= 1) {
+        phase = 4
+        elapsed = 0
       }
     } else {
-      // Phase 3: final snap to exact position (easeOutBounce)
-      snapElapsed += dt
-      const t = Math.min(1, snapElapsed / SUPER_FINAL_SNAP_DURATION)
+      // Snap: near-final → final, 0.2s, easeOutBounce — AS3 final settle
+      elapsed += dt
+      const t = Math.min(1, elapsed / SUPER_FINAL_SNAP_DURATION)
       const e = easeOutBounce(t)
-      container.x = (finalX - 4) + ((finalX) - (finalX - 4)) * e
-      container.y = (finalY - 10) + ((finalY) - (finalY - 10)) * e
+      container.x = nearFinalX + (finalX - nearFinalX) * e
+      container.y = nearFinalY + (finalY - nearFinalY) * e
       container.rotation = 0
-      container.scale.set(1)
       if (t >= 1) {
         container.x = finalX
         container.y = finalY
         ticker.remove(onTick)
+        onSettledRef.current?.()
       }
     }
   }

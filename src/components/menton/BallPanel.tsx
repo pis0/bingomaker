@@ -145,6 +145,10 @@ interface Props {
   onBallArrive?: () => void
   /** Reports when peel animation starts/ends (for halt-for-user) */
   onPeelChange?: (peeling: boolean) => void
+  /** Reports when super balls are in flight (for z-order toggle — AS3: addChild/addChildAt) */
+  onSuperFlyingChange?: (flying: boolean) => void
+  /** zIndex passed to the root container (for sortableChildren in parent) */
+  zIndex?: number
 }
 
 /**
@@ -162,7 +166,7 @@ interface Props {
  * 9. Extra front container (pipoqueira): fundo, lemon, tampa, large ball, cover
  * 10. Text overlay ("EXTRA" / "SUPER")
  */
-export default function BallPanel({ round, targetBallCount, stake = 1, launchInterval = DEFAULT_INTERVAL, paused = false, peelAdvanceTick = 0, onBallArrive, onPeelChange }: Props) {
+export default function BallPanel({ round, targetBallCount, stake = 1, launchInterval = DEFAULT_INTERVAL, paused = false, peelAdvanceTick = 0, onBallArrive, onPeelChange, onSuperFlyingChange, zIndex }: Props) {
   const isIdle = !round || targetBallCount === 0
 
   // ── Animation queue ──────────────────────────────────────────────
@@ -173,6 +177,19 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
   const queueRef = useRef<number[]>([])
   const roundRef = useRef(round)
   roundRef.current = round
+
+  // ── Super ball z-order toggle (AS3: addChild/addChildAt during fitToLastSuperPosition) ──
+  const superSettledCountRef = useRef(0)
+  const superLaunchedCountRef = useRef(0)
+  const onSuperFlyingChangeRef = useRef(onSuperFlyingChange)
+  onSuperFlyingChangeRef.current = onSuperFlyingChange
+
+  const handleSuperSettled = useCallback(() => {
+    superSettledCountRef.current++
+    if (superSettledCountRef.current >= superLaunchedCountRef.current) {
+      onSuperFlyingChangeRef.current?.(false)
+    }
+  }, [])
 
   // ── Peel animation state (extra/super ball launch buildup) ─────
   const peelRef = useRef({
@@ -353,6 +370,12 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
   const nextExtraPrice = round?.extraPriceAt(nextDrawIndex, stake) ?? 0
   const hasLaunchedExtras = launchedIndices.some(i => i >= DEFAULT_BALLS)
   const hasLaunchedSupers = launchedIndices.some(i => i >= MAX_EXTRA_INDEX)
+  // Detect newly launched super balls → signal "flying" to parent for z-order toggle
+  const superCount = launchedIndices.filter(i => i >= MAX_EXTRA_INDEX).length
+  if (superCount > superLaunchedCountRef.current) {
+    superLaunchedCountRef.current = superCount
+    onSuperFlyingChangeRef.current?.(true)
+  }
   // "In extra mode" = extras available OR already launched some
   const inExtraMode = extraReady || hasLaunchedExtras
   // "In super mode" = super available OR already launched some
@@ -635,7 +658,7 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
   const extraBgTexture = inExtraMode ? 'bgextraball_full' : 'bgextraball'
 
   return (
-    <pixiContainer x={BALL_PANEL_X} y={BALL_PANEL_Y}>
+    <pixiContainer x={BALL_PANEL_X} y={BALL_PANEL_Y} zIndex={zIndex}>
       {/* 1+2. Extra back container — bg (MeshPlane for 3D beat) + slots grid */}
       <pixiContainer ref={extraGridRef} x={BG_EXTRA_X} y={EXTRA_FRONT_Y}>
         <pixiContainer ref={useCallback((c: Container | null) => {
@@ -715,6 +738,7 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
               type="super"
               index={i}
               superPos={superPos}
+              onSettled={handleSuperSettled}
             />
           )
         }
@@ -773,13 +797,13 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
             Icon at upper half (~58), text at lower half (~82). */}
         {inExtraMode && (
           <>
-            {/* Icon: star (free) or ficha (coins) — same size, centered */}
+            {/* Icon: star (free), ficha (coins), or dindin (cash/super) — AS3: mutually exclusive */}
             <pixiSprite
-              texture={tex(nextExtraStake === 'free' ? 'extragratis' : 'ficha78_sk')}
+              texture={tex(nextExtraStake === 'free' ? 'extragratis' : nextExtraStake === 'cash' ? 'dindin77_sk' : 'ficha78_sk')}
               anchor={0.5}
               x={83}
               y={55}
-              scale={0.6}
+              scale={nextExtraStake === 'cash' ? 0.75 : 0.6}
             />
             {/* Text: "FREE" or price value — auto-scales to fit circle (max 76px) */}
             <pixiText

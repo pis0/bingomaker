@@ -86,6 +86,9 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const [releasedSpinSymbols, setReleasedSpinSymbols] = useState<SlotSymbol[] | null>(null)
   const prevSpinSymbolsRef = useRef<SlotSymbol[] | null>(null)
 
+  // Super ball z-order toggle (AS3: BallPanel goes to front during super ball flight)
+  const [superFlying, setSuperFlying] = useState(false)
+
   // Slot bonus animation states
   const [slotBlinking, setSlotBlinking] = useState(false)
   const [multiplierActive, setMultiplierActive] = useState(false)
@@ -117,6 +120,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     if (multiplierActive) setMultiplierActive(false)
     if (fruitBombActive) setFruitBombActive(false)
     if (bellRingActive) setBellRingActive(false)
+    if (superFlying) setSuperFlying(false)
     if (releasedSpinSymbols) setReleasedSpinSymbols(null)
     prevSpinSymbolsRef.current = null
     fruitBombRef.current = null
@@ -253,8 +257,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     <pixiContainer>
       <Scenery />
       {round && (
-        <pixiContainer key={roundGenRef.current}>
-          <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} peelAdvanceTick={peelAdvanceTick} onBallArrive={handleBallArrive} onPeelChange={onPeelChange} />
+        <pixiContainer key={roundGenRef.current} sortableChildren>
           <BellPanel
             bellsRevealed={bellsRevealed}
             spinSymbols={releasedSpinSymbols}
@@ -263,6 +266,9 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
           />
           <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
           <Payout value={currentPayout} stake={stake} lastPayout={!drawing ? lastPayout : 0} collecting={isCollecting || !!chipFlyPositions} />
+          {/* AS3: BallPanel at index 4, CardPanel at index 6 — balls behind cards.
+              During super ball flight, BallPanel temporarily goes to top (zIndex toggle). */}
+          <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} peelAdvanceTick={peelAdvanceTick} onBallArrive={handleBallArrive} onPeelChange={onPeelChange} onSuperFlyingChange={setSuperFlying} zIndex={superFlying ? 100 : 4} />
           <CardPanel
             round={round}
             stakeIndex={stakeIndex}
