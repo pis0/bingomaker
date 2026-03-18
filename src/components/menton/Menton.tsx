@@ -175,40 +175,37 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const maxPriority = round?.maxPatternPriority ?? 0
   const launchInterval = TRIGGER_INTERVALS[Math.min(maxPriority, TRIGGER_INTERVALS.length - 1)]
 
-  // ── Consume pattern event queue ──────────────────────────────
+  // ── Consume pattern event queue — one chipFly at a time ─────
   // Processes new patterns from Draw.newPatterns (enqueued by handleBallArrive).
-  // Triggers: chipFly, PatternMovie (via CardView), and MovieSplash.
-  // No polling of mutable Sets — purely event-driven.
+  // ChipFly plays sequentially: dequeues one, when it completes, dequeues next.
+  // Splash fires for the first splash-worthy pattern found.
   useEffect(() => {
     const queue = patternQueueRef.current
-    if (queue.length === 0) return
+    if (queue.length === 0 || chipFlyPositions) return // wait for current chipFly to finish
 
-    // Process all queued patterns
-    const events = queue.splice(0) // drain
+    // Dequeue first item
+    const item = queue.shift()!
+    const { cardIndex, pattern, ballNum } = item
 
-    for (const { cardIndex, pattern, ballNum } of events) {
-      // 1. ChipFly — one per pattern (queued, plays sequentially via chipFlyPositions gate)
-      if (!chipFlyPositions) {
-        setChipFlyPositions(patternChipPositions(cardIndex, pattern))
+    // ChipFly
+    setChipFlyPositions(patternChipPositions(cardIndex, pattern))
+
+    // Splash — for high-priority pattern groups
+    const group = pattern.group
+    if (!splashActive && (
+      group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
+      group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3
+    )) {
+      const textMap: Record<string, string> = {
+        [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
+        [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
+        [PatternGroup.QUAD_COLUMN.name]: '4 COLUMNS',
+        [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
       }
-
-      // 2. Splash — for high-priority pattern groups
-      const group = pattern.group
-      if (!splashActive && (
-        group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
-        group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3
-      )) {
-        const textMap: Record<string, string> = {
-          [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
-          [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
-          [PatternGroup.QUAD_COLUMN.name]: '4 COLUMNS',
-          [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
-        }
-        setSplashActive(true)
-        splashRef.current?.play(textMap[group.name] ?? group.name, String(ballNum), () => {
-          setSplashActive(false)
-        })
-      }
+      setSplashActive(true)
+      splashRef.current?.play(textMap[group.name] ?? group.name, String(ballNum), () => {
+        setSplashActive(false)
+      })
     }
   })
 
