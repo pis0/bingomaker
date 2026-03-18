@@ -12,6 +12,7 @@ import MultiplierCollect from './MultiplierCollect'
 import FruitBombAnimation from './FruitBombAnimation'
 import ChipFlyAnimation, { type ChipPosition } from './ChipFlyAnimation'
 import Payout from './Payout'
+import JackpotPanel from './JackpotPanel'
 import type { Round } from '../../engine/Round'
 import type { Draw } from '../../engine/Draw'
 import type { Pattern } from '../../engine/Pattern'
@@ -262,6 +263,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
               0: Scenery (outside this container)
               1: PayoutTable
               2: BellPanel
+              3: JackpotPanel
               4: BallPanel (→ 100 during super ball flight)
               6: CardPanel
               9: Overlay animations (chips, bells, multiplier, fruit — always above cards) */}
@@ -272,6 +274,9 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
               blinking={slotBlinking}
               onSpinComplete={handleSlotComplete}
             />
+          </pixiContainer>
+          <pixiContainer zIndex={3}>
+            <JackpotPanel />
           </pixiContainer>
           <pixiContainer zIndex={1}>
             <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
