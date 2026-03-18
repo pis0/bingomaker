@@ -36,49 +36,35 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
 
   // Detect new completed patterns → trigger animation
   const currentPatterns = card.completedPatterns
-  // Detect next pattern to animate — recalculates when size changes OR when current anim completes
-  const newPattern = useMemo(() => {
-    for (const p of currentPatterns) {
-      if (!animatedRef.current.has(p.name)) {
-        return p
-      }
-    }
-    return null
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPatterns.size, activeAnim === null])
-
-  // Start animation — only when no animation is active.
-  // IMPORTANT: do NOT mutate animatedRef during render (StrictMode double-render breaks it).
-  // Pattern is marked as animated in handleAnimComplete (visual) or useEffect (non-visual).
-  if (newPattern && !activeAnim) {
-    const configs = getPatternAnimConfigs(newPattern.name)
-    if (configs.length > 0) {
-      setActiveAnim({ pattern: newPattern, configs })
-    }
-  }
-
-  // Mark non-visual patterns as animated (in effect, not render — StrictMode safe)
+  // Process pattern animations — useEffect runs after every render.
+  // Finds next unanimated pattern, starts it if nothing is playing.
+  // No useMemo, no render-phase state updates — simple and StrictMode safe.
   useEffect(() => {
+    if (activeAnim) return // wait for current to finish
+
     for (const p of currentPatterns) {
-      if (!animatedRef.current.has(p.name) && getPatternAnimConfigs(p.name).length === 0) {
-        animatedRef.current.add(p.name)
+      if (animatedRef.current.has(p.name)) continue
+      animatedRef.current.add(p.name)
+      const configs = getPatternAnimConfigs(p.name)
+      if (configs.length > 0) {
+        setActiveAnim({ pattern: p, configs })
+        return // one at a time
       }
+      // no configs = non-visual, already marked, continue to next
+    }
+  })
+
+  // Reset tracking when card clears
+  useEffect(() => {
+    if (currentPatterns.size === 0 && animatedRef.current.size > 0) {
+      animatedRef.current.clear()
+      setActiveAnim(null)
     }
   }, [currentPatterns.size])
 
-  // Reset tracking when card clears
-  if (currentPatterns.size === 0 && animatedRef.current.size > 0) {
-    animatedRef.current.clear()
-    if (activeAnim) setActiveAnim(null)
-  }
-
-  // Mark visual pattern as animated AFTER completion (not during render)
   const handleAnimComplete = useCallback(() => {
-    if (activeAnim) {
-      animatedRef.current.add(activeAnim.pattern.name)
-    }
     setActiveAnim(null)
-  }, [activeAnim])
+  }, [])
 
   return (
     <pixiContainer>
