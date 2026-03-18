@@ -109,6 +109,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
 
   // Chip fly animation — fichas voam do pattern até o Payout
   const [chipFlyPositions, setChipFlyPositions] = useState<ChipPosition[] | null>(null)
+  const chipFlyDelayRef = useRef(300) // ms — bump duration before fly, synced with PatternMovie
 
   // MovieSplash — prize celebration in BallPanel pipoqueira area
   const splashRef = useRef<MovieSplashHandle>(null)
@@ -187,11 +188,14 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     const item = queue.shift()!
     const { cardIndex, pattern, ballNum } = item
 
-    // ChipFly
-    setChipFlyPositions(patternChipPositions(cardIndex, pattern))
-
-    // Splash — for high-priority pattern groups
+    // ChipFly — delay synced with PatternMovie timing
+    // PatternMovie: liquid ~900ms + hold (bigPrize: 1750ms, normal: 500ms)
+    // Chips bump during liquid+hold, fly when fadeOut starts
     const group = pattern.group
+    const isBigPrize = group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
+      group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3
+    chipFlyDelayRef.current = isBigPrize ? 2650 : 1400 // liquid(900) + hold(1750/500)
+    setChipFlyPositions(patternChipPositions(cardIndex, pattern))
     if (!splashActive && (
       group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
       group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3
@@ -330,7 +334,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
           {/* Overlay animations — z=9, always above cards (AS3: ParticlesLayer level) */}
           <pixiContainer zIndex={9}>
             {chipFlyPositions && (
-              <ChipFlyAnimation chips={chipFlyPositions} onComplete={handleChipFlyComplete} />
+              <ChipFlyAnimation chips={chipFlyPositions} onComplete={handleChipFlyComplete} flyDelay={chipFlyDelayRef.current} />
             )}
             <BellFlyAnimation positions={bellPositions} />
             <BellRingAnimation active={bellRingActive} onComplete={handleBellRingComplete} />

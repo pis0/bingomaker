@@ -26,8 +26,8 @@ const SHAKE_PERIOD = 200
 const FLY_DURATION = 700
 const FLY_STAGGER = 80
 
-// Delay before flight starts (shake-only phase)
-const SHAKE_DELAY = 300
+// Default delay before flight starts (shake/bump phase)
+const DEFAULT_FLY_DELAY = 300
 
 // Delay after last chip arrives before calling onComplete
 const END_DELAY = 100
@@ -40,6 +40,8 @@ export interface ChipPosition {
 interface Props {
   chips: ChipPosition[]
   onComplete: () => void
+  /** How long chips bump in place before flying (ms). Sync with PatternMovie timing. */
+  flyDelay?: number
 }
 
 interface ChipState {
@@ -51,7 +53,7 @@ interface ChipState {
   flyStartTime: number
 }
 
-export default function ChipFlyAnimation({ chips, onComplete }: Props) {
+export default function ChipFlyAnimation({ chips, onComplete, flyDelay = DEFAULT_FLY_DELAY }: Props) {
   const stateRef = useRef<ChipState[] | null>(null)
   const timerRef = useRef(0)
   const doneRef = useRef(false)
@@ -70,7 +72,7 @@ export default function ChipFlyAnimation({ chips, onComplete }: Props) {
       x: pos.x,
       y: pos.y,
       visible: true,
-      flyStartTime: SHAKE_DELAY + (totalChips - 1 - i) * FLY_STAGGER,
+      flyStartTime: flyDelay + (totalChips - 1 - i) * FLY_STAGGER,
     }))
   }
 
