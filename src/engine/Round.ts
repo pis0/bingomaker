@@ -134,11 +134,12 @@ export class Round {
         cardMatches: null,
         additionalPayout: 0,
         bellHit,
+        newPatterns: [],
       };
     }
 
     const position = card.setMatch(ball);
-    const additionalPayout = checkForPatterns(card, stake);
+    const { additionalPayout, newPatterns } = checkForPatterns(card, stake);
     const cardMatches = card.produceCardMatches();
     card.clearLastMatch();
 
@@ -155,6 +156,7 @@ export class Round {
       cardMatches,
       additionalPayout,
       bellHit,
+      newPatterns,
     };
   }
 

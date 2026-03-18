@@ -1,13 +1,19 @@
-import { SORTED_PATTERNS } from './Pattern';
+import { SORTED_PATTERNS, type Pattern } from './Pattern';
 import type { Card } from './Card';
+
+export interface PatternCheckResult {
+  additionalPayout: number;
+  newPatterns: Pattern[];
+}
 
 /**
  * Check all patterns against a card's current match state.
  * Marks complete patterns and missing-one expectations.
- * Returns additional payout from newly completed patterns.
+ * Returns additional payout and list of newly completed patterns.
  */
-export function checkForPatterns(card: Card, stake: number): number {
+export function checkForPatterns(card: Card, stake: number): PatternCheckResult {
   let additionalPayout = 0;
+  const newPatterns: Pattern[] = [];
 
   // Reset marking flags
   for (const pattern of SORTED_PATTERNS) {
@@ -31,6 +37,7 @@ export function checkForPatterns(card: Card, stake: number): number {
       // Pattern complete!
       const payout = card.setPattern(pattern, stake);
       additionalPayout += payout;
+      newPatterns.push(pattern);
       pattern.marked = true;
       // Mark all children as processed
       markChildren(pattern);
@@ -40,7 +47,7 @@ export function checkForPatterns(card: Card, stake: number): number {
     }
   }
 
-  return additionalPayout;
+  return { additionalPayout, newPatterns };
 }
 
 function markChildren(pattern: { children: { marked: boolean; children: typeof pattern.children }[] }): void {

@@ -1,4 +1,5 @@
 import type { CardMatches } from './CardMatches';
+import type { Pattern } from './Pattern';
 
 export interface Draw {
   /** Ball index in the sequence (0-based) */
@@ -15,4 +16,6 @@ export interface Draw {
   additionalPayout: number;
   /** Whether this draw hit a bell position */
   bellHit: boolean;
+  /** Patterns newly completed by this draw (empty if none) */
+  newPatterns: Pattern[];
 }

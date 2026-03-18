@@ -109,12 +109,15 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
 
   // Chip fly animation — fichas voam do pattern até o Payout
   const [chipFlyPositions, setChipFlyPositions] = useState<ChipPosition[] | null>(null)
-  const prevPatternsRef = useRef<number[]>([0, 0, 0, 0])
 
   // MovieSplash — prize celebration in BallPanel pipoqueira area
   const splashRef = useRef<MovieSplashHandle>(null)
   const [splashActive, setSplashActive] = useState(false)
-  const shownSplashPatternsRef = useRef<Set<string>>(new Set())
+
+  // ── Pattern event queue ──────────────────────────────────────
+  // Fed by handleBallArrive (from Draw.newPatterns), consumed by useEffect.
+  // Replaces fragile polling of mutable Sets during render.
+  const patternQueueRef = useRef<{ cardIndex: number; pattern: Pattern; ballNum: number }[]>([])
 
   // Round generation counter — drives key-based remount of ALL children
   const roundGenRef = useRef(0)
@@ -134,8 +137,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     fruitBombRef.current = null
     if (bombPositions.length > 0) setBombPositions([])
     if (chipFlyPositions) setChipFlyPositions(null)
-    prevPatternsRef.current = [0, 0, 0, 0]
-    shownSplashPatternsRef.current.clear()
+    patternQueueRef.current.length = 0
   }
 
   useTick((ticker) => {
@@ -173,64 +175,40 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const maxPriority = round?.maxPatternPriority ?? 0
   const launchInterval = TRIGGER_INTERVALS[Math.min(maxPriority, TRIGGER_INTERVALS.length - 1)]
 
-  // Detect new pattern completions → trigger chip fly
-  // (runs on re-render after processNextBall advances engine state)
-  if (round && !chipFlyPositions) {
-    for (let ci = 0; ci < round.cards.length; ci++) {
-      const card = round.cards[ci]
-      if (card.completedPatterns.size > prevPatternsRef.current[ci]) {
-        const patterns = [...card.completedPatterns]
-        const newPattern = patterns[patterns.length - 1]
-        setChipFlyPositions(patternChipPositions(ci, newPattern))
-        break
-      }
-    }
-    // Update tracking refs
-    for (let ci = 0; ci < round.cards.length; ci++) {
-      prevPatternsRef.current[ci] = round.cards[ci].completedPatterns.size
-    }
-  }
-
-  // Detect new splash-worthy patterns — store in ref during render, fire in useEffect
-  // AS3: RoundMotion.checkSplashMovie — triggers for DOUBLE_LINE, TRIPLE_COLUMN, QUAD_COLUMN, QUAD_COLUMN_3
-  const pendingSplashRef = useRef<{ text: string; ballNum: string } | null>(null)
-  if (round && !splashActive && !pendingSplashRef.current) {
-    for (let ci = 0; ci < round.cards.length; ci++) {
-      const card = round.cards[ci]
-      for (const pattern of card.completedPatterns) {
-        const group = pattern.group
-        if (group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
-            group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3) {
-          if (!shownSplashPatternsRef.current.has(pattern.name)) {
-            shownSplashPatternsRef.current.add(pattern.name)
-            const textMap: Record<string, string> = {
-              [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
-              [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
-              [PatternGroup.QUAD_COLUMN.name]: '4 COLUMNS',
-              [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
-            }
-            const ballNum = String(round.currentBallIndex > 0 ? round.draws[round.currentBallIndex - 1]?.ball ?? '' : '')
-            pendingSplashRef.current = { text: textMap[group.name] ?? group.name, ballNum }
-            break
-          }
-        }
-      }
-      if (pendingSplashRef.current) break
-    }
-  }
-
-  // Fire pending splash in useEffect (side effects not allowed during render)
+  // ── Consume pattern event queue ──────────────────────────────
+  // Processes new patterns from Draw.newPatterns (enqueued by handleBallArrive).
+  // Triggers: chipFly, PatternMovie (via CardView), and MovieSplash.
+  // No polling of mutable Sets — purely event-driven.
   useEffect(() => {
-    const pending = pendingSplashRef.current
-    if (!pending) return
-    pendingSplashRef.current = null
-    setSplashActive(true)
-    if (splashRef.current) {
-      splashRef.current.play(pending.text, pending.ballNum, () => {
-        setSplashActive(false)
-      })
-    } else {
-      setSplashActive(false)
+    const queue = patternQueueRef.current
+    if (queue.length === 0) return
+
+    // Process all queued patterns
+    const events = queue.splice(0) // drain
+
+    for (const { cardIndex, pattern, ballNum } of events) {
+      // 1. ChipFly — one per pattern (queued, plays sequentially via chipFlyPositions gate)
+      if (!chipFlyPositions) {
+        setChipFlyPositions(patternChipPositions(cardIndex, pattern))
+      }
+
+      // 2. Splash — for high-priority pattern groups
+      const group = pattern.group
+      if (!splashActive && (
+        group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
+        group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3
+      )) {
+        const textMap: Record<string, string> = {
+          [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
+          [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
+          [PatternGroup.QUAD_COLUMN.name]: '4 COLUMNS',
+          [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
+        }
+        setSplashActive(true)
+        splashRef.current?.play(textMap[group.name] ?? group.name, String(ballNum), () => {
+          setSplashActive(false)
+        })
+      }
     }
   })
 
@@ -273,8 +251,16 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   }, [round])
 
   // Ball arrives in tube → process engine draw (incremental)
+  // Ball arrives → process engine draw → enqueue new patterns for animations
   const handleBallArrive = useCallback(() => {
-    processNextBall?.()
+    const draw = processNextBall?.()
+    if (draw && draw.newPatterns.length > 0) {
+      for (const p of draw.newPatterns) {
+        patternQueueRef.current.push({ cardIndex: draw.affectedCard, pattern: p, ballNum: draw.ball })
+      }
+      // Trigger re-render to consume queue
+      setTick(t => t + 1)
+    }
   }, [processNextBall])
 
   const handleChipFlyComplete = useCallback(() => {
