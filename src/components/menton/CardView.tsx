@@ -44,16 +44,30 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
     }
     return null
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPatterns.size])
+  }, [currentPatterns.size, activeAnim])
 
-  // Start animation for new pattern
-  if (newPattern && (!activeAnim || activeAnim.pattern !== newPattern)) {
-    const configs = getPatternAnimConfigs(newPattern.name)
-    if (configs.length > 0) {
-      animatedRef.current.add(newPattern.name)
-      setActiveAnim({ pattern: newPattern, configs })
-    } else {
-      animatedRef.current.add(newPattern.name)
+  // Start animation for new patterns — mark ALL no-config patterns as animated immediately,
+  // then trigger the first pattern that HAS visual configs
+  if (newPattern) {
+    // First: mark all non-visual patterns as seen so they don't block visual ones
+    for (const p of currentPatterns) {
+      if (!animatedRef.current.has(p.name)) {
+        const configs = getPatternAnimConfigs(p.name)
+        if (configs.length === 0) {
+          animatedRef.current.add(p.name) // no visual — skip
+        }
+      }
+    }
+    // Then: find the first pattern with visual configs that hasn't been animated
+    for (const p of currentPatterns) {
+      if (!animatedRef.current.has(p.name)) {
+        const configs = getPatternAnimConfigs(p.name)
+        if (configs.length > 0 && (!activeAnim || activeAnim.pattern !== p)) {
+          animatedRef.current.add(p.name)
+          setActiveAnim({ pattern: p, configs })
+          break
+        }
+      }
     }
   }
 
