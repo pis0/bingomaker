@@ -35,6 +35,7 @@ import type { BallType } from './AnimatedBall'
 import TubeWater from './TubeWater'
 import IdleLemon from './IdleLemon'
 import SliceMovie from './SliceMovie'
+import MovieSplash, { type MovieSplashHandle } from './MovieSplash'
 import { DEFAULT_BALLS, EXTRA_BALLS, HALT_PRIORITY } from '../../engine/constants'
 import type { Round } from '../../engine/Round'
 import { ParticleEmitter } from '../../particles/ParticleEmitter'
@@ -149,6 +150,8 @@ interface Props {
   onSuperFlyingChange?: (flying: boolean) => void
   /** zIndex passed to the root container (for sortableChildren in parent) */
   zIndex?: number
+  /** Ref to trigger MovieSplash animation (prize celebration) */
+  splashRef?: React.RefObject<MovieSplashHandle | null>
 }
 
 /**
@@ -166,7 +169,7 @@ interface Props {
  * 9. Extra front container (pipoqueira): fundo, lemon, tampa, large ball, cover
  * 10. Text overlay ("EXTRA" / "SUPER")
  */
-export default function BallPanel({ round, targetBallCount, stake = 1, launchInterval = DEFAULT_INTERVAL, paused = false, peelAdvanceTick = 0, onBallArrive, onPeelChange, onSuperFlyingChange, zIndex }: Props) {
+export default function BallPanel({ round, targetBallCount, stake = 1, launchInterval = DEFAULT_INTERVAL, paused = false, peelAdvanceTick = 0, onBallArrive, onPeelChange, onSuperFlyingChange, zIndex, splashRef }: Props) {
   const isIdle = !round || targetBallCount === 0
 
   // ── Animation queue ──────────────────────────────────────────────
@@ -816,6 +819,9 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
             />
           </>
         )}
+
+        {/* MovieSplash — prize celebration animation (AS3: x:406 y:62 in extraBallsFrontContainer) */}
+        <MovieSplash ref={splashRef} />
 
         <pixiSprite
           ref={setupCover}

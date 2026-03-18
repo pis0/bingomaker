@@ -17,6 +17,8 @@ import type { Round } from '../../engine/Round'
 import type { Draw } from '../../engine/Draw'
 import type { Pattern } from '../../engine/Pattern'
 import type { SlotSymbol } from '../../engine/SlotBonusSession'
+import { PatternGroup } from '../../engine/PatternGroup'
+import type { MovieSplashHandle } from './MovieSplash'
 import { FruitBombBonusSession, type BombPosition } from '../../engine/FruitBombBonusSession'
 import { COLS, STAKE_LEVELS, DEFAULT_BALLS } from '../../engine/constants'
 import { SLOT_X2, SLOT_FRUIT } from '../../engine/SlotBonusSession'
@@ -109,6 +111,10 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const [chipFlyPositions, setChipFlyPositions] = useState<ChipPosition[] | null>(null)
   const prevPatternsRef = useRef<number[]>([0, 0, 0, 0])
 
+  // MovieSplash — prize celebration in BallPanel pipoqueira area
+  const splashRef = useRef<MovieSplashHandle>(null)
+  const [splashActive, setSplashActive] = useState(false)
+
   // Round generation counter — drives key-based remount of ALL children
   const roundGenRef = useRef(0)
   const prevRoundRef = useRef<Round | null>(null)
@@ -152,6 +158,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     || multiplierActive
     || fruitBombActive
     || !!chipFlyPositions // pattern celebration
+    || splashActive // MovieSplash prize animation
 
   // Report bonus state to parent (disables advance/end buttons)
   useEffect(() => {
@@ -164,7 +171,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const maxPriority = round?.maxPatternPriority ?? 0
   const launchInterval = TRIGGER_INTERVALS[Math.min(maxPriority, TRIGGER_INTERVALS.length - 1)]
 
-  // Detect new pattern completions → trigger chip fly
+  // Detect new pattern completions → trigger chip fly + splash
   // (runs on re-render after processNextBall advances engine state)
   if (round && !chipFlyPositions) {
     for (let ci = 0; ci < round.cards.length; ci++) {
@@ -173,6 +180,23 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
         const patterns = [...card.completedPatterns]
         const newPattern = patterns[patterns.length - 1]
         setChipFlyPositions(patternChipPositions(ci, newPattern))
+
+        // AS3: RoundMotion.checkSplashMovie — trigger MovieSplash for ≥ DOUBLE_LINE patterns
+        const group = newPattern.group
+        if (group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
+            group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3) {
+          const textMap: Record<string, string> = {
+            [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
+            [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
+            [PatternGroup.QUAD_COLUMN.name]: '4 COLUMNS',
+            [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
+          }
+          const ballNum = String(round.currentBallIndex > 0 ? round.draws[round.currentBallIndex - 1]?.ball ?? '' : '')
+          setSplashActive(true)
+          splashRef.current?.play(textMap[group.name] ?? group.name, ballNum, () => {
+            setSplashActive(false)
+          })
+        }
         break
       }
     }
@@ -282,7 +306,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
             <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
             <Payout value={currentPayout} stake={stake} lastPayout={!drawing ? lastPayout : 0} collecting={isCollecting || !!chipFlyPositions} />
           </pixiContainer>
-          <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} peelAdvanceTick={peelAdvanceTick} onBallArrive={handleBallArrive} onPeelChange={onPeelChange} onSuperFlyingChange={setSuperFlying} zIndex={superFlying ? 100 : 4} />
+          <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} peelAdvanceTick={peelAdvanceTick} onBallArrive={handleBallArrive} onPeelChange={onPeelChange} onSuperFlyingChange={setSuperFlying} zIndex={superFlying ? 100 : 4} splashRef={splashRef} />
           <pixiContainer zIndex={6}>
             <CardPanel
               round={round}

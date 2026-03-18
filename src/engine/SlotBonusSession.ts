@@ -20,18 +20,30 @@ export interface SlotPosition {
 
 const HITS_REQUIRED = 4
 
+// TODO: re-enable SLOT_BONUS in buckets when BonusGame (Fête du Citron) is implemented
+const BONUS_ENABLED = false
+
 // AS3: SlotBonusSession.BUCKET — equal probability
-const PRIMARY_BUCKET: SlotSymbol[] = [
+const PRIMARY_BUCKET_FULL: SlotSymbol[] = [
   SLOT_X2, SLOT_X2, SLOT_X2, SLOT_X2,
   SLOT_FRUIT, SLOT_FRUIT, SLOT_FRUIT, SLOT_FRUIT,
   SLOT_BONUS, SLOT_BONUS, SLOT_BONUS, SLOT_BONUS,
 ]
 
 // AS3: SlotBonusSession.BUCKETS2 — weighted by first symbol
-const SECONDARY_BUCKETS: Record<SlotSymbol, SlotSymbol[]> = {
+const SECONDARY_BUCKETS_FULL: Record<SlotSymbol, SlotSymbol[]> = {
   [SLOT_X2]: [SLOT_X2, SLOT_X2, SLOT_X2, SLOT_X2, SLOT_FRUIT, SLOT_FRUIT, SLOT_BONUS, SLOT_BONUS],
   [SLOT_FRUIT]: [SLOT_X2, SLOT_X2, SLOT_FRUIT, SLOT_FRUIT, SLOT_FRUIT, SLOT_FRUIT, SLOT_BONUS, SLOT_BONUS],
   [SLOT_BONUS]: [SLOT_X2, SLOT_X2, SLOT_FRUIT, SLOT_FRUIT, SLOT_BONUS, SLOT_BONUS, SLOT_BONUS, SLOT_BONUS],
+}
+
+// Filtered buckets (no SLOT_BONUS in random pool until BonusGame is ready)
+const filterBonus = (arr: SlotSymbol[]) => BONUS_ENABLED ? arr : arr.filter(s => s !== SLOT_BONUS)
+const PRIMARY_BUCKET = filterBonus(PRIMARY_BUCKET_FULL)
+const SECONDARY_BUCKETS: Record<SlotSymbol, SlotSymbol[]> = {
+  [SLOT_X2]: filterBonus(SECONDARY_BUCKETS_FULL[SLOT_X2]),
+  [SLOT_FRUIT]: filterBonus(SECONDARY_BUCKETS_FULL[SLOT_FRUIT]),
+  [SLOT_BONUS]: filterBonus(SECONDARY_BUCKETS_FULL[SLOT_BONUS]),
 }
 
 function pickRandom<T>(arr: T[], random: RandomFn): T {
