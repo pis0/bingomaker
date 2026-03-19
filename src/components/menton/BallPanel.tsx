@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Sprite, Container, Text, TextStyle, Ticker, MeshPlane, Assets, Texture } from 'pixi.js'
+import { Sprite, Container, Text, TextStyle, Ticker, MeshPlane, AnimatedSprite, Assets, Texture } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
-import { tex } from '../../assets/atlas'
+import { tex, textures as getTextures } from '../../assets/atlas'
 import { BALL_PANEL_X, BALL_PANEL_Y } from './layoutConstants'
 import {
   TUBING_Y,
@@ -11,8 +11,9 @@ import {
   FUNDO_Y,
   TAMPA_Y,
   COVER_X, COVER_Y, COVER_PIVOT_X, COVER_PIVOT_Y,
-  COVER_ROTATION_CLOSED,
-  COVER_CLOSE_DURATION,
+  COVER_ROTATION_CLOSED, COVER_ROTATION_OPEN,
+  COVER_CLOSE_DURATION, COVER_OPEN_DURATION, COVER_SPLASH_CLOSE_DURATION,
+  POPPER_X, POPPER_Y,
   IDLE_CONTAINER_X, IDLE_CONTAINER_Y,
   IDLE_LEMON_X, IDLE_LEMON_Y,
   COUNTER_X, COUNTER_Y,
@@ -41,7 +42,7 @@ import type { Round } from '../../engine/Round'
 import { ParticleEmitter } from '../../particles/ParticleEmitter'
 import { mentonExtraWater } from '../../particles/configs/menton_extra_water'
 
-extend({ Sprite, Container, Text })
+extend({ Sprite, Container, Text, AnimatedSprite })
 
 // Large ball text style (AS3: fontSize:50, color:0x4d371e, letterSpacing:-2)
 const largeBallStyle = new TextStyle({
@@ -524,6 +525,119 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
     }
   }, [inExtraMode])
 
+  // ── Splash orchestration (AS3: playSplash → shakePopper → resetPos) ──
+  const movieSplashRef = useRef<MovieSplashHandle>(null)
+  const popperRef = useRef<AnimatedSprite>(null)
+  const frontContainerRef = useRef<Container>(null)
+  const largeBallRef = useRef<Container>(null)
+  const extraPriceRef = useRef<Container>(null)
+  const splashCleanupRef = useRef<(() => void) | null>(null)
+
+  // Expose orchestrated splash to parent via splashRef
+  useEffect(() => {
+    if (!splashRef) return
+    const mutableRef = splashRef as React.MutableRefObject<MovieSplashHandle | null>
+    mutableRef.current = {
+      play: (text: string, ballNumber: string, onComplete?: () => void) => {
+        // Cleanup any previous splash
+        splashCleanupRef.current?.()
+        const timeouts: ReturnType<typeof setTimeout>[] = []
+        const delay = (fn: () => void, ms: number) => { timeouts.push(setTimeout(fn, ms)) }
+        splashCleanupRef.current = () => { timeouts.forEach(clearTimeout); timeouts.length = 0 }
+
+        // AS3: hide(extraPriceContainer), show(largeBallContainer) with current ball number
+        if (extraPriceRef.current) extraPriceRef.current.visible = false
+        if (largeBallRef.current) largeBallRef.current.visible = true
+
+        // Capture base position for shake restore
+        const fc = frontContainerRef.current
+        const baseX = fc?.x ?? 0
+        const baseY = fc?.y ?? 0
+        const popper = popperRef.current
+
+        // Phase 1: Play popperJuice animation (pipo_juice frames, 1 loop)
+        if (popper) {
+          popper.visible = true
+          popper.currentFrame = 0
+          popper.play()
+        }
+
+        // Phase 2: After popper finishes → shake
+        // Duration = totalFrames / (tickerFPS × animationSpeed) × 1000
+        const popperDuration = popper ? (popper.totalFrames / (60 * 0.2)) * 1000 : 300
+        delay(() => {
+          // Hold popper at last frame
+          if (popper) {
+            popper.stop()
+            popper.currentFrame = popper.totalFrames - 1
+          }
+
+          // Shake front container (AS3: 7 micro-tweens, 0.05s each, 0.28s total)
+          if (fc) {
+            const shakes = [
+              { dx: 1, dy: 1, t: 0 }, { dx: -2, dy: -2, t: 50 },
+              { dx: 1, dy: -1, t: 100 }, { dx: -1, dy: 1, t: 150 },
+              { dx: 2, dy: -2, t: 200 }, { dx: -1, dy: -1, t: 250 },
+              { dx: 0, dy: 0, t: 280 },
+            ]
+            for (const s of shakes) {
+              delay(() => { fc.x = baseX + s.dx; fc.y = baseY + s.dy }, s.t)
+            }
+          }
+
+          // Phase 3: After shake (280ms) → resetPos
+          delay(() => {
+            // Restore front container to original position
+            if (fc) { fc.x = baseX; fc.y = baseY }
+
+            // Hide large ball (AS3: largeBallContainer.visible = false)
+            if (largeBallRef.current) largeBallRef.current.visible = false
+
+            // Burst open cover: 0 → -2.2 rad, 1s, EASE_OUT_BACK
+            const ca = coverAnimRef.current
+            const cover = coverRef.current
+            if (cover) {
+              ca.current = cover.rotation
+              ca.target = COVER_ROTATION_OPEN
+              ca.t0 = performance.now()
+              ca.duration = COVER_OPEN_DURATION
+              ca.wobble = false
+            }
+
+            // Play MovieSplash (juice splash + ball + text)
+            movieSplashRef.current?.play(text, ballNumber, () => {
+              // Restore extra price (large ball stays hidden — React's visible={!inExtraMode} manages it)
+              if (extraPriceRef.current) extraPriceRef.current.visible = true
+              onComplete?.()
+            })
+
+            // Hide popperJuice after 0.3s
+            delay(() => {
+              if (popper) popper.visible = false
+            }, 300)
+
+            // Close cover after 2.4s (0.2s duration)
+            delay(() => {
+              const ca2 = coverAnimRef.current
+              const cover2 = coverRef.current
+              if (cover2) {
+                ca2.current = cover2.rotation
+                ca2.target = COVER_ROTATION_CLOSED
+                ca2.t0 = performance.now()
+                ca2.duration = COVER_SPLASH_CLOSE_DURATION
+                ca2.wobble = false
+              }
+            }, 2400)
+          }, 280)
+        }, popperDuration)
+      }
+    }
+    return () => {
+      mutableRef.current = null
+      splashCleanupRef.current?.()
+    }
+  }, [splashRef])
+
   // ── Text overlay state ────────────────────────────────────────
   const [overlayText, setOverlayText] = useState<'extra' | 'super' | null>(null)
   const overlayShownRef = useRef({ extra: false, super: false })
@@ -770,66 +884,7 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
       {/* 8. ballcontainer1 — front tube */}
       <pixiSprite texture={tex('ballcontainer1')} y={TUBING_Y} />
 
-      {/* 9. Extra front container (pipoqueira) */}
-      <pixiContainer y={EXTRA_FRONT_Y}>
-        <pixiSprite texture={tex('fundopipoqueira')} y={FUNDO_Y} />
-        {/* IdleLemon — visible only during idle (not extras) */}
-        <IdleLemon
-          active={isIdle && !inExtraMode}
-          x={IDLE_CONTAINER_X + IDLE_LEMON_X}
-          y={IDLE_CONTAINER_Y + IDLE_LEMON_Y}
-        />
-        <pixiSprite texture={tex('tampapipoqueira')} y={TAMPA_Y} />
-
-        {/* Large ball — shows current ball number during REGULAR drawing only */}
-        {drawing && !inExtraMode && currentBall > 0 && (
-          <pixiContainer x={LARGE_BALL_X} y={LARGE_BALL_Y}>
-            <pixiSprite texture={tex('bigballv2')} />
-            <pixiText
-              text={String(currentBall)}
-              style={largeBallStyle}
-              anchor={0.5}
-              x={42}
-              y={42}
-            />
-          </pixiContainer>
-        )}
-
-        {/* Extra price display — icon + text centered in pipoqueira circle.
-            bigballv2 center = (LARGE_BALL_X+43, LARGE_BALL_Y+42) = (83, 71) in this container.
-            Icon at upper half (~58), text at lower half (~82). */}
-        {inExtraMode && (
-          <>
-            {/* Icon: star (free), ficha (coins), or dindin (cash/super) — AS3: mutually exclusive */}
-            <pixiSprite
-              texture={tex(nextExtraStake === 'free' ? 'extragratis' : nextExtraStake === 'cash' ? 'dindin77_sk' : 'ficha78_sk')}
-              anchor={0.5}
-              x={83}
-              y={55}
-              scale={nextExtraStake === 'cash' ? 0.75 : 0.6}
-            />
-            {/* Text: "FREE" or price value — auto-scales to fit circle (max 76px) */}
-            <pixiText
-              ref={priceTextAutoScale}
-              text={nextExtraStake === 'free' ? 'FREE' : String(nextExtraPrice)}
-              style={extraPriceStyle}
-              anchor={0.5}
-              x={83}
-              y={88}
-            />
-          </>
-        )}
-
-        <pixiSprite
-          ref={setupCover}
-          texture={tex('bigballpipe2')}
-          x={COVER_X}
-          y={COVER_Y}
-        />
-
-      </pixiContainer>
-
-      {/* 10. Text overlay — "EXTRA" / "SUPER" announcement */}
+      {/* 10. Text overlay — "EXTRA" / "SUPER" announcement (renders BELOW pipoqueira) */}
       {overlayText && (
         <pixiText
           ref={overlayRef}
@@ -842,9 +897,80 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
         />
       )}
 
-      {/* MovieSplash — prize celebration, above overlay text (AS3: extraBallsFrontContainer top) */}
-      <pixiContainer y={EXTRA_FRONT_Y}>
-        <MovieSplash ref={splashRef} />
+      {/* 9. Extra front container (pipoqueira) — renders ABOVE overlay text.
+          Z-order matches AS3: fundo → idleLemon → largeBall → extraPrice → splash+popper → tampa → cover */}
+      <pixiContainer ref={frontContainerRef} y={EXTRA_FRONT_Y}>
+        <pixiSprite texture={tex('fundopipoqueira')} y={FUNDO_Y} />
+        {/* IdleLemon — visible only during idle (not extras) */}
+        <IdleLemon
+          active={isIdle && !inExtraMode}
+          x={IDLE_CONTAINER_X + IDLE_LEMON_X}
+          y={IDLE_CONTAINER_Y + IDLE_LEMON_Y}
+        />
+
+        {/* Large ball — always rendered during drawing (visibility managed by mode + splash).
+            Regular: visible. Extras: hidden (price shows instead), except during splash sequence. */}
+        {drawing && currentBall > 0 && (
+          <pixiContainer ref={largeBallRef} x={LARGE_BALL_X} y={LARGE_BALL_Y} visible={!inExtraMode}>
+            <pixiSprite texture={tex('bigballv2')} />
+            <pixiText
+              text={String(currentBall)}
+              style={largeBallStyle}
+              anchor={0.5}
+              x={42}
+              y={42}
+            />
+          </pixiContainer>
+        )}
+
+        {/* Extra price display — same z-level as large ball */}
+        {inExtraMode && (
+          <pixiContainer ref={extraPriceRef}>
+            <pixiSprite
+              texture={tex(nextExtraStake === 'free' ? 'extragratis' : nextExtraStake === 'cash' ? 'dindin77_sk' : 'ficha78_sk')}
+              anchor={0.5}
+              x={83}
+              y={55}
+              scale={nextExtraStake === 'cash' ? 0.75 : 0.6}
+            />
+            <pixiText
+              ref={priceTextAutoScale}
+              text={nextExtraStake === 'free' ? 'FREE' : String(nextExtraPrice)}
+              style={extraPriceStyle}
+              anchor={0.5}
+              x={83}
+              y={88}
+            />
+          </pixiContainer>
+        )}
+
+        {/* MovieSplash + PopperJuice — ABOVE ball, BELOW tampa (AS3: movieSplashContainer) */}
+        <MovieSplash ref={movieSplashRef} />
+        <pixiContainer ref={useCallback((c: Container | null) => {
+          if (!c || popperRef.current) return
+          const frames = getTextures('pipo_juice')
+          const anim = new AnimatedSprite(frames)
+          anim.x = POPPER_X
+          anim.y = POPPER_Y
+          anim.animationSpeed = 0.2 // ~12fps
+          anim.loop = false
+          anim.visible = false
+          anim.autoUpdate = true
+          c.addChild(anim)
+          popperRef.current = anim
+        }, [])} />
+
+        {/* Tampa — clips splash/popper from below */}
+        <pixiSprite texture={tex('tampapipoqueira')} y={TAMPA_Y} />
+
+        {/* Cover (bigballpipe2) — topmost element */}
+        <pixiSprite
+          ref={setupCover}
+          texture={tex('bigballpipe2')}
+          x={COVER_X}
+          y={COVER_Y}
+        />
+
       </pixiContainer>
 
     </pixiContainer>

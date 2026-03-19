@@ -101,9 +101,14 @@ export const SUPER_PHASE1_TARGET_Y = 365
 export const SUPER_ARC_PEAK_Y = 118 // 318 - 200
 export const SUPER_FINAL_SNAP_DURATION = 0.2
 
+// PopperJuice position (AS3: movieSplashContainer.addMovie pipo_juice)
+export const POPPER_X = 36
+export const POPPER_Y = 25
+
 // ── Cover animation (AS3: BallPanelMenton.openExtraCover/closeExtraCover) ──
-export const COVER_OPEN_DURATION = 1000 // 1s
+export const COVER_OPEN_DURATION = 1000 // 1s — burst open (EASE_OUT_BACK)
 export const COVER_CLOSE_DURATION = 600 // 0.6s — slow close after peel fling
+export const COVER_SPLASH_CLOSE_DURATION = 200 // 0.2s — quick close after splash
 
 // ── Text overlay (AS3: BallPanelMenton.showText) ────────────────
 export const EXTRA_TEXT_COLOR = 0xfff000 // yellow
