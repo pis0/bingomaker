@@ -137,6 +137,10 @@ export function useDebugEngine(): DebugEngine {
     // Cancel any pending auto-end timer
     if (autoEndTimerRef.current) { clearTimeout(autoEndTimerRef.current); autoEndTimerRef.current = null; }
     setIsCollecting(false);
+    // Reset peel state — avoids stuck "Peel" label on new round
+    isPeelingRef.current = false;
+    setIsPeeling(false);
+    peelAdvanceTickRef.current = 0;
     const round = buildRound(force);
     roundRef.current = round;
     targetBallCountRef.current = 0;
@@ -344,6 +348,10 @@ export function useDebugEngine(): DebugEngine {
     if (!r) return;
     targetBallCountRef.current = r.currentBallIndex;
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+    // Reset peel state
+    isPeelingRef.current = false;
+    setIsPeeling(false);
+    peelAdvanceTickRef.current = 0;
     if (r.totalPayout > 0) {
       setIsCollecting(true);
       rerender();
