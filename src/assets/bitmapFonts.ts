@@ -25,7 +25,11 @@ const MYRIAD = '"Myriad Pro", sans-serif'
 const CLARENDON = '"Clarendon Black BT", Georgia, serif'
 
 // ── Install all BitmapFonts ─────────────────────────────────────
+let installed = false
+
 export function installBitmapFonts(): void {
+  if (installed) return
+  installed = true
   const t0 = performance.now()
   let count = 0
   // ── Iowan Old Style Black ───────────────────────────────────
