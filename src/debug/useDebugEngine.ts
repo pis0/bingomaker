@@ -281,6 +281,10 @@ export function useDebugEngine(): DebugEngine {
     // Peel in progress — user clicks to advance each step
     advanceLabel = 'Peel';
     canAdvance = true;
+  } else if (drawn < DEFAULT_BALLS && halted && !bonusActive) {
+    // Halted during initial 30 + bonus animations done → user can resume
+    advanceLabel = 'Next';
+    canAdvance = true;
   } else if (isSettling || bonusActive) {
     // Balls in flight or bonus animation active — always disabled
     advanceLabel = drawn < DEFAULT_BALLS ? 'Play' : 'Extra';
@@ -288,10 +292,6 @@ export function useDebugEngine(): DebugEngine {
   } else if (drawn === 0) {
     // Round ready, not started
     advanceLabel = 'Play';
-    canAdvance = true;
-  } else if (drawn < DEFAULT_BALLS && halted) {
-    // Halted during initial 30 — user presses to resume
-    advanceLabel = 'Next';
     canAdvance = true;
   } else if (drawn < DEFAULT_BALLS) {
     // Mid-discharge but not settling and not halted (shouldn't happen normally)
@@ -304,14 +304,13 @@ export function useDebugEngine(): DebugEngine {
     advanceLabel = 'Super Extra';
     canAdvance = true;
   } else {
-    advanceLabel = 'Done';
-    canAdvance = false;
+    advanceLabel = 'Play'; // Round over — Play acts as end+new round+discharge
+    canAdvance = true;
   }
 
-  // End button — available whenever extras/super are offered, or when round is done
-  // Not blocked by bonusActive — End is a force-end action that overrides animations
-  const canEnd = !!round && !isSettling && !isCollecting && drawn >= DEFAULT_BALLS &&
-    (round.extraAvailable || round.superExtraAvailable || advanceLabel === 'Done');
+  // End button — only when there's a choice to skip (extras/super/peel)
+  const canEnd = !!round && !isCollecting && drawn >= DEFAULT_BALLS &&
+    (round.extraAvailable || round.superExtraAvailable || isPeeling);
 
   // Auto-end ref to track/cancel pending auto-new-round timer
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -368,16 +367,7 @@ export function useDebugEngine(): DebugEngine {
   if (!round || drawn === 0) {
     autoEndFiredRef.current = false;
   }
-  if (advanceLabel === 'Done' && !isCollecting && !autoEndFiredRef.current && !isSettling) {
-    autoEndFiredRef.current = true;
-    const r = roundRef.current!;
-    if (r.totalPayout > 0) {
-      setIsCollecting(true);
-    }
-    // AS3: 0.5s delay + collect animation → new round (~2-4s total)
-    if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
-    autoEndTimerRef.current = setTimeout(autoNewRound, 3000);
-  }
+  // No auto-end — Play button handles end+new round via advance()
 
   const advance = useCallback(() => {
     const r = roundRef.current;
@@ -403,9 +393,19 @@ export function useDebugEngine(): DebugEngine {
     } else if (r.superExtraAvailable) {
       // Super extra — animate through BallPanel (starts peel)
       targetBallCountRef.current = r.currentBallIndex + 1;
+    } else {
+      // Done — end + new round + auto-play in one click
+      if (autoEndTimerRef.current) { clearTimeout(autoEndTimerRef.current); autoEndTimerRef.current = null; }
+      const prevPayout = r.totalPayout;
+      if (prevPayout > 0) setLastPayout(prevPayout);
+      setIsCollecting(false);
+      newRound(lastForceRef.current ?? undefined);
+      // Start discharge immediately (newRound resets target to 0, override)
+      targetBallCountRef.current = DEFAULT_BALLS;
+      return;
     }
     rerender();
-  }, [stake, rerender]);
+  }, [stake, rerender, endRound]);
 
   return {
     round,

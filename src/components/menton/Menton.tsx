@@ -81,13 +81,15 @@ interface Props {
   /** ButtonPanel callbacks */
   onPlay?: () => void
   onExtra?: () => void
+  /** Force-show End button */
+  showEnd?: boolean
   onEnd?: () => void
   onStakeChange?: (newIndex: number) => void
   /** Shuffle cards (click on cards during idle) */
   onShuffle?: () => void
 }
 
-export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange, peelAdvanceTick = 0, onPeelChange, buttonPhase = 'play', buttonEnabled = true, onPlay, onExtra, onEnd, onStakeChange, onShuffle }: Props) {
+export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange, peelAdvanceTick = 0, onPeelChange, buttonPhase = 'play', buttonEnabled = true, showEnd = false, onPlay, onExtra, onEnd, onStakeChange, onShuffle }: Props) {
   const stake = STAKE_LEVELS[stakeIndex]
 
   // AS3: IntervalCardPatternController — cycles individual patterns during idle
@@ -367,6 +369,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
         phase={buttonPhase}
         enabled={buttonEnabled}
         stakeIndex={stakeIndex}
+        showEnd={showEnd}
         onPlay={onPlay}
         onExtra={onExtra}
         onEnd={onEnd}

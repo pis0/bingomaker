@@ -142,13 +142,15 @@ interface Props {
   phase: ButtonPhase
   enabled: boolean
   stakeIndex: number
+  /** Force-show End button (even outside extra/super/peel) */
+  showEnd?: boolean
   onPlay?: () => void
   onExtra?: () => void
   onEnd?: () => void
   onStakeChange?: (newIndex: number) => void
 }
 
-export default function ButtonPanel({ phase, enabled, stakeIndex, onPlay, onExtra, onEnd, onStakeChange }: Props) {
+export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: forceShowEnd = false, onPlay, onExtra, onEnd, onStakeChange }: Props) {
   const state = phaseToState(phase, enabled)
   const label = PHASE_LABELS[phase]
   const showExtra = phase === 'extra' || phase === 'super'
@@ -221,8 +223,8 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, onPlay, onExtr
         x={END_X}
         y={END_Y}
         label="END"
-        on={state.endOn}
-        visible={phase === 'extra' || phase === 'super' || phase === 'peel'}
+        on={state.endOn || forceShowEnd}
+        visible={phase === 'extra' || phase === 'super' || phase === 'peel' || forceShowEnd}
         labelStyle={endStyle}
         labelOffStyle={endOffStyle}
         textRect={END_TEXT_RECT}

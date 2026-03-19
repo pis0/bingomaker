@@ -27,6 +27,9 @@ export default function App() {
   const engine = useDebugEngine()
   useViewportScale()
 
+  // Button state — must be before early returns (hooks rules)
+  const showEnd = engine.canEnd
+
   if (status === 'error') {
     return <div style={errorStyle}>Failed to load assets. Check console.</div>
   }
@@ -70,6 +73,7 @@ export default function App() {
           buttonEnabled={engine.canAdvance}
           onPlay={engine.advance}
           onExtra={engine.advance}
+          showEnd={showEnd}
           onEnd={engine.endRound}
           onStakeChange={engine.setStakeIndex}
           onShuffle={engine.shuffle}
