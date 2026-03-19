@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AssetManager } from './AssetManager'
 import { mentonManifest } from './manifest'
+import { installBitmapFonts } from './bitmapFonts'
 
 export type AssetStatus = 'loading' | 'ready' | 'error'
 
@@ -27,6 +28,8 @@ export function useAssets() {
           document.fonts.load('bold 24px "Myriad Pro"'),
           document.fonts.load('normal 24px "Clarendon Black BT"'),
         ])
+        // Generate BitmapFont atlases from loaded TTF fonts (runtime install)
+        installBitmapFonts()
         if (!cancelled) setStatus('ready')
       } catch (err) {
         console.error('[AssetManager] Failed to load assets:', err)

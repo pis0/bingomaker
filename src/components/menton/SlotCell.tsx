@@ -1,12 +1,12 @@
 import { useRef, useState, useMemo, useCallback } from 'react'
-import { Graphics, Text, TextStyle, AnimatedSprite, Sprite, Texture } from 'pixi.js'
+import { Graphics, BitmapText, AnimatedSprite, Sprite, Texture } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import type { Card } from '../../engine/Card'
 import { tex, textures as getTextures } from '../../assets/atlas'
 import { SLOT_W, SLOT_H, COLORS } from './cardConstants'
 import MissingMark from './MissingMark'
 
-extend({ Graphics, Text, AnimatedSprite, Sprite })
+extend({ Graphics, Text, BitmapText, AnimatedSprite, Sprite })
 
 // ── Shared resources (created once) ──────────────────────────
 let markingFrames: Texture[] | null = null
@@ -21,26 +21,8 @@ function getBellTex() {
   return _bellTex
 }
 
-const FONT_FAMILY = '"Iowan Old Style Black", "Iowan Old Style", Georgia, serif'
 const FONT_SIZE = 28
-
-const styleDefault = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE,
-  fill: COLORS.textDefault, letterSpacing: -1, padding: 4,
-})
-const styleMatched = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE,
-  fill: COLORS.textMatched, letterSpacing: -1, padding: 4,
-})
-const styleInPattern = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE,
-  fill: COLORS.textInPattern, letterSpacing: -1, padding: 4,
-})
-// AS3: setMark with intervalMark=true → MARKED_NUMBER_COLORS_BY_STAKE_INDEX[0]
-const styleIdleHighlight = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: FONT_SIZE,
-  fill: COLORS.textMatched, letterSpacing: -1, padding: 4, // 0x852f96
-})
+// BitmapFonts: slot-default, slot-matched, slot-pattern, slot-idle (installed at startup)
 
 // ── Color interpolation (matching AS3 Slot.enterFrame) ───────
 const CYCLE_LENGTH = 20 // frames per color transition
@@ -266,23 +248,22 @@ export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHi
 
   // Determine visual state — keep default look while marking animation plays
   let bgColor: number
-  let textStyle: TextStyle
+  let bitmapFont: string
   if (settlePhase < 2 && matched) {
     bgColor = COLORS.bgDefault
-    textStyle = settlePhase >= 1 ? styleMatched : styleDefault
+    bitmapFont = settlePhase >= 1 ? 'slot-matched' : 'slot-default'
   } else if (inPattern && matched) {
     bgColor = COLORS.bgMatchedDark // fallback; cycling overrides via useTick
-    textStyle = styleInPattern
+    bitmapFont = 'slot-pattern'
   } else if (matched) {
     bgColor = COLORS.bgMatched
-    textStyle = styleMatched
+    bitmapFont = 'slot-matched'
   } else if (idleHighlighted) {
-    // AS3: setIntervalPattern → setMark(i,j,false,true) — purple bg + purple text
-    bgColor = COLORS.bgMatched // 0x5b1f72
-    textStyle = styleIdleHighlight
+    bgColor = COLORS.bgMatched
+    bitmapFont = 'slot-idle'
   } else {
     bgColor = COLORS.bgDefault
-    textStyle = styleDefault
+    bitmapFont = 'slot-default'
   }
 
   const drawBg = useCallback((g: Graphics) => {
@@ -331,11 +312,11 @@ export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHi
         height={SLOT_H}
       />
 
-      {/* Number text (hidden when missing mark is active) */}
+      {/* Number text — BitmapText for GPU performance (60 instances on screen) */}
       {!isMissing && (
-        <pixiText
+        <pixiBitmapText
           text={num}
-          style={textStyle}
+          style={{ fontFamily: bitmapFont, fontSize: FONT_SIZE }}
           anchor={0.5}
           x={SLOT_W / 2 - 2}
           y={SLOT_H / 2 - 2}
