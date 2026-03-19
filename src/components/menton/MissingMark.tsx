@@ -1,34 +1,11 @@
 import { useRef, useMemo } from 'react'
-import { Graphics, Text, TextStyle, Sprite, Container } from 'pixi.js'
+import { Graphics, BitmapText, Sprite, Container } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { SLOT_W, SLOT_H, MISSING_ICONS, MISSING_ICON_OFFSETS, COLORS } from './cardConstants'
 import type { MissingPatternsHolder } from '../../engine/MissingPatternsHolder'
 
-extend({ Graphics, Text, Sprite, Container })
-
-const FONT_FAMILY = '"Iowan Old Style Black", "Iowan Old Style", Georgia, serif'
-
-// --- Shared text styles (matching AS3 MissingMarkMovie) ---
-const titleStyleGreen = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 30,
-  fill: COLORS.missingTitle,
-})
-
-const titleStyleDark = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 30,
-  fill: COLORS.textDefault,
-})
-
-const priceStyle = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 18,
-  fill: 0xffffff,
-})
-
-const bonusStyle = new TextStyle({
-  fontFamily: FONT_FAMILY, fontSize: 14,
-  fill: 0xfff770,
-})
+extend({ Graphics, BitmapText, Sprite, Container })
 
 // --- Easing functions ---
 function easeInOutCirc(t: number): number {
@@ -107,7 +84,7 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
   const payout = holder.expectation
   const iconName = MISSING_ICONS[priority]
   const iconOffset = MISSING_ICON_OFFSETS[priority]
-  const titleStyle = priority <= 1 ? titleStyleGreen : titleStyleDark
+  const titleFont = priority <= 1 ? 'missing-green' : 'missing-brown'
   const layout = MISSING_LAYOUT[priority] ?? MISSING_LAYOUT[1]
 
   const hasEntrance = priority >= 2
@@ -266,9 +243,9 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
         )}
 
         {/* Ball number */}
-        <pixiText
+        <pixiBitmapText
           text={String(ballNumber)}
-          style={titleStyle}
+          style={{ fontFamily: titleFont, fontSize: 30, fill: priority <= 1 ? 0x198754 : 0x4d321e }}
           anchor={{ x: 0.5, y: 0 }}
           x={SLOT_W / 2}
           y={layout.titleY}
@@ -276,9 +253,12 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
 
         {/* Payout label on green bar */}
         {payoutText !== '' && (
-          <pixiText
+          <pixiBitmapText
             text={payoutText}
-            style={payout === 0 ? bonusStyle : priceStyle}
+            style={payout === 0
+              ? { fontFamily: 'missing-bonus', fontSize: 14, fill: 0xfff770 }
+              : { fontFamily: 'missing-price', fontSize: 18, fill: 0xffffff }
+            }
             anchor={{ x: 0.5, y: 0 }}
             x={SLOT_W / 2}
             y={layout.labelY}

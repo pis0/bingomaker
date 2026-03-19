@@ -8,13 +8,13 @@
  * of AssukarTextField instances in the AS3 runtime.
  */
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react'
-import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js'
+import { Container, Graphics, Sprite, BitmapText } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { BUTTON_PANEL_X, BUTTON_PANEL_Y } from './layoutConstants'
 import { STAKE_LEVELS } from '../../engine/constants'
 
-extend({ Container, Graphics, Sprite, Text })
+extend({ Container, Graphics, Sprite, BitmapText })
 
 // ── Layout (Composer-verified) ──────────────────────────────────
 const STAKES_X = 21
@@ -24,24 +24,7 @@ const PLAY_Y = 0
 const END_X = 21
 const END_Y = 10
 
-// ── Font (Composer-verified sizes) ──────────────────────────────
-const BUTTON_FONT = '"Clarendon Black BT", Georgia, serif'
-const IOWAN_FONT = '"Iowan Old Style Black", Georgia, serif'
-const COLOR_ON = 0xffffff
-const COLOR_OFF = 0xbbbbbb
-
-// PLAY/EXTRA: AS3 fontSize 43 — reduced for Canvas text parity
-// PLAY/EXTRA: Composer fontSize 43
-const playStyle = new TextStyle({ fontFamily: BUTTON_FONT, fontSize: 43, fill: COLOR_ON })
-const playOffStyle = new TextStyle({ fontFamily: BUTTON_FONT, fontSize: 43, fill: COLOR_OFF })
-
-// END: Composer fontSize 33
-const endStyle = new TextStyle({ fontFamily: BUTTON_FONT, fontSize: 33, fill: COLOR_ON })
-const endOffStyle = new TextStyle({ fontFamily: BUTTON_FONT, fontSize: 33, fill: COLOR_OFF })
-
-// BET: Composer fontSize 24
-const betStyle = new TextStyle({ fontFamily: BUTTON_FONT, fontSize: 24, fill: COLOR_ON })
-const betOffStyle = new TextStyle({ fontFamily: BUTTON_FONT, fontSize: 24, fill: COLOR_OFF })
+// BitmapFont names: btn-play/btn-play-off, btn-end/btn-end-off, btn-bet/btn-bet-off, stake-N, tongue-value
 
 // AS3: STAKE_COLORS per stake index
 const STAKE_COLORS = [0x6AB22F, 0xB1AA03, 0xCF499D, 0x66736F, 0x4781CD, 0xd5cdaa, 0x80128F, 0xffffff]
@@ -57,7 +40,6 @@ const TONGUE_COLOR = 0x471043
 const TONGUE_TWEEN_MS = 500
 const FICHA_SCALE = 0.57 // ficha43_sk(29px) / ficha78_sk(50px)
 
-const tonguePriceStyle = new TextStyle({ fontFamily: IOWAN_FONT, fontSize: 26, fill: 0xffffff })
 
 /** Button phase — determines label text and which button is visible */
 export type ButtonPhase = 'play' | 'halt' | 'peel' | 'extra' | 'super'
@@ -89,19 +71,20 @@ interface MentonButtonProps {
   label: string
   on: boolean
   visible?: boolean
-  labelStyle: TextStyle
-  labelOffStyle: TextStyle
+  fontOn: string
+  fontOff: string
+  fontSize: number
   /** Text rect from Composer: x, y, w, h — text centered inside */
   textRect: { x: number; y: number; w: number; h: number }
   onPress?: () => void
 }
 
-function MentonButton({ prefix, x, y, label, on, visible = true, labelStyle, labelOffStyle, textRect, onPress }: MentonButtonProps) {
+function MentonButton({ prefix, x, y, label, on, visible = true, fontOn, fontOff, fontSize, textRect, onPress }: MentonButtonProps) {
   const idleTex = useMemo(() => tex(`${prefix}_idle`), [prefix])
   const hitTex = useMemo(() => tex(`${prefix}_hit`), [prefix])
   const offTex = useMemo(() => tex(`${prefix}_off`), [prefix])
   const spriteRef = useRef<Sprite>(null)
-  const textRef = useRef<Text>(null)
+  const textRef = useRef<BitmapText>(null)
   const labelCenterY = textRect.y + textRect.h / 2
 
   const handleDown = useCallback(() => {
@@ -128,10 +111,10 @@ function MentonButton({ prefix, x, y, label, on, visible = true, labelStyle, lab
   return (
     <pixiContainer x={x} y={y} eventMode={on ? 'static' : 'none'} cursor={on ? 'pointer' : 'default'} onPointerDown={handleDown} onPointerUp={handleUp} onPointerUpOutside={handleOut}>
       <pixiSprite ref={spriteRef} texture={on ? idleTex : offTex} eventMode="passive" />
-      <pixiText
+      <pixiBitmapText
         ref={textRef}
         text={label}
-        style={on ? labelStyle : labelOffStyle}
+        style={{ fontFamily: on ? fontOn : fontOff, fontSize, fill: on ? 0xffffff : 0xbbbbbb }}
         anchor={{ x: 0.5, y: 0.5 }}
         x={textRect.x + textRect.w / 2}
         y={labelCenterY}
@@ -236,8 +219,8 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
   }, [])
 
   const betSpriteRef = useRef<Sprite>(null)
-  const betLabelRef = useRef<Text>(null)
-  const betValueRef = useRef<Text>(null)
+  const betLabelRef = useRef<BitmapText>(null)
+  const betValueRef = useRef<BitmapText>(null)
   const betLabelCY = BET_TEXT_RECT.y + BET_TEXT_RECT.h / 2
   const betValueCY = VALUE_TEXT_RECT.y + VALUE_TEXT_RECT.h / 2
   const betHitTex = useMemo(() => tex('btbet_hit'), [])
@@ -265,12 +248,7 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
     if (betValueRef.current) betValueRef.current.y = betValueCY
   }, [state.stakeOn, betLabelCY, betValueCY])
 
-  const stakeColor = STAKE_COLORS[stakeIndex % STAKE_COLORS.length]
-  const stakeValStyle = useMemo(() => new TextStyle({
-    fontFamily: IOWAN_FONT,
-    fontSize: 26,
-    fill: stakeColor,
-  }), [stakeColor])
+  const stakeFontName = `stake-${stakeIndex % STAKE_COLORS.length}`
 
   return (
     <pixiContainer x={BUTTON_PANEL_X} y={BUTTON_PANEL_Y}>
@@ -282,15 +260,15 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
           // Recenter ficha+value pair in tongue after each render
           const fichaW = 29 // ficha78_sk scaled
           const gap = 4
-          const textChild = c.children[1] as Text | undefined
+          const textChild = c.children[1] as BitmapText | undefined
           const textW = textChild?.width ?? 20
           const totalW = fichaW + gap + textW
           c.x = (TONGUE_W - totalW) / 2
         }, [totalStake])}>
           <pixiSprite texture={tex('ficha78_sk')} y={TONGUE_H / 2 - 5} anchor={{ x: 0, y: 0.5 }} scale={FICHA_SCALE} eventMode="passive" />
-          <pixiText
+          <pixiBitmapText
             text={String(totalStake)}
-            style={tonguePriceStyle}
+            style={{ fontFamily: 'tongue-value', fontSize: 26, fill: 0xffffff }}
             anchor={{ x: 0, y: 0.5 }}
             x={33}
             y={TONGUE_H / 2 - 5}
@@ -302,19 +280,19 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
       {/* Stakes/Bet button */}
       <pixiContainer x={STAKES_X} y={STAKES_Y} eventMode={state.stakeOn ? 'static' : 'none'} cursor={state.stakeOn ? 'pointer' : 'default'} onPointerDown={handleStakeDown} onPointerUp={handleStakeUp} onPointerUpOutside={handleStakeOut}>
         <pixiSprite ref={betSpriteRef} texture={state.stakeOn ? tex('btbet_idle') : tex('btbet_off')} eventMode="passive" />
-        <pixiText
+        <pixiBitmapText
           ref={betLabelRef}
           text="BET"
-          style={state.stakeOn ? betStyle : betOffStyle}
+          style={{ fontFamily: state.stakeOn ? 'btn-bet' : 'btn-bet-off', fontSize: 24, fill: state.stakeOn ? 0xffffff : 0xbbbbbb }}
           anchor={{ x: 0.5, y: 0.5 }}
           x={BET_TEXT_RECT.x + BET_TEXT_RECT.w / 2}
           y={betLabelCY}
           eventMode="passive"
         />
-        <pixiText
+        <pixiBitmapText
           ref={betValueRef}
           text={String(STAKE_LEVELS[stakeIndex])}
-          style={stakeValStyle}
+          style={{ fontFamily: stakeFontName, fontSize: 26, fill: STAKE_COLORS[stakeIndex % STAKE_COLORS.length] }}
           anchor={{ x: 0.5, y: 0.5 }}
           x={VALUE_TEXT_RECT.x + VALUE_TEXT_RECT.w / 2}
           y={betValueCY}
@@ -330,8 +308,9 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
         label="END"
         on={state.endOn || forceShowEnd}
         visible={phase === 'extra' || phase === 'super' || phase === 'peel' || forceShowEnd}
-        labelStyle={endStyle}
-        labelOffStyle={endOffStyle}
+        fontOn="btn-end"
+        fontOff="btn-end-off"
+        fontSize={33}
         textRect={END_TEXT_RECT}
         onPress={onEnd}
       />
@@ -344,8 +323,9 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
         label={label}
         on={state.playOn}
         visible={!showExtra}
-        labelStyle={playStyle}
-        labelOffStyle={playOffStyle}
+        fontOn="btn-play"
+        fontOff="btn-play-off"
+        fontSize={43}
         textRect={PLAY_TEXT_RECT}
         onPress={onPlay}
       />
@@ -358,8 +338,9 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
         label={label}
         on={state.extraOn}
         visible={showExtra}
-        labelStyle={playStyle}
-        labelOffStyle={playOffStyle}
+        fontOn="btn-play"
+        fontOff="btn-play-off"
+        fontSize={43}
         textRect={PLAY_TEXT_RECT}
         onPress={onExtra}
       />

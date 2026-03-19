@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { Container, Sprite, Text, TextStyle } from 'pixi.js'
+import { Container, Sprite, BitmapText } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { COLS } from '../../engine/constants'
@@ -10,11 +10,9 @@ import {
   PATTERN_CYCLE_INTERVAL,
   MISSING_COLORS, BLINK_COLORS,
   MISSING_ANIM_INTERVAL, MISSING_ANIM_INTERVAL_SINGLE,
-  LABEL_COLOR_IDLE, LABEL_COLOR_WON, COUNT_COLOR_IDLE,
-  FONT_LABEL, FONT_COUNT,
 } from './payoutConstants'
 
-extend({ Container, Sprite, Text })
+extend({ Container, Sprite, BitmapText })
 
 const DOT_COUNT = 15 // 3 rows x 5 cols
 
@@ -41,30 +39,13 @@ interface Props {
   idlePattern?: Pattern | null
 }
 
-// --- Style factories (per-instance to avoid shared mutation) ---
-
-function makeLabelStyle() {
-  return new TextStyle({
-    fontFamily: FONT_LABEL,
-    fontSize: 14,
-    fill: LABEL_COLOR_IDLE,
-  })
-}
-
-function makeCountStyle() {
-  return new TextStyle({
-    fontFamily: FONT_COUNT,
-    fontSize: 14,
-    fontWeight: 'bold',
-    fill: COUNT_COLOR_IDLE,
-  })
-}
+// BitmapFont names: prize-value / prize-value-won, prize-count / prize-count-won
 
 // --- Component ---
 
 export default function PayoutCard({ cardIndex, patterns, stake, state, missings, winCount, drawing = false, idleHighlighted = false, idlePattern = null }: Props) {
-  const labelStyleRef = useRef(makeLabelStyle())
-  const countStyleRef = useRef(makeCountStyle())
+  const labelFontRef = useRef('prize-value')
+  const countFontRef = useRef('prize-count')
   // Pattern cycling for idle animation
   const patternIndexRef = useRef(0)
   const cycleTimerRef = useRef(0)
@@ -80,8 +61,8 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
   const bgIdleRef = useRef<Sprite | null>(null)
   const bgOnRef = useRef<Sprite | null>(null)
   const bgWonRef = useRef<Sprite | null>(null)
-  const labelRef = useRef<Text | null>(null)
-  const countRef = useRef<Text | null>(null)
+  const labelRef = useRef<BitmapText | null>(null)
+  const countRef = useRef<BitmapText | null>(null)
   const textsContainerRef = useRef<Container | null>(null)
 
   const currentPattern = patterns[patternIndexRef.current % patterns.length]
@@ -128,12 +109,10 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
     const countText = countRef.current
     if (!label) return
 
-    // Auto-shrink label to fit (AS3: fontSize 18 bitmap → ~14 canvas equiv)
-    const style = labelStyleRef.current
-    style.fontSize = 14
-    label.text = label.text // Force recalc
-    while (label.width > 55 && (style.fontSize as number) > 6) {
-      style.fontSize = (style.fontSize as number) - 1
+    // Auto-shrink label to fit (scale down if exceeds 55px)
+    label.scale.set(1)
+    if (label.width > 55) {
+      label.scale.set(55 / label.width)
     }
 
     // Position count next to label with small gap
@@ -213,8 +192,11 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
       bgIdle.visible = true
       bgOn.visible = idleHighlighted  // AS3: bgon cycles per card during idle
       bgWon.visible = false
-      labelStyleRef.current.fill = LABEL_COLOR_IDLE
-      countStyleRef.current.fill = COUNT_COLOR_IDLE
+      labelFontRef.current = 'prize-value'
+      countFontRef.current = 'prize-count'
+      if (label) label.style = { fontFamily: 'prize-value', fontSize: 14, fill: 0x1b1302 }
+      const ct = countRef.current
+      if (ct) ct.style = { fontFamily: 'prize-count', fontSize: 14, fill: 0xfacb25 }
       patternIndexRef.current = 0
       cycleTimerRef.current = 0
       blinkOnRef.current = false
@@ -224,7 +206,8 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
       bgIdle.visible = false
       bgOn.visible = true
       bgWon.visible = false
-      labelStyleRef.current.fill = LABEL_COLOR_IDLE
+      labelFontRef.current = 'prize-value'
+      if (label) label.style = { fontFamily: 'prize-value', fontSize: 14, fill: 0x1b1302 }
       missingAnimIndexRef.current = 0
       missingAnimTimerRef.current = 0
     } else if (state === 'won') {
@@ -232,8 +215,11 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
       bgIdle.visible = true
       bgOn.visible = false
       bgWon.visible = true
-      labelStyleRef.current.fill = LABEL_COLOR_WON
-      countStyleRef.current.fill = LABEL_COLOR_WON
+      labelFontRef.current = 'prize-value-won'
+      countFontRef.current = 'prize-count-won'
+      if (label) label.style = { fontFamily: 'prize-value-won', fontSize: 14, fill: 0xd11919 }
+      const ct = countRef.current
+      if (ct) ct.style = { fontFamily: 'prize-count-won', fontSize: 14, fill: 0xd11919 }
       // Show the won pattern dots (use first pattern, white tint like idle)
       updateDots(patterns[0], 0xffffff)
     }
@@ -325,19 +311,19 @@ export default function PayoutCard({ cardIndex, patterns, stake, state, missings
 
       {/* Labels container */}
       <pixiContainer ref={(ref: Container | null) => { textsContainerRef.current = ref }}>
-        <pixiText
+        <pixiBitmapText
           text={formatNumber(prizeValue)}
-          style={labelStyleRef.current}
-          ref={(ref: Text | null) => {
+          style={{ fontFamily: labelFontRef.current, fontSize: 14, fill: 0x1b1302 }}
+          ref={(ref: BitmapText | null) => {
             labelRef.current = ref
             if (ref) updateLabelPosition()
           }}
         />
-        <pixiText
+        <pixiBitmapText
           text=""
-          style={countStyleRef.current}
+          style={{ fontFamily: countFontRef.current, fontSize: 14, fill: 0xfacb25 }}
           visible={false}
-          ref={(ref: Text | null) => { countRef.current = ref }}
+          ref={(ref: BitmapText | null) => { countRef.current = ref }}
         />
       </pixiContainer>
     </pixiContainer>

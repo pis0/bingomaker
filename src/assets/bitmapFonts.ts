@@ -62,9 +62,11 @@ export function installBitmapFonts(): void {
   ins('jackpot-title', IOWAN, 16, 0xffffff, LABEL_CHARS)
   ins('jackpot-sub', IOWAN, 16, 0x4e2b0d, LABEL_CHARS)
 
-  // PayoutCard — value 14px brown, count 14px gold
+  // PayoutCard — value 14px brown, count 14px gold, won variants red
   ins('prize-value', IOWAN, 14, 0x1b1302, NUMERIC)
   ins('prize-count', IOWAN, 14, 0xfacb25, LABEL_CHARS)
+  ins('prize-value-won', IOWAN, 14, 0xd11919, NUMERIC)
+  ins('prize-count-won', IOWAN, 14, 0xd11919, LABEL_CHARS)
 
   // BallPanel overlays — EXTRA 70px yellow, SUPER 74px cyan
   ins('overlay-extra', IOWAN, 70, 0xfff000, BUTTON_CHARS)

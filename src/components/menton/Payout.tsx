@@ -24,21 +24,19 @@
  *   Blank when no payout at all.
  */
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { Container, Sprite, Text } from 'pixi.js'
+import { Container, Sprite, BitmapText } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { PAYOUT_X, PAYOUT_Y, PAYOUT_W, PAYOUT_H } from './layoutConstants'
 
-extend({ Container, Sprite, Text })
+extend({ Container, Sprite, BitmapText })
 
 // AS3: BgPayout texture names
 const BG_OFF = 'payout'
 const BG_ON = 'payout_on'
 const BG_GLOW = 'payout_glow'
 
-// AS3: LABEL_COLORS — [0] white normal, [1] yellow on tween
-const COLOR_NORMAL = 0xffffff
-const COLOR_TWEEN = 0xfdfaa6
+// BitmapFont names: 'payout-value' (white), 'payout-won' (yellow blink)
 
 // Coin icon — AS3: scale 0.75 → 39×37
 const COIN_SCALE = 0.75
@@ -52,8 +50,6 @@ const ALIGN_Y_OFFSET = 12
 // AS3: container spans y[-15..45] = height 60 (Starling TextField fixed h:60, vAlign:center)
 const AS3_CONTAINER_H = 60
 
-// Composer: fontName "Myriad Pro Light", bold, fontSize 43
-const FONT_FAMILY = '"Myriad Pro", Arial, sans-serif'
 const FONT_SIZE = 43
 
 // AS3: blinkWonMoney — 0.2s interval, 0.4s duration
@@ -293,7 +289,8 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
       ? value       // active round payout
       : lastPayout  // idle: previous round's win (0 = blank)
 
-  const labelColor = tweenActiveRef.current ? COLOR_TWEEN : COLOR_NORMAL
+  const labelFont = tweenActiveRef.current ? 'payout-won' : 'payout-value'
+  const labelFill = tweenActiveRef.current ? 0xfdfaa6 : 0xffffff
   const displayAlpha = tweenActiveRef.current ? tweenAlpha : 1
   const labelText = showValue > 0 ? formatNumber(showValue) : ''
 
@@ -343,14 +340,9 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
             y={0}
             scale={COIN_SCALE}
           />
-          <pixiText
+          <pixiBitmapText
             text={labelText}
-            style={{
-              fontFamily: FONT_FAMILY,
-              fontSize: FONT_SIZE,
-              fontWeight: '600',
-              fill: labelColor,
-            }}
+            style={{ fontFamily: labelFont, fontSize: FONT_SIZE, fill: labelFill }}
             anchor={{ x: 0, y: 0.5 }}
             x={LABEL_OFFSET_X}
             y={Math.round(COIN_H / 2)}

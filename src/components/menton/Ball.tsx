@@ -1,21 +1,8 @@
-import { Sprite, Container, TextStyle } from 'pixi.js'
+import { Sprite, Container, BitmapText } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { tex } from '../../assets/atlas'
-import { BALL_FONT, BALL_TEXT_COLOR, BALL_NORMAL_SIZE, BALL_EXTRA_SIZE } from './ballConstants'
 
-extend({ Sprite, Container })
-
-const normalStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: BALL_NORMAL_SIZE,
-  fill: BALL_TEXT_COLOR,
-})
-
-const extraStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: BALL_EXTRA_SIZE,
-  fill: BALL_TEXT_COLOR,
-})
+extend({ Sprite, Container, BitmapText })
 
 interface Props {
   number: number
@@ -27,12 +14,13 @@ interface Props {
 /** AS3: Ball — single drawn ball with number text */
 export default function Ball({ number, x, y, extra = false }: Props) {
   const textureName = extra ? 'extraball' : 'ball'
-  const style = extra ? extraStyle : normalStyle
+  const bitmapFont = extra ? 'ball-extra' : 'ball-regular'
+  const fontSize = extra ? 29 : 24
 
   return (
     <pixiContainer x={x} y={y}>
       <pixiSprite texture={tex(textureName)} anchor={0.5} />
-      <pixiText text={String(number)} style={style} anchor={0.5} />
+      <pixiBitmapText text={String(number)} style={{ fontFamily: bitmapFont, fontSize, fill: 0x4d371e }} anchor={0.5} />
     </pixiContainer>
   )
 }

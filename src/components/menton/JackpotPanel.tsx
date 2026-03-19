@@ -15,12 +15,12 @@
  * - Counter animation: 1s tween from old value to new
  */
 import { useRef, useEffect, useCallback } from 'react'
-import { Container, Text, TextStyle, Ticker } from 'pixi.js'
+import { Container, BitmapText, Ticker } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { JACKPOT_PANEL_X, JACKPOT_PANEL_Y } from './layoutConstants'
 
-extend({ Container, Text })
+extend({ Container, BitmapText })
 
 // Internal offset — AS3 children base at (50, 50)
 const BASE_X = 50
@@ -51,26 +51,7 @@ const COIN_TEXT_GAP = 2
 // Value text x within pContainer (after coin + gap)
 const VALUE_X = COIN_W + COIN_TEXT_GAP
 
-// Composer: "JACKPOT" — IowanOldSt 16px, white, centered in 158×30
-const titleStyle = new TextStyle({
-  fontFamily: '"Iowan Old Style Black", Georgia, serif',
-  fontSize: 16,
-  fill: 0xffffff,
-})
-
-const offLabelStyle = new TextStyle({
-  fontFamily: '"Iowan Old Style Black", Georgia, serif',
-  fontSize: 16,
-  fill: 0x4e2b0d,
-})
-
-// Composer: value — Myriad Pro 35px bold, 0xd5cdaa
-const valueStyle = new TextStyle({
-  fontFamily: '"Myriad Pro Semibold", "Myriad Pro", Arial, sans-serif',
-  fontSize: 35,
-  fontWeight: '600',
-  fill: 0xd5cdaa,
-})
+// BitmapFont names: 'jackpot-title' (white 16px), 'jackpot-sub' (brown 16px), 'jackpot-value' (tan 35px)
 
 function formatNumber(n: number): string {
   return Math.floor(n).toLocaleString('pt-BR')
@@ -84,7 +65,7 @@ interface Props {
 }
 
 export default function JackpotPanel({ value = 5000, active = true, ballsToJackpot = 30, oneToWin = false }: Props) {
-  const valueTextRef = useRef<Text>(null)
+  const valueTextRef = useRef<BitmapText>(null)
   const pContainerRef = useRef<Container>(null)
   const prevValueRef = useRef(value)
   const displayValueRef = useRef(value)
@@ -174,9 +155,9 @@ export default function JackpotPanel({ value = 5000, active = true, ballsToJackp
 
       {/* "JACKPOT" title — centered in bg, vCenter in 30px box */}
       {active && (
-        <pixiText
+        <pixiBitmapText
           text="JACKPOT"
-          style={titleStyle}
+          style={{ fontFamily: 'jackpot-title', fontSize: 16, fill: 0xffffff }}
           anchor={{ x: 0.5, y: 0.5 }}
           x={BASE_X + BG_W / 2}
           y={BASE_Y + 15}
@@ -185,9 +166,9 @@ export default function JackpotPanel({ value = 5000, active = true, ballsToJackp
 
       {/* "UNTIL BALL X" — shown when inactive */}
       {!active && (
-        <pixiText
+        <pixiBitmapText
           text={`ATÉ BOLA ${ballsToJackpot}`}
-          style={offLabelStyle}
+          style={{ fontFamily: 'jackpot-sub', fontSize: 16, fill: 0x4e2b0d }}
           anchor={{ x: 0.5, y: 0.5 }}
           x={BASE_X + BG_W / 2}
           y={BASE_Y + 15}
@@ -208,10 +189,10 @@ export default function JackpotPanel({ value = 5000, active = true, ballsToJackp
           y={0}
         />
         {/* Value text — starts after coin right edge + gap, vCenter aligned with coin */}
-        <pixiText
+        <pixiBitmapText
           ref={valueTextRef}
           text={formatNumber(value)}
-          style={valueStyle}
+          style={{ fontFamily: 'jackpot-value', fontSize: 35, fill: 0xd5cdaa }}
           anchor={{ x: 0, y: 0.5 }}
           x={VALUE_X}
           y={0}

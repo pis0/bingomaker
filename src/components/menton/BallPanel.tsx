@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Sprite, Container, Text, TextStyle, Ticker, MeshPlane, AnimatedSprite, Assets, Texture } from 'pixi.js'
+import { Sprite, Container, BitmapText, Ticker, MeshPlane, AnimatedSprite, Assets, Texture } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex, textures as getTextures } from '../../assets/atlas'
 import { BALL_PANEL_X, BALL_PANEL_Y } from './layoutConstants'
@@ -21,10 +21,7 @@ import {
   ROW_0_Y, ROW_1_Y,
   ROW_0_START_X, ROW_1_START_X,
   BALL_SPACING, BALL_ROW_SIZE,
-  BALL_FONT, BALL_TEXT_COLOR, BALL_EXTRA_SIZE,
   EXTRA_GRID_START_X, EXTRA_GRID_COL_SPACING, EXTRA_GRID_ROW_SPACING, EXTRA_GRID_BASE_Y,
-  EXTRA_TEXT_COLOR, EXTRA_TEXT_SIZE,
-  SUPER_TEXT_COLOR, SUPER_TEXT_SIZE,
   TEXT_FADE_IN, TEXT_HOLD, TEXT_FADE_OUT,
   PEEL_STEP_TWEEN, PEEL_FLING_TWEEN,
   PEEL_COVER_ROTATIONS, PEEL_WOBBLE_AMPLITUDE, PEEL_WOBBLE_SPEED,
@@ -42,44 +39,8 @@ import type { Round } from '../../engine/Round'
 import { ParticleEmitter } from '../../particles/ParticleEmitter'
 import { mentonExtraWater } from '../../particles/configs/menton_extra_water'
 
-extend({ Sprite, Container, Text, AnimatedSprite })
+extend({ Sprite, Container, BitmapText, AnimatedSprite })
 
-// Large ball text style (AS3: fontSize:50, color:0x4d371e, letterSpacing:-2)
-const largeBallStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: 50,
-  fill: BALL_TEXT_COLOR,
-  letterSpacing: -2,
-})
-
-// Extra price display text (AS3: MyriadPro Semibold, 22px equiv, white)
-// Sized to fit within bigballv2 circle (86px wide)
-const extraPriceStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: 20,
-  fill: 0xffffff,
-})
-
-// "EXTRA" overlay text style (AS3: Fonts.IOWAN_BLACK, 70px, 0xfff000)
-const extraOverlayStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: EXTRA_TEXT_SIZE,
-  fill: EXTRA_TEXT_COLOR,
-})
-
-// "SUPER" overlay text style (AS3: Fonts.IOWAN_BLACK, 74px, 0x00fcff)
-const superOverlayStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: SUPER_TEXT_SIZE,
-  fill: SUPER_TEXT_COLOR,
-})
-
-// Peel ball text style (same as AnimatedBall extra style)
-const peelBallStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: BALL_EXTRA_SIZE,
-  fill: BALL_TEXT_COLOR,
-})
 
 const MAX_EXTRA_INDEX = DEFAULT_BALLS + EXTRA_BALLS
 
@@ -390,8 +351,8 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
   // ── Price text auto-scale (AS3: autoScale + resizeOffset) ─────
   // Scales down text if it exceeds the bigballv2 circle width (76px usable)
   const PRICE_MAX_WIDTH = 64
-  const priceTextRef = useRef<Text>(null)
-  const priceTextAutoScale = useCallback((t: Text | null) => {
+  const priceTextRef = useRef<BitmapText>(null)
+  const priceTextAutoScale = useCallback((t: BitmapText | null) => {
     priceTextRef.current = t
   }, [])
 
@@ -700,7 +661,7 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
   }, [isExtraPhase, isSuperPhase])
 
   // ── Text overlay animation (fade in → hold → fade out) ────────
-  const overlayRef = useRef<Text>(null)
+  const overlayRef = useRef<BitmapText>(null)
   const overlayT0Ref = useRef(0)
   useEffect(() => {
     if (overlayText) overlayT0Ref.current = performance.now()
@@ -896,7 +857,7 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
       {peelVisible && (
         <pixiContainer ref={peelBallContainerRef} x={PEEL_BALL_X[3]} y={PEEL_BALL_Y} scale={PEEL_BALL_SCALE}>
           <pixiSprite texture={tex('extraball')} anchor={0.5} />
-          <pixiText text={String(peelBallNumber)} style={peelBallStyle} anchor={0.5} />
+          <pixiBitmapText text={String(peelBallNumber)} style={{ fontFamily: 'ball-extra', fontSize: 29, fill: 0x4d371e }} anchor={0.5} />
         </pixiContainer>
       )}
 
@@ -917,10 +878,13 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
 
       {/* 10. Text overlay — "EXTRA" / "SUPER" announcement (renders BELOW pipoqueira) */}
       {overlayText && (
-        <pixiText
+        <pixiBitmapText
           ref={overlayRef}
           text={overlayText === 'extra' ? 'EXTRA' : 'SUPER'}
-          style={overlayText === 'extra' ? extraOverlayStyle : superOverlayStyle}
+          style={overlayText === 'extra'
+            ? { fontFamily: 'overlay-extra', fontSize: 70, fill: 0xfff000 }
+            : { fontFamily: 'overlay-super', fontSize: 74, fill: 0x00fcff }
+          }
           anchor={0.5}
           x={380}
           y={-20}
@@ -944,9 +908,9 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
         {drawing && currentBall > 0 && (
           <pixiContainer ref={largeBallRef} x={LARGE_BALL_X} y={LARGE_BALL_Y} visible={!inExtraMode}>
             <pixiSprite texture={tex('bigballv2')} />
-            <pixiText
+            <pixiBitmapText
               text={String(currentBall)}
-              style={largeBallStyle}
+              style={{ fontFamily: 'ball-large', fontSize: 50, fill: 0x4d371e }}
               anchor={0.5}
               x={42}
               y={42}
@@ -964,10 +928,10 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
               y={55}
               scale={nextExtraStake === 'cash' ? 0.75 : 0.6}
             />
-            <pixiText
+            <pixiBitmapText
               ref={priceTextAutoScale}
               text={nextExtraStake === 'free' ? 'FREE' : String(nextExtraPrice)}
-              style={extraPriceStyle}
+              style={{ fontFamily: 'extra-price', fontSize: 20, fill: 0xffffff }}
               anchor={0.5}
               x={83}
               y={88}

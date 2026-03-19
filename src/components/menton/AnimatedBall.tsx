@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { Container, Sprite, Text, TextStyle, Ticker } from 'pixi.js'
+import { Container, Sprite, BitmapText, Ticker } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import {
-  BALL_FONT, BALL_TEXT_COLOR, BALL_NORMAL_SIZE, BALL_EXTRA_SIZE,
   EXTRA_CHUTE_X, EXTRA_CHUTE_Y,
   EXTRA_WAYPOINT_X, EXTRA_WAYPOINT_Y,
   EXTRA_SPEED_PHASE1, EXTRA_SPEED_PHASE2,
@@ -14,19 +13,7 @@ import {
   SUPER_STACK_X, SUPER_STACK_BASE_Y, SUPER_STACK_BALL_HEIGHT,
 } from './ballConstants'
 
-extend({ Container, Sprite, Text })
-
-const normalStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: BALL_NORMAL_SIZE,
-  fill: BALL_TEXT_COLOR,
-})
-
-const extraStyle = new TextStyle({
-  fontFamily: BALL_FONT,
-  fontSize: BALL_EXTRA_SIZE,
-  fill: BALL_TEXT_COLOR,
-})
+extend({ Container, Sprite, BitmapText })
 
 /** Pipe exit X — center of ballpipe bottom opening */
 const PIPE_EXIT_X = 33
@@ -134,14 +121,15 @@ export default function AnimatedBall({ number, finalX, finalY, type, index, supe
 
   const isExtra = type !== 'regular'
   const textureName = isExtra ? 'extraball' : 'ball'
-  const style = isExtra ? extraStyle : normalStyle
+  const bitmapFont = isExtra ? 'ball-extra' : 'ball-regular'
+  const fontSize = isExtra ? 29 : 24
   const startX = isExtra ? EXTRA_CHUTE_X : PIPE_EXIT_X
   const startY = isExtra ? EXTRA_CHUTE_Y : PIPE_BOTTOM_Y
 
   return (
     <pixiContainer ref={containerRef} x={startX} y={startY}>
       <pixiSprite texture={tex(textureName)} anchor={0.5} />
-      <pixiText text={String(number)} style={style} anchor={0.5} />
+      <pixiBitmapText text={String(number)} style={{ fontFamily: bitmapFont, fontSize, fill: 0x4d371e }} anchor={0.5} />
     </pixiContainer>
   )
 }

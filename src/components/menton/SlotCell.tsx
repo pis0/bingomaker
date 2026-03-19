@@ -249,21 +249,27 @@ export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHi
   // Determine visual state — keep default look while marking animation plays
   let bgColor: number
   let bitmapFont: string
+  let bitmapFill: number
   if (settlePhase < 2 && matched) {
     bgColor = COLORS.bgDefault
     bitmapFont = settlePhase >= 1 ? 'slot-matched' : 'slot-default'
+    bitmapFill = settlePhase >= 1 ? 0x852f96 : 0x332d11
   } else if (inPattern && matched) {
     bgColor = COLORS.bgMatchedDark // fallback; cycling overrides via useTick
     bitmapFont = 'slot-pattern'
+    bitmapFill = 0x5b1f72
   } else if (matched) {
     bgColor = COLORS.bgMatched
     bitmapFont = 'slot-matched'
+    bitmapFill = 0x852f96
   } else if (idleHighlighted) {
     bgColor = COLORS.bgMatched
     bitmapFont = 'slot-idle'
+    bitmapFill = 0x852f96
   } else {
     bgColor = COLORS.bgDefault
     bitmapFont = 'slot-default'
+    bitmapFill = 0x332d11
   }
 
   const drawBg = useCallback((g: Graphics) => {
@@ -316,7 +322,7 @@ export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHi
       {!isMissing && (
         <pixiBitmapText
           text={num}
-          style={{ fontFamily: bitmapFont, fontSize: FONT_SIZE }}
+          style={{ fontFamily: bitmapFont, fontSize: FONT_SIZE, fill: bitmapFill }}
           anchor={0.5}
           x={SLOT_W / 2 - 2}
           y={SLOT_H / 2 - 2}

@@ -1,20 +1,7 @@
-import { Text, TextStyle } from 'pixi.js'
+import { BitmapText } from 'pixi.js'
 import { extend } from '@pixi/react'
-import { COUNTER_FONT, COUNTER_SIZE, COUNTER_COLOR, COUNTER_SHADOW } from './ballConstants'
 
-extend({ Text })
-
-const shadowStyle = new TextStyle({
-  fontFamily: COUNTER_FONT,
-  fontSize: COUNTER_SIZE,
-  fill: COUNTER_SHADOW,
-})
-
-const labelStyle = new TextStyle({
-  fontFamily: COUNTER_FONT,
-  fontSize: COUNTER_SIZE,
-  fill: COUNTER_COLOR,
-})
+extend({ BitmapText })
 
 interface Props {
   count: number
@@ -28,8 +15,8 @@ export default function BallCounter({ count, x = 0, y = 0 }: Props) {
 
   return (
     <pixiContainer x={x} y={y}>
-      <pixiText text={text} style={shadowStyle} anchor={0.5} y={2} />
-      <pixiText text={text} style={labelStyle} anchor={0.5} />
+      <pixiBitmapText text={text} style={{ fontFamily: 'counter-shadow', fontSize: 25, fill: 0x37393c }} anchor={0.5} y={2} />
+      <pixiBitmapText text={text} style={{ fontFamily: 'counter-label', fontSize: 25, fill: 0xc1c0ae }} anchor={0.5} />
     </pixiContainer>
   )
 }
