@@ -49,6 +49,8 @@ export interface DebugEngine {
   endRound: () => void;
   patternPreview: { pattern: Pattern; cardIndex: number } | null;
   setSeed: (seed: number) => void;
+  lockSeed: boolean;
+  setLockSeed: (locked: boolean) => void;
   setStakeIndex: (index: number) => void;
   newRound: (force?: ForceConfig) => void;
   shuffle: () => void;
@@ -75,6 +77,7 @@ export interface DebugEngine {
 
 export function useDebugEngine(): DebugEngine {
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 100000));
+  const [lockSeed, setLockSeed] = useState(false);
   const [stakeIndex, setStakeIndex] = useState(0);
   const stake = STAKE_LEVELS[stakeIndex];
   const [, setTick] = useState(0);
@@ -141,6 +144,8 @@ export function useDebugEngine(): DebugEngine {
     isPeelingRef.current = false;
     setIsPeeling(false);
     peelAdvanceTickRef.current = 0;
+    // Increment seed unless locked
+    if (!lockSeed) setSeed(s => s + 1);
     const round = buildRound(force);
     roundRef.current = round;
     targetBallCountRef.current = 0;
@@ -148,7 +153,7 @@ export function useDebugEngine(): DebugEngine {
     setPatternPreview(null);
     logNewRound(round, seed);
     rerender();
-  }, [seed, buildRound, rerender]);
+  }, [seed, lockSeed, buildRound, rerender]);
 
   const shuffle = useCallback(() => {
     if (!roundRef.current) return;
@@ -410,6 +415,8 @@ export function useDebugEngine(): DebugEngine {
   return {
     round,
     seed,
+    lockSeed,
+    setLockSeed,
     stake,
     stakeIndex,
     targetBallCount: targetBallCountRef.current,

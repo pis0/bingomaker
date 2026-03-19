@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function SimulationSection({ engine }: Props) {
-  const { round, seed, stakeIndex, setSeed, setStakeIndex, newRound, shuffle, forceNow, advance, advanceLabel, canAdvance, canEnd, endRound, isSettling, setPreview } = engine;
+  const { round, seed, lockSeed, setLockSeed, stakeIndex, setSeed, setStakeIndex, newRound, shuffle, forceNow, advance, advanceLabel, canAdvance, canEnd, endRound, isSettling, setPreview } = engine;
 
   const [forceEnabled, setForceEnabled] = useState(false);
   const [patternIndex, setPatternIndex] = useState(0);
@@ -70,7 +70,12 @@ export default function SimulationSection({ engine }: Props) {
           type="number"
           value={seed}
           onChange={(e) => setSeed(Number(e.target.value) || 0)}
+          style={{ width: lockSeed ? '60px' : undefined }}
         />
+        <label style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 3 }}>
+          <input type="checkbox" checked={lockSeed} onChange={(e) => setLockSeed(e.target.checked)} />
+          Lock
+        </label>
       </div>
       <div className="debug-row">
         <label>Stake</label>
