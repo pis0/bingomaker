@@ -24,6 +24,10 @@ export const BELL_PANEL_CENTER_Y = BELL_PANEL_Y + BELL_PANEL_H / 2
 export const JACKPOT_PANEL_X = 540
 export const JACKPOT_PANEL_Y = 130
 
+// AS3: addComp(ButtonPanel, {x: 7, y: 712})
+export const BUTTON_PANEL_X = 7
+export const BUTTON_PANEL_Y = 712
+
 // AS3: Payout — local x:525, y:10 inside ButtonPanel (x:7, y:712)
 // Absolute in Menton space: 7+525=532, 712+10=722
 export const PAYOUT_X = 532

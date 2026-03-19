@@ -29,9 +29,13 @@ interface Props {
   shakeOffset?: { x: number; y: number }
   /** Enable blinkMarkExtra on slots (extras/super extras phase) */
   shouldBlink?: boolean
+  /** Whether cards are in idle state (clickable for shuffle) */
+  isIdle?: boolean
+  /** Called when player clicks cards during idle to shuffle */
+  onShuffle?: () => void
 }
 
-export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y, shakeOffset, shouldBlink = false }: Props) {
+export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y, shakeOffset, shouldBlink = false, isIdle = false, onShuffle }: Props) {
   const offsetX = (x ?? CARD_PANEL_X) + (shakeOffset?.x ?? 0)
   const offsetY = (y ?? CARD_PANEL_Y) + (shakeOffset?.y ?? 0)
 
@@ -65,7 +69,15 @@ export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x
   return (
     <pixiContainer x={offsetX} y={offsetY}>
       {round.cards.map((card, i) => (
-        <pixiContainer key={card.index} x={positions[i].x} y={positions[i].y} visible={cardsVisible}>
+        <pixiContainer
+          key={card.index}
+          x={positions[i].x}
+          y={positions[i].y}
+          visible={cardsVisible}
+          eventMode={isIdle && onShuffle ? 'static' : 'auto'}
+          cursor={isIdle && onShuffle ? 'pointer' : 'default'}
+          onPointerUp={isIdle ? onShuffle : undefined}
+        >
           <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} idlePattern={idlePattern} shouldBlink={shouldBlink} />
         </pixiContainer>
       ))}

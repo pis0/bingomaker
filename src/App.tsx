@@ -50,7 +50,30 @@ export default function App() {
         background="#000000"
         preference="webgpu"
       >
-        <Menton round={engine.round} stakeIndex={engine.stakeIndex} targetBallCount={engine.targetBallCount} processNextBall={engine.processNextBall} isCollecting={engine.isCollecting} lastPayout={engine.lastPayout} onBonusActiveChange={engine.setBonusActive} peelAdvanceTick={engine.peelAdvanceTick} onPeelChange={engine.handlePeelChange} />
+        <Menton
+          round={engine.round}
+          stakeIndex={engine.stakeIndex}
+          targetBallCount={engine.targetBallCount}
+          processNextBall={engine.processNextBall}
+          isCollecting={engine.isCollecting}
+          lastPayout={engine.lastPayout}
+          onBonusActiveChange={engine.setBonusActive}
+          peelAdvanceTick={engine.peelAdvanceTick}
+          onPeelChange={engine.handlePeelChange}
+          buttonPhase={
+            engine.advanceLabel === 'Extra' ? 'extra'
+            : engine.advanceLabel === 'Super Extra' ? 'super'
+            : engine.advanceLabel === 'Peel' ? 'peel'
+            : engine.advanceLabel === 'Next' ? 'halt'
+            : 'play'
+          }
+          buttonEnabled={engine.canAdvance}
+          onPlay={engine.advance}
+          onExtra={engine.advance}
+          onEnd={engine.endRound}
+          onStakeChange={engine.setStakeIndex}
+          onShuffle={engine.shuffle}
+        />
         {showDevtools && <PixiStatsBridge />}
       </Application>
       {showDevtools && <PixiStats />}

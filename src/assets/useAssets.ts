@@ -25,6 +25,7 @@ export function useAssets() {
           document.fonts.load('normal 24px "Iowan Old Style Bold"'),
           document.fonts.load('600 24px "Myriad Pro"'),
           document.fonts.load('bold 24px "Myriad Pro"'),
+          document.fonts.load('normal 24px "Clarendon Black BT"'),
         ])
         if (!cancelled) setStatus('ready')
       } catch (err) {

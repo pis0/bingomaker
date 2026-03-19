@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react'
 import { Container } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import Scenery from './Scenery'
+import ButtonPanel, { type ButtonPhase } from './ButtonPanel'
 import CardPanel from './CardPanel'
 import PayoutTable from './PayoutTable'
 import BallPanel from './BallPanel'
@@ -73,9 +74,20 @@ interface Props {
   peelAdvanceTick?: number
   /** BallPanel peel state change callback */
   onPeelChange?: (peeling: boolean) => void
+  /** ButtonPanel phase */
+  buttonPhase?: ButtonPhase
+  /** ButtonPanel enabled (accepts input) */
+  buttonEnabled?: boolean
+  /** ButtonPanel callbacks */
+  onPlay?: () => void
+  onExtra?: () => void
+  onEnd?: () => void
+  onStakeChange?: (newIndex: number) => void
+  /** Shuffle cards (click on cards during idle) */
+  onShuffle?: () => void
 }
 
-export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange, peelAdvanceTick = 0, onPeelChange }: Props) {
+export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange, peelAdvanceTick = 0, onPeelChange, buttonPhase = 'play', buttonEnabled = true, onPlay, onExtra, onEnd, onStakeChange, onShuffle }: Props) {
   const stake = STAKE_LEVELS[stakeIndex]
 
   // AS3: IntervalCardPatternController — cycles individual patterns during idle
@@ -329,6 +341,8 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
               idlePattern={idlePattern}
               shakeOffset={cardShake}
               shouldBlink={isExtraPhase}
+              isIdle={!drawing}
+              onShuffle={onShuffle}
             />
           </pixiContainer>
           {/* Overlay animations — z=9, always above cards (AS3: ParticlesLayer level) */}
@@ -348,6 +362,16 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
           </pixiContainer>
         </pixiContainer>
       )}
+      {/* ButtonPanel — always visible, below game area */}
+      <ButtonPanel
+        phase={buttonPhase}
+        enabled={buttonEnabled}
+        stakeIndex={stakeIndex}
+        onPlay={onPlay}
+        onExtra={onExtra}
+        onEnd={onEnd}
+        onStakeChange={onStakeChange}
+      />
     </pixiContainer>
   )
 }
