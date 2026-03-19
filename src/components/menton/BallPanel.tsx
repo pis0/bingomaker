@@ -820,9 +820,6 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
           </>
         )}
 
-        {/* MovieSplash — prize celebration animation (AS3: x:406 y:62 in extraBallsFrontContainer) */}
-        <MovieSplash ref={splashRef} />
-
         <pixiSprite
           ref={setupCover}
           texture={tex('bigballpipe2')}
@@ -844,6 +841,12 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
           alpha={0}
         />
       )}
+
+      {/* MovieSplash — prize celebration, above overlay text (AS3: extraBallsFrontContainer top) */}
+      <pixiContainer y={EXTRA_FRONT_Y}>
+        <MovieSplash ref={splashRef} />
+      </pixiContainer>
+
     </pixiContainer>
   )
 }

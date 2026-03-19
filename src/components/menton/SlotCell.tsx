@@ -79,12 +79,13 @@ interface Props {
   col: number
   x: number
   y: number
+  zIndex?: number
   hasBell?: boolean
   idleHighlighted?: boolean
   shouldBlink?: boolean
 }
 
-export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighted = false, shouldBlink = false }: Props) {
+export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHighlighted = false, shouldBlink = false }: Props) {
   const matched = card.matches[row][col]
   const inPattern = card.inPattern[row][col]
   const priority = card.patternPriority[row][col]
@@ -307,7 +308,7 @@ export default function SlotCell({ card, row, col, x, y, hasBell, idleHighlighte
   }, [])
 
   return (
-    <pixiContainer x={x} y={y}>
+    <pixiContainer x={x} y={y} zIndex={zIndex}>
       {/* Background quad */}
       <pixiGraphics draw={drawBg} />
 

@@ -1,0 +1,215 @@
+{
+  "frames": {
+    "juice_03": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 295,
+        "h": 205
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 295,
+        "h": 205
+      },
+      "sourceSize": {
+        "w": 295,
+        "h": 205
+      }
+    },
+    "juice_01": {
+      "frame": {
+        "x": 207,
+        "y": 0,
+        "w": 444,
+        "h": 204
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 444,
+        "h": 204
+      },
+      "sourceSize": {
+        "w": 444,
+        "h": 204
+      }
+    },
+    "juice_02": {
+      "frame": {
+        "x": 653,
+        "y": 0,
+        "w": 314,
+        "h": 112
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 314,
+        "h": 112
+      },
+      "sourceSize": {
+        "w": 314,
+        "h": 112
+      }
+    },
+    "juice_04": {
+      "frame": {
+        "x": 969,
+        "y": 0,
+        "w": 103,
+        "h": 130
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 103,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 103,
+        "h": 130
+      }
+    },
+    "juice_05c": {
+      "frame": {
+        "x": 1101,
+        "y": 0,
+        "w": 43,
+        "h": 34
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 43,
+        "h": 34
+      },
+      "sourceSize": {
+        "w": 43,
+        "h": 34
+      }
+    },
+    "juice_06": {
+      "frame": {
+        "x": 1137,
+        "y": 0,
+        "w": 36,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 36,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 36,
+        "h": 33
+      }
+    },
+    "juice_06b": {
+      "frame": {
+        "x": 1175,
+        "y": 0,
+        "w": 38,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 38,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 38,
+        "h": 33
+      }
+    },
+    "juice_06c": {
+      "frame": {
+        "x": 1215,
+        "y": 0,
+        "w": 36,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 36,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 36,
+        "h": 33
+      }
+    },
+    "juice_05": {
+      "frame": {
+        "x": 1253,
+        "y": 0,
+        "w": 40,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 40,
+        "h": 32
+      }
+    },
+    "juice_05b": {
+      "frame": {
+        "x": 1295,
+        "y": 0,
+        "w": 40,
+        "h": 30
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 40,
+        "h": 30
+      }
+    }
+  },
+  "meta": {
+    "app": "pack-juice-atlas.mjs",
+    "version": "1.0",
+    "image": "menton_juice.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1335,
+      "h": 295
+    },
+    "scale": "1"
+  }
+}

@@ -18,14 +18,26 @@
  * Text: Iowan Black 56px, dark brown 0x340100, autoScale
  * Ball: bigball 138×138, scale 0.65, with number text (Iowan Black 75px)
  */
-import { useRef, useCallback, useImperativeHandle, forwardRef } from 'react'
-import { Container, Sprite, Text, TextStyle, Ticker } from 'pixi.js'
+import { useRef, useCallback, useImperativeHandle, forwardRef, useEffect } from 'react'
+import { Container, Sprite, Text, TextStyle, Ticker, Assets, Spritesheet, Texture } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { tex } from '../../assets/atlas'
-// TODO: integrate MovieBytesPlayer for juicesplash.bytes when needed
-// import { MovieBytesPlayer } from '../../animations/MovieBytesPlayer'
+import { loadMovieBytes } from '../../animations/loadMovieBytes'
+import { MovieBytesPlayer } from '../../animations/MovieBytesPlayer'
 
 extend({ Container, Sprite, Text })
+
+const SPLASH_BYTES_URL = '/assets/menton/movies/juicesplash.bytes'
+// AS3: AssukarMovieBytes with movieScale=0 → defaults to PRAIA_GAME_CONTAINER_SCALE
+const MOVIE_SCALE = 0.41667
+
+/** Resolve texture — juice_* sprites in dedicated menton_juice atlas */
+function getTexture(name: string): Texture {
+  const sheet = Assets.get<Spritesheet>('menton_juice')
+  if (sheet?.textures[name]) return sheet.textures[name]
+  console.warn(`[MovieSplash] texture "${name}" not found`)
+  return Texture.EMPTY
+}
 
 // AS3: label — Iowan Black 56px, dark brown, autoScale within 430×80
 const labelStyle = new TextStyle({
@@ -62,9 +74,28 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
   const ballContainerRef = useRef<Container>(null)
   const labelRef = useRef<Text>(null)
   const ballTextRef = useRef<Text>(null)
-  // Label reveal: use scaleX on the label itself (0→1) instead of a separate mask Graphics
-  const movieRef = useRef<{ play: () => void; stop: () => void } | null>(null)
+  const movieRef = useRef<MovieBytesPlayer | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
+
+  // Load juicesplash.bytes on mount — adds player container behind label/ball
+  useEffect(() => {
+    let disposed = false
+    loadMovieBytes(SPLASH_BYTES_URL).then((data) => {
+      if (disposed) return
+      const player = new MovieBytesPlayer(data, getTexture, { scale: MOVIE_SCALE })
+      movieRef.current = player
+      player.container.visible = false
+      if (containerRef.current) {
+        // Insert at index 0 so it renders behind label and ball
+        containerRef.current.addChildAt(player.container, 0)
+      }
+    })
+    return () => {
+      disposed = true
+      movieRef.current?.destroy()
+      movieRef.current = null
+    }
+  }, [])
 
   const reset = useCallback(() => {
     const ball = ballContainerRef.current
@@ -83,7 +114,11 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
       label.scale.set(1)
       label.scale.x = 0 // hidden via scaleX (mask reveal substitute)
     }
-    movieRef.current?.stop()
+    const movie = movieRef.current
+    if (movie) {
+      movie.stop()
+      movie.container.visible = false
+    }
   }, [])
 
   const play = useCallback((text: string, ballNumber: string, onComplete?: () => void) => {
@@ -139,7 +174,11 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
     }, () => {
       // Phase 2 starts: show movie + label
       label.visible = true
-      movieRef.current?.play()
+      const movie = movieRef.current
+      if (movie) {
+        movie.container.visible = true
+        movie.play({ fps: 45, repeatCount: 1 })
+      }
 
       // Label reveal via scaleX (0.1s delay, 0.2s duration)
       tween(0.3, 0.2, (t) => {
@@ -205,8 +244,7 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
 
   return (
     <pixiContainer ref={containerRef} x={406} y={62}>
-      {/* Juice splash MovieBytes — plays behind the ball/text */}
-      {/* TODO: integrate MovieBytesPlayer for juicesplash.bytes when manifest supports it */}
+      {/* Juice splash MovieBytes — loaded imperatively, inserted at index 0 (behind label/ball) */}
 
       {/* Prize text label — revealed via scaleX 0→1 (AS3 used mask, we use scale) */}
       <pixiText

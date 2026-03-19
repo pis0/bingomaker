@@ -97,25 +97,30 @@ export default function CardView({ card, stakeIndex = 0, bellPosition, idlePatte
       {/* Moldura borders for missing-one patterns */}
       {card.maxMissingPriority >= 2 && <MissingBackground card={card} />}
 
-      {/* Slot layer 2: missing slots (above moldura, AS3: topChild) */}
-      {Array.from({ length: ROWS }, (_, row) =>
-        Array.from({ length: COLS }, (_, col) => {
-          if (card.matches[row][col] || card.expectations[row][col] === null) return null
-          return (
-            <SlotCell
-              key={`m${row * COLS + col}`}
-              card={card}
-              row={row}
-              col={col}
-              x={X_O + col * CELL_W}
-              y={Y_O + row * CELL_H}
-              hasBell={bellPosition?.row === row && bellPosition?.col === col}
-              idleHighlighted={!!idlePattern && idlePattern.mask[row * COLS + col]}
-              shouldBlink={shouldBlink}
-            />
-          )
-        }),
-      )}
+      {/* Slot layer 2: missing slots (above moldura, AS3: topChild)
+          sortableChildren + zIndex ensures higher-priority patterns render on top */}
+      <pixiContainer sortableChildren>
+        {Array.from({ length: ROWS }, (_, row) =>
+          Array.from({ length: COLS }, (_, col) => {
+            const holder = card.expectations[row][col]
+            if (card.matches[row][col] || holder === null) return null
+            return (
+              <SlotCell
+                key={`m${row * COLS + col}`}
+                card={card}
+                row={row}
+                col={col}
+                x={X_O + col * CELL_W}
+                y={Y_O + row * CELL_H}
+                zIndex={holder.maxPriority}
+                hasBell={bellPosition?.row === row && bellPosition?.col === col}
+                idleHighlighted={!!idlePattern && idlePattern.mask[row * COLS + col]}
+                shouldBlink={shouldBlink}
+              />
+            )
+          }),
+        )}
+      </pixiContainer>
 
       {/* Pattern completion animation (liquid + chips) */}
       {activeAnim && (
