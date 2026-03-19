@@ -28,7 +28,6 @@ const BASE_Y = 50
 
 // prizejack dimensions
 const BG_W = 158
-const BG_H = 75
 
 // AREA rect for value display (AS3: Rectangle(50, 90, 158, 40))
 const AREA_X = 50
@@ -43,7 +42,6 @@ const MAX_CONTAINER_W = AREA_W - 20
 // Coin: ficha57_sk at scale 0.75 → 28.5 × 27.75
 const COIN_SCALE = 0.75
 const COIN_W = 38 * COIN_SCALE  // 28.5
-const COIN_H = 37 * COIN_SCALE  // 27.75
 
 // Gap between coin right edge and value text left edge
 const COIN_TEXT_GAP = 2
