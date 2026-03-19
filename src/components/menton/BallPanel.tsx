@@ -525,12 +525,43 @@ export default function BallPanel({ round, targetBallCount, stake = 1, launchInt
     }
   }, [inExtraMode])
 
-  // ── Splash orchestration (AS3: playSplash → shakePopper → resetPos) ──
-  const movieSplashRef = useRef<MovieSplashHandle>(null)
-  const popperRef = useRef<AnimatedSprite>(null)
+  // ── Pipoqueira refs (shared by flash + splash) ──────────────
   const frontContainerRef = useRef<Container>(null)
   const largeBallRef = useRef<Container>(null)
   const extraPriceRef = useRef<Container>(null)
+
+  // ── Large ball flash during extras (AS3: updateLargeBall on every draw) ──
+  // When a new ball is dispatched during extras/supers, briefly show the ball
+  // number in the pipoqueira (~2s) then restore the price display.
+  const largeBallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prevBallRef = useRef(0)
+  useEffect(() => {
+    if (!inExtraMode || currentBall === 0 || currentBall === prevBallRef.current) return
+    prevBallRef.current = currentBall
+
+    // Show ball, hide price
+    if (largeBallRef.current) largeBallRef.current.visible = true
+    if (extraPriceRef.current) extraPriceRef.current.visible = false
+
+    // Restore after ~2s
+    if (largeBallTimerRef.current) clearTimeout(largeBallTimerRef.current)
+    largeBallTimerRef.current = setTimeout(() => {
+      if (largeBallRef.current) largeBallRef.current.visible = false
+      if (extraPriceRef.current) extraPriceRef.current.visible = true
+    }, 1000)
+  }, [currentBall, inExtraMode])
+
+  // Cleanup timer on unmount/round change
+  useEffect(() => {
+    if (!drawing) {
+      prevBallRef.current = 0
+      if (largeBallTimerRef.current) { clearTimeout(largeBallTimerRef.current); largeBallTimerRef.current = null }
+    }
+  }, [drawing])
+
+  // ── Splash orchestration (AS3: playSplash → shakePopper → resetPos) ──
+  const movieSplashRef = useRef<MovieSplashHandle>(null)
+  const popperRef = useRef<AnimatedSprite>(null)
   const splashCleanupRef = useRef<(() => void) | null>(null)
 
   // Expose orchestrated splash to parent via splashRef
