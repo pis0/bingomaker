@@ -15,8 +15,11 @@ export class Card {
   /** ball number → { row, col } for quick lookup */
   private readonly ballPosition = new Map<number, { row: number; col: number }>();
 
-  /** Patterns completed this round */
+  /** Patterns completed this round (mutable — children removed for payout hierarchy) */
   readonly completedPatterns: Set<Pattern> = new Set();
+
+  /** All patterns ever resolved this round (add-only, never deleted) */
+  private readonly resolvedPatterns: Set<Pattern> = new Set();
 
   /** Last matched cell (for CardMatches snapshot) */
   private lastMatch: { row: number; col: number } | null = null;
@@ -62,6 +65,7 @@ export class Card {
     this.maxCompletedPriority = 0;
     this.lastMatch = null;
     this.completedPatterns.clear();
+    this.resolvedPatterns.clear();
 
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
@@ -99,9 +103,17 @@ export class Card {
     return pos;
   }
 
+  /** Check if a pattern was ever completed this round (never cleared by hierarchy) */
+  hasResolved(pattern: Pattern): boolean {
+    return this.resolvedPatterns.has(pattern);
+  }
+
   /** Mark cells of a completed pattern */
   setPattern(pattern: Pattern, stake: number): number {
     this.completedPatterns.add(pattern);
+    // Permanently mark pattern + all descendants as resolved
+    this.resolvedPatterns.add(pattern);
+    this.resolveDescendants(pattern);
 
     // Mark cells in pattern with priority
     const priority = pattern.group.priority;
@@ -175,5 +187,13 @@ export class Card {
   /** Clear lastMatch after snapshot is taken */
   clearLastMatch(): void {
     this.lastMatch = null;
+  }
+
+  /** Recursively mark all descendants as resolved */
+  private resolveDescendants(pattern: Pattern): void {
+    for (const child of pattern.children) {
+      this.resolvedPatterns.add(child);
+      this.resolveDescendants(child);
+    }
   }
 }

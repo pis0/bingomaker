@@ -26,7 +26,7 @@ export function checkForPatterns(card: Card, stake: number): PatternCheckResult 
   // Iterate patterns from highest priority to lowest
   for (const pattern of SORTED_PATTERNS) {
     if (pattern.marked) continue;
-    if (card.completedPatterns.has(pattern)) {
+    if (card.hasResolved(pattern)) {
       pattern.marked = true;
       continue;
     }
