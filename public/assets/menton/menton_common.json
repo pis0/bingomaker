@@ -1,0 +1,75 @@
+{
+  "frames": {
+    "ficha": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 77,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 77,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 77,
+        "h": 52
+      }
+    },
+    "ficha78_sk": {
+      "frame": {
+        "x": 79,
+        "y": 0,
+        "w": 50,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 50,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 50,
+        "h": 49
+      }
+    },
+    "smallball": {
+      "frame": {
+        "x": 131,
+        "y": 0,
+        "w": 23,
+        "h": 22
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 23,
+        "h": 22
+      },
+      "sourceSize": {
+        "w": 23,
+        "h": 22
+      }
+    }
+  },
+  "meta": {
+    "app": "split-atlas.mjs",
+    "version": "1.0",
+    "image": "menton_common.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 256,
+      "h": 64
+    },
+    "scale": "1"
+  }
+}

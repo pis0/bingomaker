@@ -1,0 +1,255 @@
+{
+  "frames": {
+    "payout": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 202,
+        "h": 93
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 202,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 202,
+        "h": 93
+      }
+    },
+    "payout_on": {
+      "frame": {
+        "x": 204,
+        "y": 0,
+        "w": 202,
+        "h": 91
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 202,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 202,
+        "h": 91
+      }
+    },
+    "payout_glow": {
+      "frame": {
+        "x": 408,
+        "y": 0,
+        "w": 202,
+        "h": 91
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 202,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 202,
+        "h": 91
+      }
+    },
+    "prize_won": {
+      "frame": {
+        "x": 612,
+        "y": 0,
+        "w": 66,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 66,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 66,
+        "h": 50
+      }
+    },
+    "prize2": {
+      "frame": {
+        "x": 680,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 36
+      }
+    },
+    "prize3": {
+      "frame": {
+        "x": 747,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 36
+      }
+    },
+    "prize4": {
+      "frame": {
+        "x": 814,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 36
+      }
+    },
+    "prize5": {
+      "frame": {
+        "x": 881,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 36
+      }
+    },
+    "prize6": {
+      "frame": {
+        "x": 948,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 36
+      }
+    },
+    "prize7": {
+      "frame": {
+        "x": 1015,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 36
+      }
+    },
+    "prize1": {
+      "frame": {
+        "x": 1082,
+        "y": 0,
+        "w": 61,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 61,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 61,
+        "h": 32
+      }
+    },
+    "prizedot1": {
+      "frame": {
+        "x": 1145,
+        "y": 0,
+        "w": 9,
+        "h": 9
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 9,
+        "h": 9
+      },
+      "sourceSize": {
+        "w": 9,
+        "h": 9
+      }
+    }
+  },
+  "meta": {
+    "app": "split-atlas.mjs",
+    "version": "1.0",
+    "image": "menton_payoutpanel.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 2048,
+      "h": 128
+    },
+    "scale": "1"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "frames": {
+    "jackbar2": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 5,
+        "h": 146
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 5,
+        "h": 146
+      },
+      "sourceSize": {
+        "w": 5,
+        "h": 146
+      }
+    },
+    "prizejack_on": {
+      "frame": {
+        "x": 7,
+        "y": 0,
+        "w": 165,
+        "h": 82
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 165,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 165,
+        "h": 82
+      }
+    },
+    "prizejack": {
+      "frame": {
+        "x": 174,
+        "y": 0,
+        "w": 158,
+        "h": 75
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 158,
+        "h": 75
+      },
+      "sourceSize": {
+        "w": 158,
+        "h": 75
+      }
+    },
+    "ficha57_sk": {
+      "frame": {
+        "x": 334,
+        "y": 0,
+        "w": 38,
+        "h": 37
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 38,
+        "h": 37
+      },
+      "sourceSize": {
+        "w": 38,
+        "h": 37
+      }
+    },
+    "jackbar1": {
+      "frame": {
+        "x": 374,
+        "y": 0,
+        "w": 62,
+        "h": 6
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 62,
+        "h": 6
+      },
+      "sourceSize": {
+        "w": 62,
+        "h": 6
+      }
+    }
+  },
+  "meta": {
+    "app": "split-atlas.mjs",
+    "version": "1.0",
+    "image": "menton_jackpot.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 512,
+      "h": 256
+    },
+    "scale": "1"
+  }
+}

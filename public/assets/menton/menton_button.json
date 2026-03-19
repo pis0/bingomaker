@@ -1,254 +1,254 @@
 {
   "frames": {
-    "sino_brilho0001": {
+    "btplay_idle": {
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       }
     },
-    "sino_brilho0002": {
+    "btplay_hit": {
       "frame": {
-        "x": 173,
+        "x": 283,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       }
     },
-    "sino_brilho0003": {
+    "btplay_off": {
       "frame": {
-        "x": 346,
+        "x": 566,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       }
     },
-    "sino_brilho0004": {
+    "btextra_idle": {
       "frame": {
-        "x": 519,
+        "x": 849,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       }
     },
-    "sino_brilho0005": {
+    "btextra_hit": {
       "frame": {
-        "x": 692,
+        "x": 1132,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       }
     },
-    "sino_brilho0006": {
+    "btextra_off": {
       "frame": {
-        "x": 0,
-        "y": 172,
-        "w": 171,
-        "h": 170
+        "x": 1415,
+        "y": 0,
+        "w": 281,
+        "h": 109
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 281,
+        "h": 109
       }
     },
-    "sino_brilho0007": {
+    "btend_idle": {
       "frame": {
-        "x": 173,
-        "y": 172,
-        "w": 171,
-        "h": 170
+        "x": 1698,
+        "y": 0,
+        "w": 181,
+        "h": 93
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       }
     },
-    "sino_brilho0008": {
+    "btend_hit": {
       "frame": {
-        "x": 346,
-        "y": 172,
-        "w": 171,
-        "h": 170
+        "x": 1881,
+        "y": 0,
+        "w": 181,
+        "h": 93
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       }
     },
-    "sino_brilho0009": {
+    "btend_off": {
       "frame": {
-        "x": 519,
-        "y": 172,
-        "w": 171,
-        "h": 170
+        "x": 2064,
+        "y": 0,
+        "w": 181,
+        "h": 93
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       }
     },
-    "sino_brilho0010": {
+    "btbet_idle": {
       "frame": {
-        "x": 692,
-        "y": 172,
-        "w": 171,
-        "h": 170
+        "x": 2247,
+        "y": 0,
+        "w": 181,
+        "h": 93
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       }
     },
-    "sino_brilho0011": {
+    "btbet_hit": {
       "frame": {
-        "x": 0,
-        "y": 344,
-        "w": 171,
-        "h": 170
+        "x": 2430,
+        "y": 0,
+        "w": 181,
+        "h": 93
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       },
       "sourceSize": {
-        "w": 171,
-        "h": 170
+        "w": 181,
+        "h": 93
       }
     },
-    "Sino": {
+    "btbet_off": {
       "frame": {
-        "x": 173,
-        "y": 344,
-        "w": 62,
-        "h": 79
+        "x": 2613,
+        "y": 0,
+        "w": 181,
+        "h": 93
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 62,
-        "h": 79
+        "w": 181,
+        "h": 93
       },
       "sourceSize": {
-        "w": 62,
-        "h": 79
+        "w": 181,
+        "h": 93
       }
     }
   },
   "meta": {
-    "app": "pack-atlas.mjs",
+    "app": "split-atlas.mjs",
     "version": "1.0",
-    "image": "menton_bell.png",
+    "image": "menton_button.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1024,
-      "h": 1024
+      "w": 4096,
+      "h": 128
     },
     "scale": "1"
   }

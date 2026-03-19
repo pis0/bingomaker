@@ -4,7 +4,7 @@ import { mentonManifest } from './manifest'
 
 export type AssetStatus = 'loading' | 'ready' | 'error'
 
-const BUNDLES_TO_LOAD = ['menton-core', 'menton-movies']
+const BUNDLES_TO_LOAD = ['menton-core', 'menton-panels', 'menton-movies']
 
 export function useAssets() {
   const [status, setStatus] = useState<AssetStatus>('loading')

@@ -31,9 +31,9 @@ const SPLASH_BYTES_URL = '/assets/menton/movies/juicesplash.bytes'
 // AS3: AssukarMovieBytes with movieScale=0 → defaults to PRAIA_GAME_CONTAINER_SCALE
 const MOVIE_SCALE = 0.41667
 
-/** Resolve texture — juice_* sprites in dedicated menton_juice atlas */
+/** Resolve texture — juice_* sprites in menton_ballpanel atlas */
 function getTexture(name: string): Texture {
-  const sheet = Assets.get<Spritesheet>('menton_juice')
+  const sheet = Assets.get<Spritesheet>('menton_ballpanel')
   if (sheet?.textures[name]) return sheet.textures[name]
   console.warn(`[MovieSplash] texture "${name}" not found`)
   return Texture.EMPTY

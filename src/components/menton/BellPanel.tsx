@@ -33,7 +33,7 @@ function easeOutQuint(t: number): number {
 }
 
 function tex(name: string): Texture {
-  const sheet = Assets.get<Spritesheet>('menton0')
+  const sheet = Assets.get<Spritesheet>('menton_bellpanel')
   return sheet?.textures[name] ?? Texture.EMPTY
 }
 

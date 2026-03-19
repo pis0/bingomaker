@@ -7,7 +7,7 @@ import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
 
 extend({ Container })
 
-const BELL_ATLAS = 'menton_bell'
+const BELL_ATLAS = 'menton_bellpanel'
 
 // Center of the 2×2 card grid in Menton space
 const CARDS_CENTER_X = CARD_PANEL_X + (CARD_W * 2 + CARD_GAP) / 2

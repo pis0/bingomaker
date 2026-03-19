@@ -34,12 +34,15 @@ const LEMON_POS = { x: 367, y: 200 }
 
 type Phase = 'idle' | 'delay' | 'tween' | 'playing'
 
-/** Resolve texture name from bingo atlas or main atlas */
+/** Resolve texture name from bingo atlas or panel atlases */
 function getTexture(name: string): Texture {
   const bingoSheet = Assets.get<Spritesheet>('menton_bingo')
   if (bingoSheet?.textures[name]) return bingoSheet.textures[name]
-  const mainSheet = Assets.get<Spritesheet>('menton0')
-  if (mainSheet?.textures[name]) return mainSheet.textures[name]
+  // Fallback: search panel atlases (some bingo moviebytes reference card/moldura textures)
+  for (const alias of ['menton_cardpanel', 'menton_ballpanel', 'menton_common'] as const) {
+    const sheet = Assets.get<Spritesheet>(alias)
+    if (sheet?.textures[name]) return sheet.textures[name]
+  }
   console.warn(`[BingoMovie] texture "${name}" not found`)
   return Texture.EMPTY
 }

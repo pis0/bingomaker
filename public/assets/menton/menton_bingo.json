@@ -984,7 +984,7 @@
   "meta": {
     "app": "pack-atlas.mjs",
     "version": "1.0",
-    "image": "menton_bingo.png",
+    "image": "menton_bingo.webp",
     "format": "RGBA8888",
     "size": {
       "w": 4096,
