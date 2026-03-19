@@ -27,9 +27,19 @@ const CLARENDON = '"Clarendon Black BT", Georgia, serif'
 // ── Install all BitmapFonts ─────────────────────────────────────
 let installed = false
 
+/** Suppress PixiJS "[Cache] already has key" warnings for BitmapFont */
+function suppressCacheWarnings(): void {
+  const origWarn = console.warn
+  console.warn = (...args: unknown[]) => {
+    if (typeof args[0] === 'string' && args[0].includes('[Cache] already has key')) return
+    origWarn.apply(console, args)
+  }
+}
+
 export function installBitmapFonts(): void {
   if (installed) return
   installed = true
+  suppressCacheWarnings()
   const t0 = performance.now()
   let count = 0
   // ── Iowan Old Style Black ───────────────────────────────────
