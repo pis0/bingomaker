@@ -305,7 +305,8 @@ export function useDebugEngine(): DebugEngine {
   }
 
   // End button — available whenever extras/super are offered, or when round is done
-  const canEnd = !!round && !isSettling && !isCollecting && !bonusActive && drawn >= DEFAULT_BALLS &&
+  // Not blocked by bonusActive — End is a force-end action that overrides animations
+  const canEnd = !!round && !isSettling && !isCollecting && drawn >= DEFAULT_BALLS &&
     (round.extraAvailable || round.superExtraAvailable || advanceLabel === 'Done');
 
   // Auto-end ref to track/cancel pending auto-new-round timer
@@ -365,9 +366,9 @@ export function useDebugEngine(): DebugEngine {
     if (r.totalPayout > 0) {
       setIsCollecting(true);
     }
-    // 8s review period then new round
+    // AS3: 0.5s delay + collect animation → new round (~2-4s total)
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
-    autoEndTimerRef.current = setTimeout(autoNewRound, 8000);
+    autoEndTimerRef.current = setTimeout(autoNewRound, 3000);
   }
 
   const advance = useCallback(() => {
