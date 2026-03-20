@@ -27,7 +27,7 @@ import { MovieBytesPlayer } from '../../animations/MovieBytesPlayer'
 
 extend({ Container, Sprite, Text })
 
-const SPLASH_BYTES_URL = '/assets/menton/movies/juicesplash.bytes'
+const SPLASH_BYTES_URL = `${import.meta.env.BASE_URL}assets/menton/movies/juicesplash.bytes`
 // AS3: AssukarMovieBytes with movieScale=0 → defaults to PRAIA_GAME_CONTAINER_SCALE
 const MOVIE_SCALE = 0.41667
 

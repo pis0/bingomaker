@@ -10,7 +10,7 @@ import { mentonLemonXplosion } from '../../particles/configs/menton_lemon_xplosi
 
 extend({ Container })
 
-const BINGO_BYTES_URL = '/assets/menton/movies/bingo.bytes'
+const BINGO_BYTES_URL = `${import.meta.env.BASE_URL}assets/menton/movies/bingo.bytes`
 const MOVIE_SCALE = 0.5
 
 // Starting positions per card index (AS3 CardPanel.animaBingo)

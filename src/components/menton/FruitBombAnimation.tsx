@@ -29,11 +29,12 @@ const POST_SHAKE_DELAY = 0.5
 const MOVIE_SCALE = 0.41667
 
 // Fruit MovieBytes URLs + AS3 clip offsets (used as pivot to center the visual)
+const BASE = import.meta.env.BASE_URL
 const FRUIT_CONFIGS: Record<string, { url: string; offsetX: number; offsetY: number }> = {
-  grapes: { url: '/assets/menton/movies/grapes.bytes', offsetX: -84, offsetY: -66 },
-  apple: { url: '/assets/menton/movies/apple.bytes', offsetX: -91, offsetY: -86 },
-  strawberry: { url: '/assets/menton/movies/strawberry.bytes', offsetX: -99, offsetY: -80 },
-  pineapple: { url: '/assets/menton/movies/pineapple.bytes', offsetX: -98, offsetY: -69 },
+  grapes: { url: `${BASE}assets/menton/movies/grapes.bytes`, offsetX: -84, offsetY: -66 },
+  apple: { url: `${BASE}assets/menton/movies/apple.bytes`, offsetX: -91, offsetY: -86 },
+  strawberry: { url: `${BASE}assets/menton/movies/strawberry.bytes`, offsetX: -99, offsetY: -80 },
+  pineapple: { url: `${BASE}assets/menton/movies/pineapple.bytes`, offsetX: -98, offsetY: -69 },
 }
 
 const FRUIT_NAMES = Object.keys(FRUIT_CONFIGS)

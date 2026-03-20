@@ -10,7 +10,7 @@
  */
 import { BitmapFont, TextStyle } from 'pixi.js'
 
-const RES = 2 // @2x — covers iOS retina + most Android
+const RES = 3 // @3x — covers iPhone retina (3x) + high-end Android
 
 // Character sets — PixiJS v8 uses [from, to] range pairs
 const NUMERIC = [['0', '9'] as [string, string], ' ']
