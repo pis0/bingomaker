@@ -11,12 +11,16 @@ import { STAKE_LEVELS } from './engine/constants'
 
 const showDevtools = new URLSearchParams(window.location.search).has('devtools')
 
-/** Set CSS custom property for canvas scaling (height-fit, centered) */
+/** Set CSS custom properties for canvas scaling (contain-fit, centered) */
 function useViewportScale() {
   useEffect(() => {
     const update = () => {
-      const s = Math.min(1, window.innerHeight / GAME_HEIGHT)
+      const scaleX = window.innerWidth / GAME_WIDTH
+      const scaleY = window.innerHeight / GAME_HEIGHT
+      const s = Math.min(1, scaleX, scaleY)
+      const fitByWidth = scaleX < scaleY
       document.documentElement.style.setProperty('--game-scale', String(s))
+      document.documentElement.style.setProperty('--game-fit', fitByWidth ? 'width' : 'height')
     }
     update()
     window.addEventListener('resize', update)

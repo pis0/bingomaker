@@ -49,12 +49,12 @@ html, body, #root {
 #root {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
 }
 
-/* Scale canvas to fit viewport height, centered horizontally */
+/* Scale canvas to fit viewport (contain mode) — centered both axes */
 #root canvas {
   transform: scale(var(--game-scale, 1));
-  transform-origin: center top;
+  transform-origin: center center;
 }
 
