@@ -95,9 +95,9 @@ export default function App() {
           onStakeChange={engine.setStakeIndex}
           onShuffle={engine.shuffle}
         />
-        {showDevtools && <PixiStatsBridge />}
+        <PixiStatsBridge />
       </Application>
-      {showDevtools && <PixiStats />}
+      <PixiStats />
       {showDevtools && <DebugPanel engine={engine} />}
     </>
   )

@@ -53,10 +53,8 @@ export default function PixiStats() {
 
       const app = _app
       if (app?.renderer) {
-        const name = app.renderer.constructor.name
-        const type = name.includes('WebGPU') ? 'WebGPU'
-          : name.includes('WebGL') ? 'WebGL'
-          : 'Canvas'
+        const r = app.renderer as any
+        const type = r.gpu ? 'WebGPU' : r.gl ? 'WebGL' : 'Canvas'
         lines.push(`Renderer: ${type}`)
       }
 
