@@ -6,6 +6,8 @@ import DebugPanel from './debug/DebugPanel'
 import PixiStats, { PixiStatsBridge } from './debug/PixiStats'
 import { useAssets } from './assets/useAssets'
 import { useDebugEngine } from './debug/useDebugEngine'
+import { useGameStore } from './store/gameStore'
+import { STAKE_LEVELS } from './engine/constants'
 
 const showDevtools = new URLSearchParams(window.location.search).has('devtools')
 
@@ -29,6 +31,18 @@ export default function App() {
 
   // Button state — must be before early returns (hooks rules)
   const showEnd = engine.canEnd
+
+  // ── Sync engine state to Zustand store (react-dom reconciler → no cross-update warning) ──
+  // BallPanel/CardPanel (@pixi/react reconciler) subscribe to these slices.
+  // Synchronous during render so subscribers see values on the same frame.
+  useGameStore.setState({
+    round: engine.round,
+    stakeIndex: engine.stakeIndex,
+    stake: STAKE_LEVELS[engine.stakeIndex],
+    targetBallCount: engine.targetBallCount,
+    peelAdvanceTick: engine.peelAdvanceTick,
+    drawing: engine.targetBallCount > 0,
+  })
 
   if (status === 'error') {
     return <div style={errorStyle}>Failed to load assets. Check console.</div>
@@ -61,7 +75,6 @@ export default function App() {
           isCollecting={engine.isCollecting}
           lastPayout={engine.lastPayout}
           onBonusActiveChange={engine.setBonusActive}
-          peelAdvanceTick={engine.peelAdvanceTick}
           onPeelChange={engine.handlePeelChange}
           buttonPhase={
             engine.advanceLabel === 'Extra' ? 'extra'

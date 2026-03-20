@@ -11,7 +11,6 @@
  */
 import { create } from 'zustand'
 import type { Round } from '../engine/Round'
-import type { Draw } from '../engine/Draw'
 import type { SlotSymbol } from '../engine/SlotBonusSession'
 import type { ChipPosition } from '../components/menton/ChipFlyAnimation'
 import type { BombPosition } from '../engine/FruitBombBonusSession'

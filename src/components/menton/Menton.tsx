@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useCallback, useEffect, useLayoutEffect } from 'react'
 import { Container } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import Scenery from './Scenery'
@@ -21,11 +21,12 @@ import type { SlotSymbol } from '../../engine/SlotBonusSession'
 import { PatternGroup } from '../../engine/PatternGroup'
 import type { MovieSplashHandle } from './MovieSplash'
 import { FruitBombBonusSession, type BombPosition } from '../../engine/FruitBombBonusSession'
-import { COLS, STAKE_LEVELS, DEFAULT_BALLS } from '../../engine/constants'
+import { COLS, STAKE_LEVELS } from '../../engine/constants'
 import { SLOT_X2, SLOT_FRUIT } from '../../engine/SlotBonusSession'
 import { INTERVAL_PATTERNS, INTERVAL_PATTERN_DELAY, PATTERN_TO_CARD_INDEX } from './payoutConstants'
 import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 import { CARD_W, CARD_H, CARD_GAP, X_O, Y_O, CELL_W, CELL_H, SLOT_W, SLOT_H } from './cardConstants'
+import { useGameStore } from '../../store/gameStore'
 
 extend({ Container })
 
@@ -70,8 +71,6 @@ interface Props {
   lastPayout?: number
   /** Report bonus animation active state to parent */
   onBonusActiveChange?: (active: boolean) => void
-  /** Peel step advance tick (user-driven) */
-  peelAdvanceTick?: number
   /** BallPanel peel state change callback */
   onPeelChange?: (peeling: boolean) => void
   /** ButtonPanel phase */
@@ -89,7 +88,7 @@ interface Props {
   onShuffle?: () => void
 }
 
-export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange, peelAdvanceTick = 0, onPeelChange, buttonPhase = 'play', buttonEnabled = true, showEnd = false, onPlay, onExtra, onEnd, onStakeChange, onShuffle }: Props) {
+export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange, onPeelChange, buttonPhase = 'play', buttonEnabled = true, showEnd = false, onPlay, onExtra, onEnd, onStakeChange, onShuffle }: Props) {
   const stake = STAKE_LEVELS[stakeIndex]
 
   // AS3: IntervalCardPatternController — cycles individual patterns during idle
@@ -167,9 +166,8 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const idlePattern = !drawing ? INTERVAL_PATTERNS[idlePatternIndex] : null
   const activeIdleCard = idlePattern ? (PATTERN_TO_CARD_INDEX.get(idlePattern) ?? -1) : -1
 
-  // Payout and extra phase derive from engine state (advances incrementally)
+  // Payout derives from engine state (advances incrementally)
   const currentPayout = round?.totalPayout ?? 0
-  const isExtraPhase = (round?.currentBallIndex ?? 0) > DEFAULT_BALLS
 
   // AS3: RoundMotion pauses ball discharge during bonus animations
   const bonusActive = bellRingActive
@@ -184,11 +182,14 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     onBonusActiveChange?.(bonusActive)
   }, [bonusActive, onBonusActiveChange])
 
-  // AS3: dynamic ball trigger interval based on maxPatternPriority
-  // Values doubled from AS3 30fps → 60fps (original: [3,3,4,5,6,7,8,12,15,20,30])
-  const TRIGGER_INTERVALS = [6, 6, 8, 10, 12, 14, 16, 24, 30, 40, 60]
-  const maxPriority = round?.maxPatternPriority ?? 0
-  const launchInterval = TRIGGER_INTERVALS[Math.min(maxPriority, TRIGGER_INTERVALS.length - 1)]
+  // ── Sync Menton-owned state to Zustand store (layout phase — before paint) ──
+  // Engine state (round, targetBallCount, etc.) is synced by App.tsx.
+  // Here we sync derived/animation values that change during gameplay.
+  useLayoutEffect(() => {
+    useGameStore.setState({
+      bonusActive, superFlying, cardShake, idlePatternIndex,
+    })
+  })
 
   // ── Consume pattern event queue — one chipFly at a time ─────
   // Processes new patterns from Draw.newPatterns (enqueued by handleBallArrive).
@@ -335,17 +336,9 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
             <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
             <Payout value={currentPayout} stake={stake} lastPayout={!drawing ? lastPayout : 0} collecting={isCollecting || !!chipFlyPositions} />
           </pixiContainer>
-          <BallPanel round={round} targetBallCount={targetBallCount} stake={stake} launchInterval={launchInterval} paused={bonusActive} peelAdvanceTick={peelAdvanceTick} onBallArrive={handleBallArrive} onPeelChange={onPeelChange} onSuperFlyingChange={setSuperFlying} zIndex={superFlying ? 100 : 4} splashRef={splashRef} />
+          <BallPanel onBallArrive={handleBallArrive} onPeelChange={onPeelChange} onSuperFlyingChange={setSuperFlying} splashRef={splashRef} />
           <pixiContainer zIndex={6}>
-            <CardPanel
-              round={round}
-              stakeIndex={stakeIndex}
-              idlePattern={idlePattern}
-              shakeOffset={cardShake}
-              shouldBlink={isExtraPhase}
-              isIdle={!drawing}
-              onShuffle={onShuffle}
-            />
+            <CardPanel onShuffle={onShuffle} />
           </pixiContainer>
           {/* Overlay animations — z=9, always above cards (AS3: ParticlesLayer level) */}
           <pixiContainer zIndex={9}>

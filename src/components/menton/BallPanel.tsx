@@ -36,6 +36,7 @@ import SliceMovie from './SliceMovie'
 import MovieSplash, { type MovieSplashHandle } from './MovieSplash'
 import { DEFAULT_BALLS, EXTRA_BALLS, HALT_PRIORITY } from '../../engine/constants'
 import type { Round } from '../../engine/Round'
+import { useGameStore } from '../../store/gameStore'
 import { ParticleEmitter } from '../../particles/ParticleEmitter'
 import { mentonExtraWater } from '../../particles/configs/menton_extra_water'
 
@@ -76,8 +77,6 @@ function superPosition(index: number): { superPos: number } {
   return { superPos: index - MAX_EXTRA_INDEX }
 }
 
-/** Default frames between consecutive ball launches (60fps) */
-const DEFAULT_INTERVAL = 6
 // ── Easing ──────────────────────────────────────────────────────
 function easeOutElastic(t: number): number {
   if (t === 0 || t === 1) return t
@@ -93,25 +92,16 @@ function easeOutCubic(t: number): number {
   return t1 * t1 * t1 + 1
 }
 
+// AS3: dynamic ball trigger interval based on maxPatternPriority
+// Values doubled from AS3 30fps → 60fps (original: [3,3,4,5,6,7,8,12,15,20,30])
+const TRIGGER_INTERVALS = [6, 6, 8, 10, 12, 14, 16, 24, 30, 40, 60]
+
 interface Props {
-  round: Round | null
-  /** How many balls to launch (visual target, may outpace engine processing) */
-  targetBallCount: number
-  /** Current stake level (for extra ball price calculation) */
-  stake?: number
-  /** Current max pattern priority — drives dynamic launch interval */
-  launchInterval?: number
-  /** Pause ball launching (bonus animations active) */
-  paused?: boolean
-  /** Increments to advance one peel step (user-driven) */
-  peelAdvanceTick?: number
   onBallArrive?: () => void
   /** Reports when peel animation starts/ends (for halt-for-user) */
   onPeelChange?: (peeling: boolean) => void
   /** Reports when super balls are in flight (for z-order toggle — AS3: addChild/addChildAt) */
   onSuperFlyingChange?: (flying: boolean) => void
-  /** zIndex passed to the root container (for sortableChildren in parent) */
-  zIndex?: number
   /** Ref to trigger MovieSplash animation (prize celebration) */
   splashRef?: React.RefObject<MovieSplashHandle | null>
 }
@@ -131,7 +121,19 @@ interface Props {
  * 9. Extra front container (pipoqueira): fundo, lemon, tampa, large ball, cover
  * 10. Text overlay ("EXTRA" / "SUPER")
  */
-export default function BallPanel({ round, targetBallCount, stake = 1, launchInterval = DEFAULT_INTERVAL, paused = false, peelAdvanceTick = 0, onBallArrive, onPeelChange, onSuperFlyingChange, zIndex, splashRef }: Props) {
+export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingChange, splashRef }: Props) {
+  // ── Read from Zustand store ─────────────────────────────────────
+  const round = useGameStore(s => s.round)
+  const targetBallCount = useGameStore(s => s.targetBallCount)
+  const stake = useGameStore(s => s.stake)
+  const paused = useGameStore(s => s.bonusActive)
+  const peelAdvanceTick = useGameStore(s => s.peelAdvanceTick)
+  const superFlying = useGameStore(s => s.superFlying)
+
+  // Derived locally
+  const maxPriority = round?.maxPatternPriority ?? 0
+  const launchInterval = TRIGGER_INTERVALS[Math.min(maxPriority, TRIGGER_INTERVALS.length - 1)]
+  const zIndex = superFlying ? 100 : 4
   const isIdle = !round || targetBallCount === 0
 
   // ── Animation queue ──────────────────────────────────────────────

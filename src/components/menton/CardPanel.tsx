@@ -1,13 +1,14 @@
 import { useState, useCallback, useRef } from 'react'
 import { Container } from 'pixi.js'
 import { extend } from '@pixi/react'
-import type { Round } from '../../engine/Round'
-import type { Pattern } from '../../engine/Pattern'
 import { FULL } from '../../engine/Pattern'
 import CardView from './CardView'
 import BingoMovie from './BingoMovie'
 import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
 import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
+import { DEFAULT_BALLS } from '../../engine/constants'
+import { INTERVAL_PATTERNS } from './payoutConstants'
+import { useGameStore } from '../../store/gameStore'
 
 extend({ Container })
 
@@ -20,24 +21,27 @@ const positions = [
 ]
 
 interface Props {
-  round: Round | null
-  stakeIndex?: number
-  idlePattern?: Pattern | null
   x?: number
   y?: number
-  /** Card shake offset driven by FruitBombAnimation */
-  shakeOffset?: { x: number; y: number }
-  /** Enable blinkMarkExtra on slots (extras/super extras phase) */
-  shouldBlink?: boolean
-  /** Whether cards are in idle state (clickable for shuffle) */
-  isIdle?: boolean
   /** Called when player clicks cards during idle to shuffle */
   onShuffle?: () => void
 }
 
-export default function CardPanel({ round, stakeIndex = 0, idlePattern = null, x, y, shakeOffset, shouldBlink = false, isIdle = false, onShuffle }: Props) {
-  const offsetX = (x ?? CARD_PANEL_X) + (shakeOffset?.x ?? 0)
-  const offsetY = (y ?? CARD_PANEL_Y) + (shakeOffset?.y ?? 0)
+export default function CardPanel({ x, y, onShuffle }: Props) {
+  // ── Read from Zustand store ─────────────────────────────────────
+  const round = useGameStore(s => s.round)
+  const stakeIndex = useGameStore(s => s.stakeIndex)
+  const shakeX = useGameStore(s => s.cardShake.x)
+  const shakeY = useGameStore(s => s.cardShake.y)
+  const drawing = useGameStore(s => s.drawing)
+  const idlePatternIndex = useGameStore(s => s.idlePatternIndex)
+
+  // Derived locally
+  const idlePattern = !drawing ? INTERVAL_PATTERNS[idlePatternIndex] : null
+  const shouldBlink = (round?.currentBallIndex ?? 0) > DEFAULT_BALLS
+  const isIdle = !drawing
+  const offsetX = (x ?? CARD_PANEL_X) + shakeX
+  const offsetY = (y ?? CARD_PANEL_Y) + shakeY
 
   const [cardsVisible, setCardsVisible] = useState(true)
   const [bingoCardIndex, setBingoCardIndex] = useState<number | null>(null)
