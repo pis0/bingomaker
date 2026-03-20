@@ -249,9 +249,9 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   // AS3: RoundMotion.checkBonus → prize-specific animations
   const handleSlotComplete = useCallback(() => {
     const prize = round?.slotBonus.prize
-    if (!prize) return
-
     setSlotBlinking(true)
+
+    if (!prize) return
 
     if (prize === SLOT_X2) {
       setMultiplierActive(true)
