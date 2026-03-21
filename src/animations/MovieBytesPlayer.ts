@@ -42,6 +42,7 @@ export class MovieBytesPlayer {
   private _onComplete: (() => void) | null = null
   private _onUpdate: ((frame: number) => void) | null = null
   private _scale = 1
+  private _texScale = 1
   private _offsetX = 0
   private _offsetY = 0
   private _checkIndex = false
@@ -51,11 +52,17 @@ export class MovieBytesPlayer {
     getTexture: (name: string) => Texture,
     options?: {
       /**
-       * Scale applied to tx/ty values only (AS3 movieScale).
+       * Scale applied to tx/ty values (AS3 movieScale).
        * Maps Flash authoring coordinates → game coordinates.
        * For Praia games: 0.41667 (PRAIA_GAME_CONTAINER_SCALE).
        */
       scale?: number
+      /**
+       * Atlas pre-scale factor. When atlas sprites are pre-scaled
+       * (e.g., 0.5 means sprites are at half authoring resolution),
+       * a/b/c/d are divided by this to compensate. Default = 1 (no compensation).
+       */
+      textureScale?: number
       /** Offset added to raw tx before scaling. */
       offsetX?: number
       /** Offset added to raw ty before scaling. */
@@ -67,6 +74,7 @@ export class MovieBytesPlayer {
     this.data = data
     this.container = new Container()
     this._scale = options?.scale ?? 1
+    this._texScale = options?.textureScale ?? 1
     this._offsetX = options?.offsetX ?? 0
     this._offsetY = options?.offsetY ?? 0
     this._checkIndex = options?.checkIndex ?? false
@@ -101,7 +109,7 @@ export class MovieBytesPlayer {
   get totalFrames(): number { return this.data.totalFrames }
   get isPlaying(): boolean { return this._playing }
 
-  /** movieScale — controls tx/ty scaling. Settable at runtime for debug. */
+  /** movieScale — controls full matrix scaling. Settable at runtime for debug. */
   set scale(v: number) {
     this._scale = v
     // Re-apply current frame so the change is visible immediately
@@ -153,10 +161,13 @@ export class MovieBytesPlayer {
       } else {
         sprite.visible = true
         const m = sprite.localTransform
-        m.a = obj.a
-        m.b = obj.b
-        m.c = obj.c
-        m.d = obj.d
+        // a/b/c/d: compensate for pre-scaled atlas sprites (1/textureScale)
+        // tx/ty: map authoring coords → game coords (movieScale)
+        const texComp = 1 / this._texScale
+        m.a = obj.a * texComp
+        m.b = obj.b * texComp
+        m.c = obj.c * texComp
+        m.d = obj.d * texComp
         m.tx = (obj.tx + ox) * scale
         m.ty = (obj.ty + oy) * scale
         sprite.setFromMatrix(m)

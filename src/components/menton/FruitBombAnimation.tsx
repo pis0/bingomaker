@@ -25,10 +25,10 @@ const SHAKE_DURATION = 0.22
 // AS3: 0.5s delay after shake before callback
 const POST_SHAKE_DELAY = 0.5
 
-// AS3: movieScale = PRAIA_GAME_CONTAINER_SCALE (default when 0 passed)
+// movieScale — maps tx/ty from Flash authoring coords to game coords
 const MOVIE_SCALE = 0.41667
 
-// Fruit MovieBytes URLs + AS3 clip offsets (used as pivot to center the visual)
+// Fruit MovieBytes URLs + AS3 clip offsets (in authoring coords, scaled by movieScale at runtime)
 const BASE = import.meta.env.BASE_URL
 const FRUIT_CONFIGS: Record<string, { url: string; offsetX: number; offsetY: number }> = {
   grapes: { url: `${BASE}assets/menton/movies/grapes.bytes`, offsetX: -84, offsetY: -66 },
@@ -163,6 +163,7 @@ export default function FruitBombAnimation({ active, bombPositions, onShake, onC
         if (data) {
           player = new MovieBytesPlayer(data, getFruitTexture, {
             scale: MOVIE_SCALE,
+            textureScale: MOVIE_SCALE,
           })
           player.container.visible = false
           fruitContainer.addChild(player.container)

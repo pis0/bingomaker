@@ -482,126 +482,6 @@
     },
     "liqu_horizontal0003": {
       "frame": {
-        "x": 1950,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_horizontal0004": {
-      "frame": {
-        "x": 2265,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_horizontal0005": {
-      "frame": {
-        "x": 2580,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_horizontal0006": {
-      "frame": {
-        "x": 2895,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_horizontal0007": {
-      "frame": {
-        "x": 3210,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_horizontal0008": {
-      "frame": {
-        "x": 3525,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 313,
-        "h": 40
-      },
-      "sourceSize": {
-        "w": 313,
-        "h": 40
-      }
-    },
-    "liqu_horizontal0009": {
-      "frame": {
         "x": 0,
         "y": 132,
         "w": 313,
@@ -620,7 +500,7 @@
         "h": 40
       }
     },
-    "liqu_horizontal0010": {
+    "liqu_horizontal0004": {
       "frame": {
         "x": 315,
         "y": 132,
@@ -640,7 +520,7 @@
         "h": 40
       }
     },
-    "liqu_horizontal0011": {
+    "liqu_horizontal0005": {
       "frame": {
         "x": 630,
         "y": 132,
@@ -660,7 +540,7 @@
         "h": 40
       }
     },
-    "liqu_horizontal0012": {
+    "liqu_horizontal0006": {
       "frame": {
         "x": 945,
         "y": 132,
@@ -680,7 +560,7 @@
         "h": 40
       }
     },
-    "liqu_horizontal0013": {
+    "liqu_horizontal0007": {
       "frame": {
         "x": 1260,
         "y": 132,
@@ -700,7 +580,7 @@
         "h": 40
       }
     },
-    "liqu_horizontal0014": {
+    "liqu_horizontal0008": {
       "frame": {
         "x": 1575,
         "y": 132,
@@ -720,10 +600,130 @@
         "h": 40
       }
     },
+    "liqu_horizontal0009": {
+      "frame": {
+        "x": 0,
+        "y": 174,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
+    },
+    "liqu_horizontal0010": {
+      "frame": {
+        "x": 315,
+        "y": 174,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
+    },
+    "liqu_horizontal0011": {
+      "frame": {
+        "x": 630,
+        "y": 174,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
+    },
+    "liqu_horizontal0012": {
+      "frame": {
+        "x": 945,
+        "y": 174,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
+    },
+    "liqu_horizontal0013": {
+      "frame": {
+        "x": 1260,
+        "y": 174,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
+    },
+    "liqu_horizontal0014": {
+      "frame": {
+        "x": 1575,
+        "y": 174,
+        "w": 313,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 40
+      }
+    },
     "liqu_horizontal0015": {
       "frame": {
-        "x": 1890,
-        "y": 132,
+        "x": 0,
+        "y": 216,
         "w": 313,
         "h": 40
       },
@@ -742,8 +742,8 @@
     },
     "liqu_horizontal0016": {
       "frame": {
-        "x": 2205,
-        "y": 132,
+        "x": 315,
+        "y": 216,
         "w": 313,
         "h": 40
       },
@@ -762,8 +762,8 @@
     },
     "liqu_horizontal0017": {
       "frame": {
-        "x": 2520,
-        "y": 132,
+        "x": 630,
+        "y": 216,
         "w": 313,
         "h": 40
       },
@@ -782,8 +782,8 @@
     },
     "liqu_horizontal0018": {
       "frame": {
-        "x": 2835,
-        "y": 132,
+        "x": 945,
+        "y": 216,
         "w": 313,
         "h": 40
       },
@@ -802,8 +802,8 @@
     },
     "liqu_horizontal0019": {
       "frame": {
-        "x": 3150,
-        "y": 132,
+        "x": 1260,
+        "y": 216,
         "w": 313,
         "h": 40
       },
@@ -822,8 +822,8 @@
     },
     "liqu_horizontal0020": {
       "frame": {
-        "x": 3465,
-        "y": 132,
+        "x": 1575,
+        "y": 216,
         "w": 313,
         "h": 40
       },
@@ -842,8 +842,8 @@
     },
     "liqu_horizontal0021": {
       "frame": {
-        "x": 3780,
-        "y": 132,
+        "x": 0,
+        "y": 258,
         "w": 313,
         "h": 40
       },
@@ -862,8 +862,8 @@
     },
     "liqu_horizontal0022": {
       "frame": {
-        "x": 0,
-        "y": 174,
+        "x": 315,
+        "y": 258,
         "w": 313,
         "h": 40
       },
@@ -887,8 +887,8 @@
     "image": "menton_pattern.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 4096,
-      "h": 256
+      "w": 2048,
+      "h": 512
     },
     "scale": "1"
   }

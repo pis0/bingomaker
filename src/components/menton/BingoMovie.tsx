@@ -11,6 +11,7 @@ import { mentonLemonXplosion } from '../../particles/configs/menton_lemon_xplosi
 extend({ Container })
 
 const BINGO_BYTES_URL = `${import.meta.env.BASE_URL}assets/menton/movies/bingo.bytes`
+// movieScale — maps tx/ty from Flash authoring coords to game coords
 const MOVIE_SCALE = 0.5
 
 // Starting positions per card index (AS3 CardPanel.animaBingo)
@@ -84,7 +85,7 @@ export default function BingoMovie({ cardIndex, onHideCards, onShowCards, onComp
     let disposed = false
     loadMovieBytes(BINGO_BYTES_URL).then((data) => {
       if (disposed) return
-      const player = new MovieBytesPlayer(data, getTexture, { scale: MOVIE_SCALE, checkIndex: true })
+      const player = new MovieBytesPlayer(data, getTexture, { scale: MOVIE_SCALE, textureScale: MOVIE_SCALE, checkIndex: true })
       playerRef.current = player
       if (containerRef.current) {
         containerRef.current.addChild(player.container)

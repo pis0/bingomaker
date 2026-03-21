@@ -29,11 +29,13 @@ extend({ Container, Sprite, Text })
 
 const SPLASH_BYTES_URL = `${import.meta.env.BASE_URL}assets/menton/movies/juicesplash.bytes`
 // AS3: AssukarMovieBytes with movieScale=0 → defaults to PRAIA_GAME_CONTAINER_SCALE
+// movieScale — maps tx/ty from Flash authoring coords to game coords
+// (sprites are pre-scaled in atlas, only positions need mapping)
 const MOVIE_SCALE = 0.41667
 
-/** Resolve texture — juice_* sprites in menton_ballpanel atlas */
+/** Resolve texture — juice_* sprites in dedicated menton_juice atlas */
 function getTexture(name: string): Texture {
-  const sheet = Assets.get<Spritesheet>('menton_ballpanel')
+  const sheet = Assets.get<Spritesheet>('menton_juice')
   if (sheet?.textures[name]) return sheet.textures[name]
   console.warn(`[MovieSplash] texture "${name}" not found`)
   return Texture.EMPTY
@@ -82,7 +84,7 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
     let disposed = false
     loadMovieBytes(SPLASH_BYTES_URL).then((data) => {
       if (disposed) return
-      const player = new MovieBytesPlayer(data, getTexture, { scale: MOVIE_SCALE })
+      const player = new MovieBytesPlayer(data, getTexture, { scale: MOVIE_SCALE, textureScale: MOVIE_SCALE })
       movieRef.current = player
       player.container.visible = false
       if (containerRef.current) {
@@ -251,8 +253,8 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
         ref={labelRef}
         text=""
         style={labelStyle}
-        x={-260}
-        y={-45}
+        x={-200}
+        y={-15}
         visible={false}
       />
 

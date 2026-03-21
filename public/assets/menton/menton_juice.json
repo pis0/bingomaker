@@ -1,0 +1,213 @@
+{
+  "frames": {
+    "juice_01": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 185,
+        "h": 85
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 185,
+        "h": 85
+      },
+      "sourceSize": {
+        "w": 185,
+        "h": 85
+      }
+    },
+    "juice_03": {
+      "frame": {
+        "x": 187,
+        "y": 0,
+        "w": 123,
+        "h": 85
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 123,
+        "h": 85
+      },
+      "sourceSize": {
+        "w": 123,
+        "h": 85
+      }
+    },
+    "juice_04": {
+      "frame": {
+        "x": 312,
+        "y": 0,
+        "w": 43,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 43,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 43,
+        "h": 54
+      }
+    },
+    "juice_02": {
+      "frame": {
+        "x": 357,
+        "y": 0,
+        "w": 131,
+        "h": 47
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 131,
+        "h": 47
+      },
+      "sourceSize": {
+        "w": 131,
+        "h": 47
+      }
+    },
+    "juice_05c": {
+      "frame": {
+        "x": 490,
+        "y": 0,
+        "w": 18,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 18,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 14
+      }
+    },
+    "juice_06": {
+      "frame": {
+        "x": 510,
+        "y": 0,
+        "w": 15,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 15,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 15,
+        "h": 14
+      }
+    },
+    "juice_06b": {
+      "frame": {
+        "x": 527,
+        "y": 0,
+        "w": 16,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 16,
+        "h": 14
+      }
+    },
+    "juice_06c": {
+      "frame": {
+        "x": 545,
+        "y": 0,
+        "w": 15,
+        "h": 14
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 15,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 15,
+        "h": 14
+      }
+    },
+    "juice_05": {
+      "frame": {
+        "x": 562,
+        "y": 0,
+        "w": 17,
+        "h": 13
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 17,
+        "h": 13
+      },
+      "sourceSize": {
+        "w": 17,
+        "h": 13
+      }
+    },
+    "juice_05b": {
+      "frame": {
+        "x": 581,
+        "y": 0,
+        "w": 17,
+        "h": 13
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 17,
+        "h": 13
+      },
+      "sourceSize": {
+        "w": 17,
+        "h": 13
+      }
+    }
+  },
+  "meta": {
+    "image": "menton_juice.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1024,
+      "h": 128
+    },
+    "scale": "1"
+  }
+}

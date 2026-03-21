@@ -76,8 +76,13 @@ export interface DebugEngine {
 }
 
 export function useDebugEngine(): DebugEngine {
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 100000));
-  const [lockSeed, setLockSeed] = useState(false);
+  const [seed, setSeed] = useState(() => {
+    const urlSeed = new URLSearchParams(window.location.search).get('seed')
+    return urlSeed ? parseInt(urlSeed, 10) : Math.floor(Math.random() * 100000)
+  });
+  const [lockSeed, setLockSeed] = useState(() => {
+    return new URLSearchParams(window.location.search).has('seed')
+  });
   const [stakeIndex, setStakeIndex] = useState(0);
   const stake = STAKE_LEVELS[stakeIndex];
   const [, setTick] = useState(0);
