@@ -3,7 +3,7 @@
  * from the TTF/OTF fonts already loaded via @font-face.
  *
  * Called once at startup (before first render). Each unique font+size combo
- * = one BitmapFont. Resolution 2x for retina/mobile crisp rendering.
+ * = one BitmapFont. Resolution 3x for retina/mobile crisp rendering.
  *
  * Color consolidation: fonts that previously had multiple color variants are
  * now installed as WHITE (0xffffff). Components apply color via `tint` prop
@@ -13,9 +13,12 @@
  *   <pixiBitmapText style={{ fontFamily: 'font-name', fontSize: size }}
  *                   tint={0xff0000} />
  */
-import { BitmapFont, TextStyle } from 'pixi.js'
+import { BitmapFont, DynamicBitmapFont, TextStyle } from 'pixi.js'
 
-const RES = 2 // @2x — balanced: crisp on retina without blowing GPU budget
+// RES=3 with textureSize=256 → nextPow2(256*3)=1024 → 4MB per page (same as
+// RES=2 with textureSize=512). PixiJS auto-creates extra pages if chars don't
+// fit, so even large charsets (BUTTON_CHARS ~37 chars at 43px) stay manageable.
+const RES = 3 // @3x — sharp on all densities, 256px texture keeps pages at 4MB
 
 // Character sets — PixiJS v8 uses [from, to] range pairs
 const NUMERIC = [['0', '9'] as [string, string], ' ']
@@ -46,6 +49,8 @@ type Chars = (string | [string, string])[]
 export function installBitmapFonts(): void {
   if (installed) return
   installed = true
+  // Set textureSize=256 globally: nextPow2(256*3)=1024 → 4MB/page (vs default 512 → 16MB/page)
+  DynamicBitmapFont.defaultOptions.textureSize = 256
   const t0 = performance.now()
   let count = 0
 
