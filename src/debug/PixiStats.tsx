@@ -55,7 +55,23 @@ export default function PixiStats() {
       if (app?.renderer) {
         const r = app.renderer as any
         const type = r.gpu ? 'WebGPU' : r.gl ? 'WebGL' : 'Canvas'
-        lines.push(`Renderer: ${type}`)
+        // Detect GPU texture format from supported compressed formats
+        let texFormat = ''
+        if (r.gpu) {
+          // WebGPU: check supported GPUTextureFormat features
+          const features = r.gpu.device?.features
+          if (features?.has?.('texture-compression-astc')) texFormat = 'ASTC'
+          else if (features?.has?.('texture-compression-bc')) texFormat = 'BC7'
+          else if (features?.has?.('texture-compression-etc2')) texFormat = 'ETC2'
+          else texFormat = 'RGBA'
+        } else if (r.gl) {
+          const gl = r.gl
+          if (gl.getExtension('WEBGL_compressed_texture_astc')) texFormat = 'ASTC'
+          else if (gl.getExtension('EXT_texture_compression_bptc')) texFormat = 'BC7'
+          else if (gl.getExtension('WEBGL_compressed_texture_etc')) texFormat = 'ETC2'
+          else texFormat = 'RGBA'
+        }
+        lines.push(`Renderer: ${type}${texFormat ? ` (${texFormat})` : ''}`)
       }
 
       const mem = (performance as any).memory
