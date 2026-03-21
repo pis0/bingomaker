@@ -84,7 +84,8 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
   const payout = holder.expectation
   const iconName = MISSING_ICONS[priority]
   const iconOffset = MISSING_ICON_OFFSETS[priority]
-  const titleFont = priority <= 1 ? 'missing-green' : 'missing-brown'
+  const titleFont = 'missing-num'
+  const titleTint = priority <= 1 ? 0x198754 : 0x4d321e
   const layout = MISSING_LAYOUT[priority] ?? MISSING_LAYOUT[1]
 
   const hasEntrance = priority >= 2
@@ -245,7 +246,8 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
         {/* Ball number */}
         <pixiBitmapText
           text={String(ballNumber)}
-          style={{ fontFamily: titleFont, fontSize: 30, fill: priority <= 1 ? 0x198754 : 0x4d321e }}
+          style={{ fontFamily: titleFont, fontSize: 30, fill: 0xffffff }}
+          tint={titleTint}
           anchor={{ x: 0.5, y: 0 }}
           x={SLOT_W / 2}
           y={layout.titleY}
@@ -256,9 +258,10 @@ export default function MissingMark({ holder, ballNumber, x, y }: Props) {
           <pixiBitmapText
             text={payoutText}
             style={payout === 0
-              ? { fontFamily: 'missing-bonus', fontSize: 14, fill: 0xfff770 }
+              ? { fontFamily: 'prize-label', fontSize: 14, fill: 0xffffff }
               : { fontFamily: 'missing-price', fontSize: 18, fill: 0xffffff }
             }
+            tint={payout === 0 ? 0xfff770 : 0xffffff}
             anchor={{ x: 0.5, y: 0 }}
             x={SLOT_W / 2}
             y={layout.labelY}

@@ -242,6 +242,14 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
     }
   }, [reset])
 
+  // Cleanup active ticker listener on unmount to prevent GPU memory leaks
+  useEffect(() => {
+    return () => {
+      cleanupRef.current?.()
+      cleanupRef.current = null
+    }
+  }, [])
+
   useImperativeHandle(ref, () => ({ play }), [play])
 
   return (

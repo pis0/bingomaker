@@ -189,7 +189,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     useGameStore.setState({
       bonusActive, superFlying, cardShake, idlePatternIndex,
     })
-  })
+  }, [bonusActive, superFlying, cardShake, idlePatternIndex])
 
   // ── Consume pattern event queue — one chipFly at a time ─────
   // Processes new patterns from Draw.newPatterns (enqueued by handleBallArrive).

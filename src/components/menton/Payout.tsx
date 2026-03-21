@@ -36,7 +36,7 @@ const BG_OFF = 'payout'
 const BG_ON = 'payout_on'
 const BG_GLOW = 'payout_glow'
 
-// BitmapFont names: 'payout-value' (white), 'payout-won' (yellow blink)
+// BitmapFont name: 'payout' (white base, tinted yellow on win blink)
 
 // Coin icon — AS3: scale 0.75 → 39×37
 const COIN_SCALE = 0.75
@@ -80,11 +80,20 @@ interface Props {
 }
 
 export default function Payout({ value, stake = 1, lastPayout = 0, tween = false, collecting = false }: Props) {
-  // BgPayout state
+  // BgPayout state — driven imperatively from useTick to avoid per-frame re-renders
   const [bgTexture, setBgTexture] = useState(BG_OFF)
+  const bgSpriteRef = useRef<Sprite>(null)
+  const bgTextureRef = useRef(BG_OFF)
+  const setBgTextureImperative = useCallback((name: string) => {
+    if (name === bgTextureRef.current) return
+    bgTextureRef.current = name
+    if (bgSpriteRef.current) bgSpriteRef.current.texture = tex(name)
+  }, [])
 
-  // Tween animation state (fade in after collection)
-  const [tweenAlpha, setTweenAlpha] = useState(1)
+  // Tween animation state — alpha driven imperatively to avoid per-frame re-renders
+  const [, setTweenAlpha] = useState(1)
+  const tweenAlphaRef = useRef(1)
+  const contentRef = useRef<Container>(null)
   const tweenActiveRef = useRef(false)
   const tweenTimeRef = useRef(0)
 
@@ -219,7 +228,7 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
         if (blinkTimerRef.current >= COLLECT_BLINK_INTERVAL) {
           blinkTimerRef.current = 0
           blinkToggleRef.current = !blinkToggleRef.current
-          setBgTexture(blinkToggleRef.current ? BG_ON : BG_GLOW)
+          setBgTextureImperative(blinkToggleRef.current ? BG_ON : BG_GLOW)
         }
       }
       return // Skip other blink logic during collection
@@ -232,11 +241,11 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
 
       if (wonTimerRef.current >= WON_BLINK_DURATION) {
         wonBlinkRef.current = false
-        setBgTexture(BG_ON)
+        setBgTextureImperative(BG_ON)
       } else if (blinkTimerRef.current >= WON_BLINK_INTERVAL) {
         blinkTimerRef.current = 0
         blinkToggleRef.current = !blinkToggleRef.current
-        setBgTexture(blinkToggleRef.current ? BG_ON : BG_GLOW)
+        setBgTextureImperative(blinkToggleRef.current ? BG_ON : BG_GLOW)
       }
     }
 
@@ -246,7 +255,7 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
       if (blinkTimerRef.current >= COLLECT_BLINK_INTERVAL) {
         blinkTimerRef.current = 0
         blinkToggleRef.current = !blinkToggleRef.current
-        setBgTexture(blinkToggleRef.current ? BG_ON : BG_GLOW)
+        setBgTextureImperative(blinkToggleRef.current ? BG_ON : BG_GLOW)
       }
     }
 
@@ -254,7 +263,8 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
     if (tweenActiveRef.current) {
       tweenTimeRef.current += ticker.deltaMS
       const progress = Math.min(tweenTimeRef.current / 800, 1)
-      setTweenAlpha(progress)
+      tweenAlphaRef.current = progress
+      if (contentRef.current) contentRef.current.alpha = progress
       if (progress >= 1) {
         tweenActiveRef.current = false
       }
@@ -289,9 +299,9 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
       ? value       // active round payout
       : lastPayout  // idle: previous round's win (0 = blank)
 
-  const labelFont = tweenActiveRef.current ? 'payout-won' : 'payout-value'
+  const labelFont = 'payout'
   const labelFill = tweenActiveRef.current ? 0xfdfaa6 : 0xffffff
-  const displayAlpha = tweenActiveRef.current ? tweenAlpha : 1
+  const displayAlpha = tweenActiveRef.current ? tweenAlphaRef.current : 1
   const labelText = showValue > 0 ? formatNumber(showValue) : ''
 
   // Dynamic centering — AS3: Payout.align()
@@ -315,20 +325,24 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
 
   // Re-align when displayed value changes
   useEffect(() => {
+    let rafId: number | undefined
     if (showValue > 0) {
-      requestAnimationFrame(updateAlign)
+      rafId = requestAnimationFrame(updateAlign)
+    }
+    return () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId)
     }
   }, [showValue, updateAlign])
 
   return (
     <pixiContainer x={PAYOUT_X} y={PAYOUT_Y}>
       {/* BgPayout */}
-      <pixiSprite texture={tex(bgTexture)} x={0} y={0} />
+      <pixiSprite ref={bgSpriteRef} texture={tex(bgTexture)} x={0} y={0} />
 
       {/* Content: coin + label, centered via align() */}
       {showValue > 0 && (
         <pixiContainer
-          ref={contentContainerRef}
+          ref={(node: Container | null) => { contentContainerRef.current = node; contentRef.current = node }}
           x={containerPos.x}
           y={containerPos.y}
           scale={contentScale}
@@ -342,7 +356,8 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
           />
           <pixiBitmapText
             text={labelText}
-            style={{ fontFamily: labelFont, fontSize: FONT_SIZE, fill: labelFill }}
+            style={{ fontFamily: labelFont, fontSize: FONT_SIZE, fill: 0xffffff }}
+            tint={labelFill}
             anchor={{ x: 0, y: 0.5 }}
             x={LABEL_OFFSET_X}
             y={Math.round(COIN_H / 2)}

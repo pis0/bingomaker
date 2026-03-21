@@ -49,7 +49,7 @@ const COIN_TEXT_GAP = 2
 // Value text x within pContainer (after coin + gap)
 const VALUE_X = COIN_W + COIN_TEXT_GAP
 
-// BitmapFont names: 'jackpot-title' (white 16px), 'jackpot-sub' (brown 16px), 'jackpot-value' (tan 35px)
+// BitmapFont names: 'label-16' (tinted), 'jackpot-value' (tan 35px)
 
 function formatNumber(n: number): string {
   return Math.floor(n).toLocaleString('pt-BR')
@@ -155,7 +155,8 @@ export default function JackpotPanel({ value = 5000, active = true, ballsToJackp
       {active && (
         <pixiBitmapText
           text="JACKPOT"
-          style={{ fontFamily: 'jackpot-title', fontSize: 16, fill: 0xffffff }}
+          style={{ fontFamily: 'label-16', fontSize: 16, fill: 0xffffff }}
+          tint={0xffffff}
           anchor={{ x: 0.5, y: 0.5 }}
           x={BASE_X + BG_W / 2}
           y={BASE_Y + 15}
@@ -166,7 +167,8 @@ export default function JackpotPanel({ value = 5000, active = true, ballsToJackp
       {!active && (
         <pixiBitmapText
           text={`ATÉ BOLA ${ballsToJackpot}`}
-          style={{ fontFamily: 'jackpot-sub', fontSize: 16, fill: 0x4e2b0d }}
+          style={{ fontFamily: 'label-16', fontSize: 16, fill: 0xffffff }}
+          tint={0x4e2b0d}
           anchor={{ x: 0.5, y: 0.5 }}
           x={BASE_X + BG_W / 2}
           y={BASE_Y + 15}

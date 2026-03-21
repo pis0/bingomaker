@@ -433,11 +433,6 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
     }
   }, [peelAdvanceTick])
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => { extraWaterRef.current?.destroy(); extraWaterRef.current = null }
-  }, [])
-
   // ── 3D beat on extra grid (AS3: beatExtraBallContainer) ────────
   // Simulates 3D tilt with skewX/skewY when an extra ball lands.
   // Direction depends on slot: odd/even → skewY sign, upper/lower → skewX sign
@@ -764,6 +759,20 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
       buf.update()
     }
   })
+
+  // ── Cleanup on unmount — clear all timers and destroy all GPU resources ──
+  useEffect(() => {
+    return () => {
+      // Timers
+      if (largeBallTimerRef.current) { clearTimeout(largeBallTimerRef.current); largeBallTimerRef.current = null }
+      if (overlayTimerRef.current) { clearTimeout(overlayTimerRef.current); overlayTimerRef.current = null }
+      splashCleanupRef.current?.(); splashCleanupRef.current = null
+      // GPU resources
+      extraWaterRef.current?.destroy(); extraWaterRef.current = null
+      meshRef.current?.destroy(); meshRef.current = null
+      popperRef.current?.destroy(); popperRef.current = null
+    }
+  }, [])
 
   // ── Extra ball bg texture name ────────────────────────────────
   const extraBgTexture = inExtraMode ? 'bgextraball_full' : 'bgextraball'

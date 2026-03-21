@@ -15,8 +15,8 @@ export default function BallCounter({ count, x = 0, y = 0 }: Props) {
 
   return (
     <pixiContainer x={x} y={y}>
-      <pixiBitmapText text={text} style={{ fontFamily: 'counter-shadow', fontSize: 25, fill: 0x37393c }} anchor={0.5} y={2} />
-      <pixiBitmapText text={text} style={{ fontFamily: 'counter-label', fontSize: 25, fill: 0xc1c0ae }} anchor={0.5} />
+      <pixiBitmapText text={text} style={{ fontFamily: 'counter', fontSize: 25, fill: 0xffffff }} tint={0x37393c} anchor={0.5} y={2} />
+      <pixiBitmapText text={text} style={{ fontFamily: 'counter', fontSize: 25, fill: 0xffffff }} tint={0xc1c0ae} anchor={0.5} />
     </pixiContainer>
   )
 }

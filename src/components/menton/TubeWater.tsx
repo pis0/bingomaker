@@ -413,9 +413,14 @@ export default function TubeWater({ active, flowing = active, idle = false }: Pr
     if (c && waterEmitter.current) c.addChild(waterEmitter.current.container)
   }, [])
 
-  // Cleanup particle emitter on unmount
+  // Cleanup GPU resources on unmount
   useEffect(() => {
-    return () => { waterEmitter.current?.destroy(); waterEmitter.current = null }
+    return () => {
+      waterEmitter.current?.destroy()
+      waterEmitter.current = null
+      w1Mask.current.destroy()
+      w2Mask.current.destroy()
+    }
   }, [])
 
   return (

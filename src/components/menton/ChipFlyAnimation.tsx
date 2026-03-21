@@ -7,7 +7,7 @@
  *   - Fly 0.7s linear to Payout center, 0.08s stagger (last→first)
  *   - After all arrive + 0.1s delay → callback
  */
-import { useRef, useState } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { Container, Sprite } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
@@ -47,93 +47,101 @@ interface Props {
 interface ChipState {
   startX: number
   startY: number
-  x: number
-  y: number
-  visible: boolean
   flyStartTime: number
+  sprite: Sprite | null
 }
 
 export default function ChipFlyAnimation({ chips, onComplete, flyDelay = DEFAULT_FLY_DELAY }: Props) {
-  const stateRef = useRef<ChipState[] | null>(null)
+  const containerRef = useRef<Container>(null)
+  const statesRef = useRef<ChipState[]>([])
   const timerRef = useRef(0)
   const doneRef = useRef(false)
-  const [, setTick] = useState(0)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
 
-  // Initialize chip states on first render or when chips change
-  if (!stateRef.current || stateRef.current.length !== chips.length) {
-    doneRef.current = false
-    timerRef.current = 0
+  // Build sprites imperatively once
+  const setupContainer = useCallback((node: Container | null) => {
+    containerRef.current = node
+    if (!node || statesRef.current.length > 0) return
 
-    // AS3: stagger from last to first
+    const chipTex = tex('ficha78_sk')
     const totalChips = chips.length
-    stateRef.current = chips.map((pos, i) => ({
-      startX: pos.x,
-      startY: pos.y,
-      x: pos.x,
-      y: pos.y,
-      visible: true,
-      flyStartTime: flyDelay + (totalChips - 1 - i) * FLY_STAGGER,
-    }))
-  }
+    const states: ChipState[] = []
+
+    for (let i = 0; i < totalChips; i++) {
+      const pos = chips[i]
+      const sprite = new Sprite(chipTex)
+      sprite.anchor.set(0.5)
+      sprite.scale.set(CHIP_SCALE)
+      sprite.x = pos.x
+      sprite.y = pos.y
+      node.addChild(sprite)
+
+      states.push({
+        startX: pos.x,
+        startY: pos.y,
+        flyStartTime: flyDelay + (totalChips - 1 - i) * FLY_STAGGER,
+        sprite,
+      })
+    }
+
+    statesRef.current = states
+    timerRef.current = 0
+    doneRef.current = false
+  }, [chips, flyDelay])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+      // Destroy all sprites
+      for (const s of statesRef.current) {
+        s.sprite?.destroy()
+      }
+      statesRef.current = []
+    }
+  }, [])
 
   useTick((ticker) => {
-    if (doneRef.current || !stateRef.current) return
+    if (doneRef.current || statesRef.current.length === 0) return
 
     timerRef.current += ticker.deltaMS
     const t = timerRef.current
     let allArrived = true
 
-    for (const chip of stateRef.current) {
-      if (!chip.visible) continue
+    for (const chip of statesRef.current) {
+      const sprite = chip.sprite
+      if (!sprite || !sprite.visible) continue
 
       const flyElapsed = t - chip.flyStartTime
 
       if (flyElapsed < 0) {
         // Shake phase — Y oscillates ±SHAKE_AMPLITUDE
         const shakePhase = Math.sin((t / SHAKE_PERIOD) * Math.PI * 2)
-        chip.x = chip.startX
-        chip.y = chip.startY + shakePhase * SHAKE_AMPLITUDE
+        sprite.x = chip.startX
+        sprite.y = chip.startY + shakePhase * SHAKE_AMPLITUDE
         allArrived = false
       } else if (flyElapsed < FLY_DURATION) {
         // Fly phase — linear interpolation to Payout center
         const progress = flyElapsed / FLY_DURATION
-        chip.x = chip.startX + (PAYOUT_CENTER_X - chip.startX) * progress
-        chip.y = chip.startY + (PAYOUT_CENTER_Y - chip.startY) * progress
+        sprite.x = chip.startX + (PAYOUT_CENTER_X - chip.startX) * progress
+        sprite.y = chip.startY + (PAYOUT_CENTER_Y - chip.startY) * progress
         allArrived = false
       } else {
         // Arrived — hide
-        chip.x = PAYOUT_CENTER_X
-        chip.y = PAYOUT_CENTER_Y
-        chip.visible = false
+        sprite.visible = false
       }
     }
 
-    // Force re-render so sprite positions update
-    setTick(t => t + 1)
-
     if (allArrived && !doneRef.current) {
       doneRef.current = true
-      setTimeout(onComplete, END_DELAY)
+      timeoutRef.current = setTimeout(() => onCompleteRef.current(), END_DELAY)
     }
   })
 
-  const state = stateRef.current
-  if (!state) return null
-
-  return (
-    <pixiContainer>
-      {state.map((chip, i) =>
-        chip.visible ? (
-          <pixiSprite
-            key={i}
-            texture={tex('ficha78_sk')}
-            anchor={0.5}
-            scale={CHIP_SCALE}
-            x={chip.x}
-            y={chip.y}
-          />
-        ) : null,
-      )}
-    </pixiContainer>
-  )
+  return <pixiContainer ref={setupContainer} />
 }

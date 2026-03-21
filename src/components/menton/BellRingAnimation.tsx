@@ -80,6 +80,14 @@ export default function BellRingAnimation({ active, onComplete }: Props) {
     image.visible = false
     root.addChild(image)
     imageRef.current = image
+
+    return () => {
+      anim.destroy()
+      image.destroy()
+      animRef.current = null
+      imageRef.current = null
+      built.current = false
+    }
   }, [])
 
   useTick((ticker) => {

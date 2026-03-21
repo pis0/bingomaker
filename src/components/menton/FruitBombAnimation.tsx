@@ -99,12 +99,23 @@ export default function FruitBombAnimation({ active, bombPositions, onShake, onC
   useEffect(() => { onCompleteRef.current = onComplete })
   useEffect(() => { onShakeRef.current = onShake })
 
-  // Preload all fruit MovieBytes data on mount
+  // Preload all fruit MovieBytes data on mount; clear cache on unmount
   useEffect(() => {
+    let unmounted = false
     for (const [name, cfg] of Object.entries(FRUIT_CONFIGS)) {
       loadMovieBytes(cfg.url).then(data => {
-        bytesCache.current.set(name, data)
+        if (!unmounted) bytesCache.current.set(name, data)
       })
+    }
+    return () => {
+      unmounted = true
+      for (const data of bytesCache.current.values()) {
+        // Destroy cached frame textures if the data exposes them
+        if (data && typeof (data as any).destroy === 'function') {
+          (data as any).destroy()
+        }
+      }
+      bytesCache.current.clear()
     }
   }, [])
 

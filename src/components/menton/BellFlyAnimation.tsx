@@ -47,6 +47,11 @@ export default function BellFlyAnimation({ positions }: Props) {
     bell.scale.set(2)
     root.addChild(bell)
     spriteRef.current = bell
+
+    return () => {
+      bell.destroy()
+      spriteRef.current = null
+    }
   }, [])
 
   useTick((ticker) => {

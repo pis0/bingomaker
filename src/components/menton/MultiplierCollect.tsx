@@ -38,6 +38,11 @@ export default function MultiplierCollect({ active, onComplete }: Props) {
     img.anchor.set(0.5, 0)
     root.addChild(img)
     spriteRef.current = img
+
+    return () => {
+      img.destroy()
+      spriteRef.current = null
+    }
   }, [])
 
   useTick((ticker) => {

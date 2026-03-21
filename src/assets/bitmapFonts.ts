@@ -2,15 +2,20 @@
  * BitmapFont runtime installation — generates GPU-resident glyph atlases
  * from the TTF/OTF fonts already loaded via @font-face.
  *
- * Called once at startup (before first render). Each unique font+size+color
- * combo = one BitmapFont. Resolution 2x for retina/mobile crisp rendering.
+ * Called once at startup (before first render). Each unique font+size combo
+ * = one BitmapFont. Resolution 2x for retina/mobile crisp rendering.
+ *
+ * Color consolidation: fonts that previously had multiple color variants are
+ * now installed as WHITE (0xffffff). Components apply color via `tint` prop
+ * on <pixiBitmapText>. This cuts GPU atlas memory roughly in half.
  *
  * Usage in components: replace <pixiText style={...}> with
- *   <pixiBitmapText style={{ fontFamily: 'font-name', fontSize: size }} />
+ *   <pixiBitmapText style={{ fontFamily: 'font-name', fontSize: size }}
+ *                   tint={0xff0000} />
  */
 import { BitmapFont, TextStyle } from 'pixi.js'
 
-const RES = 3 // @3x — covers iPhone retina (3x) + high-end Android
+const RES = 2 // @2x — balanced: crisp on retina without blowing GPU budget
 
 // Character sets — PixiJS v8 uses [from, to] range pairs
 const NUMERIC = [['0', '9'] as [string, string], ' ']
@@ -35,104 +40,86 @@ console.warn = (...args: unknown[]) => {
   _origWarn.apply(console, args)
 }
 
+// ── Helper ──────────────────────────────────────────────────────
+type Chars = (string | [string, string])[]
+
 export function installBitmapFonts(): void {
   if (installed) return
   installed = true
   const t0 = performance.now()
   let count = 0
+
+  function ins(
+    name: string,
+    fontFamily: string,
+    fontSize: number,
+    fill: number,
+    chars: Chars,
+    fontWeight: string = 'normal',
+  ): void {
+    BitmapFont.install({
+      name,
+      style: new TextStyle({ fontFamily, fontSize, fill, fontWeight: fontWeight as TextStyle['fontWeight'] }),
+      chars,
+      resolution: RES,
+    })
+    count++
+  }
+
   // ── Iowan Old Style Black ───────────────────────────────────
 
-  // SlotCell — 4 color variants at 28px (60 instances on screen)
-  // Colors from cardConstants.ts COLORS
-  ins('slot-default', IOWAN, 28, 0x332d11, NUMERIC)     // textDefault
-  ins('slot-matched', IOWAN, 28, 0x852f96, NUMERIC)     // textMatched
-  ins('slot-pattern', IOWAN, 28, 0x5b1f72, NUMERIC)     // textInPattern
-  ins('slot-idle', IOWAN, 28, 0x852f96, NUMERIC)         // textMatched (idle highlight)
+  // SlotCell — white 28px, components tint per state (default/matched/pattern/idle)
+  ins('slot', IOWAN, 28, 0xffffff, NUMERIC)
 
-  // BallCounter — shadow + label at 25px
-  ins('counter-shadow', IOWAN, 25, 0x37393c, NUMERIC)
-  ins('counter-label', IOWAN, 25, 0xc1c0ae, NUMERIC)
+  // BallCounter — white 25px, components tint for shadow/label
+  ins('counter', IOWAN, 25, 0xffffff, NUMERIC)
 
-  // AnimatedBall / Ball — regular 24px, extra 29px
+  // AnimatedBall / Ball — brown 24px regular, 29px extra (unique colors, no consolidation)
   ins('ball-regular', IOWAN, 24, 0x4d371e, NUMERIC)
   ins('ball-extra', IOWAN, 29, 0x4d371e, NUMERIC)
 
-  // BallPanel — large ball 50px
+  // BallPanel — large ball 50px brown
   ins('ball-large', IOWAN, 50, 0x4d371e, NUMERIC)
 
-  // MissingMark — number green/brown 30px, price 18px, bonus 14px
-  ins('missing-green', IOWAN, 30, 0x198754, NUMERIC)
-  ins('missing-brown', IOWAN, 30, 0x4d321e, NUMERIC)
+  // MissingMark — white 30px number, 18px price (unique color)
+  ins('missing-num', IOWAN, 30, 0xffffff, NUMERIC)
   ins('missing-price', IOWAN, 18, 0xffffff, LABEL_CHARS)
-  ins('missing-bonus', IOWAN, 14, 0xfff770, LABEL_CHARS)
 
-  // MovieSplash — prize label 56px, ball number 75px
+  // MovieSplash — prize label 56px dark, ball number 75px brown (unique colors)
   ins('splash-label', IOWAN, 56, 0x340100, BUTTON_CHARS)
   ins('splash-ball', IOWAN, 75, 0x4d371e, NUMERIC)
 
-  // JackpotPanel — title 16px white, subtitle 16px brown
-  ins('jackpot-title', IOWAN, 16, 0xffffff, LABEL_CHARS)
-  ins('jackpot-sub', IOWAN, 16, 0x4e2b0d, LABEL_CHARS)
+  // Labels — white 16px (jackpot title/sub, any 16px label — tint per use)
+  ins('label-16', IOWAN, 16, 0xffffff, LABEL_CHARS)
 
-  // PayoutCard — value 14px brown, count 14px gold, won variants red
-  ins('prize-value', IOWAN, 14, 0x1b1302, NUMERIC)
-  ins('prize-count', IOWAN, 14, 0xfacb25, LABEL_CHARS)
-  ins('prize-value-won', IOWAN, 14, 0xd11919, NUMERIC)
-  ins('prize-count-won', IOWAN, 14, 0xd11919, LABEL_CHARS)
+  // PayoutCard + MissingMark bonus — white 14px numeric + 14px label, tint per state
+  ins('prize-num', IOWAN, 14, 0xffffff, NUMERIC)
+  ins('prize-label', IOWAN, 14, 0xffffff, LABEL_CHARS)
 
-  // BallPanel overlays — EXTRA 70px yellow, SUPER 74px cyan
+  // BallPanel overlays — EXTRA 70px yellow, SUPER 74px cyan (unique colors)
   ins('overlay-extra', IOWAN, 70, 0xfff000, BUTTON_CHARS)
   ins('overlay-super', IOWAN, 74, 0x00fcff, BUTTON_CHARS)
 
   // BallPanel — extra price 20px white
   ins('extra-price', IOWAN, 20, 0xffffff, PRICE_CHARS)
 
-  // Tongue — total stake 26px white
-  ins('tongue-value', IOWAN, 26, 0xffffff, NUMERIC)
+  // Tongue + Stake — white 26px numeric, tint per stake level
+  ins('value-26', IOWAN, 26, 0xffffff, NUMERIC)
 
   // ── Myriad Pro ──────────────────────────────────────────────
 
-  // Payout — value 43px white + won blink yellow
-  ins('payout-value', MYRIAD, 43, 0xffffff, NUM_FORMAT, '600')
-  ins('payout-won', MYRIAD, 43, 0xfdfaa6, NUM_FORMAT, '600')
+  // Payout — white 43px, tint for won/blink states
+  ins('payout', MYRIAD, 43, 0xffffff, NUM_FORMAT, '600')
 
-  // JackpotPanel — jackpot value 35px tan
+  // JackpotPanel — jackpot value 35px tan (unique color)
   ins('jackpot-value', MYRIAD, 35, 0xd5cdaa, NUM_FORMAT, 'bold')
 
   // ── Clarendon Black BT ──────────────────────────────────────
 
-  // ButtonPanel — play 43px, end 33px, bet 24px (on/off colors)
+  // ButtonPanel — white, tint for on/off states
   ins('btn-play', CLARENDON, 43, 0xffffff, BUTTON_CHARS)
-  ins('btn-play-off', CLARENDON, 43, 0xbbbbbb, BUTTON_CHARS)
   ins('btn-end', CLARENDON, 33, 0xffffff, BUTTON_CHARS)
-  ins('btn-end-off', CLARENDON, 33, 0xbbbbbb, BUTTON_CHARS)
   ins('btn-bet', CLARENDON, 24, 0xffffff, BUTTON_CHARS)
-  ins('btn-bet-off', CLARENDON, 24, 0xbbbbbb, BUTTON_CHARS)
-
-  // Stake value — 8 colors at 26px
-  const STAKE_COLORS = [0x6AB22F, 0xB1AA03, 0xCF499D, 0x66736F, 0x4781CD, 0xd5cdaa, 0x80128F, 0xffffff]
-  for (let i = 0; i < STAKE_COLORS.length; i++) {
-    ins(`stake-${i}`, IOWAN, 26, STAKE_COLORS[i], NUMERIC)
-  }
 
   console.log(`[BitmapFonts] ${count} fonts installed in ${(performance.now() - t0).toFixed(1)}ms`)
-}
-
-// ── Helper ──────────────────────────────────────────────────────
-type Chars = (string | [string, string])[]
-
-function ins(
-  name: string,
-  fontFamily: string,
-  fontSize: number,
-  fill: number,
-  chars: Chars,
-  fontWeight: string = 'normal',
-): void {
-  BitmapFont.install({
-    name,
-    style: new TextStyle({ fontFamily, fontSize, fill, fontWeight: fontWeight as TextStyle['fontWeight'] }),
-    chars,
-    resolution: RES,
-  })
 }
