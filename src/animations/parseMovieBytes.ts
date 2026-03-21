@@ -114,9 +114,28 @@ const decoder = new TextDecoder('utf-8')
 
 // ── Decompression ───────────────────────────────────────────────────
 
-/** Try DEFLATE (raw) decompression. Falls back to uncompressed if it fails. */
+/**
+ * Try DEFLATE (raw) decompression. Falls back to uncompressed if it fails.
+ *
+ * NOTE: .bytes files are now shipped pre-decompressed (inflated at build time).
+ * This function is kept as a safety net for any legacy compressed files.
+ * DecompressionStream requires Safari 16.4+ (iOS 16.4+), so pre-decompression
+ * ensures iPhone 7 (max iOS 15) and other older devices work correctly.
+ */
 async function inflateBytes(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+  // Quick check: if data looks like valid uncompressed MovieBytes header
+  // (first int32 = numTextures, should be small positive number), skip decompression.
+  if (buffer.byteLength >= 4) {
+    const firstInt = new DataView(buffer).getInt32(0, false)
+    if (firstInt > 0 && firstInt < 500) return buffer
+  }
+
   // Flash ByteArray.inflate() uses raw DEFLATE (RFC 1951)
+  if (typeof DecompressionStream === 'undefined') {
+    console.warn('[parseMovieBytes] DecompressionStream not available — data must be pre-decompressed')
+    return buffer
+  }
+
   try {
     const ds = new DecompressionStream('deflate-raw')
     const writer = ds.writable.getWriter()

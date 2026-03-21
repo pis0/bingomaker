@@ -107,6 +107,8 @@ export default function BingoMovie({ cardIndex, onHideCards, onShowCards, onComp
       }
 
       readyRef.current = true
+    }).catch((err) => {
+      console.error('[BingoMovie] Failed to load bingo.bytes:', err)
     })
     return () => {
       disposed = true

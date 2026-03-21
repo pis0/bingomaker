@@ -105,6 +105,8 @@ export default function FruitBombAnimation({ active, bombPositions, onShake, onC
     for (const [name, cfg] of Object.entries(FRUIT_CONFIGS)) {
       loadMovieBytes(cfg.url).then(data => {
         if (!unmounted) bytesCache.current.set(name, data)
+      }).catch((err) => {
+        console.error(`[FruitBomb] Failed to load ${name}.bytes:`, err)
       })
     }
     return () => {

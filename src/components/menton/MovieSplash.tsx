@@ -91,6 +91,8 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
         // Insert at index 0 so it renders behind label and ball
         containerRef.current.addChildAt(player.container, 0)
       }
+    }).catch((err) => {
+      console.error('[MovieSplash] Failed to load juicesplash.bytes:', err)
     })
     return () => {
       disposed = true
