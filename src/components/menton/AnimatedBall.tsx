@@ -20,12 +20,12 @@ const PIPE_EXIT_X = 33
 /** Pipe bottom Y — where balls emerge */
 const PIPE_BOTTOM_Y = 77
 
-/** Drop speed: gravity (~10 frames = 167ms) */
-const DROP_SPEED = 0.096
-/** Frames for roll to ramp up from 0 to full speed */
-const ROLL_RAMP_FRAMES = 4
-/** Constant horizontal roll speed in px/frame */
-const ROLL_PX_PER_FRAME = 14.4
+/** Drop speed: per-second (AS3: 0.096/frame × 60fps) */
+const DROP_SPEED_PS = 0.096 * 60
+/** Duration for roll to ramp up from 0 to full speed (AS3: 4 frames) */
+const ROLL_RAMP_DURATION = 4 / 60
+/** Constant horizontal roll speed in px/second (AS3: 14.4px/frame × 60fps) */
+const ROLL_PX_PS = 14.4 * 60
 /** Ball rotation factor */
 const ROTATION_FACTOR = 18
 
@@ -148,7 +148,7 @@ function animateRegular(
   let phase = 0
   let movePercent = 0
   let pixelsTraveled = 0
-  let rollFrameCount = 0
+  let rollElapsed = 0
   let landingElapsed = 0
   let rotationAtLanding = 0
 
@@ -159,8 +159,9 @@ function animateRegular(
 
   const ticker = Ticker.shared
   const onTick = () => {
+    const dt = ticker.deltaMS / 1000
     if (phase === 0) {
-      movePercent += DROP_SPEED
+      movePercent += DROP_SPEED_PS * dt
       const t = Math.min(movePercent, 1)
       container.y = PIPE_BOTTOM_Y + (finalY - PIPE_BOTTOM_Y) * easeInQuad(t)
       container.rotation = Math.PI * 2 * 2 * t
@@ -168,12 +169,12 @@ function animateRegular(
         container.y = finalY
         phase = 1
         pixelsTraveled = 0
-        rollFrameCount = 0
+        rollElapsed = 0
       }
     } else if (phase === 1) {
-      rollFrameCount++
-      const speedFactor = Math.min(rollFrameCount / ROLL_RAMP_FRAMES, 1)
-      pixelsTraveled += ROLL_PX_PER_FRAME * speedFactor
+      rollElapsed += dt
+      const speedFactor = Math.min(rollElapsed / ROLL_RAMP_DURATION, 1)
+      pixelsTraveled += ROLL_PX_PS * dt * speedFactor
       const arrived = pixelsTraveled >= rollDistance
       const px = arrived ? rollDistance : pixelsTraveled
       container.x = PIPE_EXIT_X + px
@@ -235,9 +236,10 @@ function animateExtra(
 
   const ticker = Ticker.shared
   const onTick = () => {
+    const dt = ticker.deltaMS / 1000
     if (phase === 0) {
       // Phase 1: short move from chute to waypoint (very fast)
-      movePercent += EXTRA_SPEED_PHASE1
+      movePercent += EXTRA_SPEED_PHASE1 * 60 * dt
       if (movePercent >= 1) {
         movePercent = 0
         phase = 1
@@ -245,7 +247,7 @@ function animateExtra(
       // Barely moves (130→135, same Y) — just a brief pause
     } else if (phase === 1) {
       // Phase 2: fly from waypoint to grid position
-      movePercent += EXTRA_SPEED_PHASE2
+      movePercent += EXTRA_SPEED_PHASE2 * 60 * dt
       const t = Math.min(movePercent, 1)
       container.x = EXTRA_CHUTE_X + (finalX - EXTRA_CHUTE_X) * t
       container.y = EXTRA_CHUTE_Y + (finalY - EXTRA_CHUTE_Y) * t

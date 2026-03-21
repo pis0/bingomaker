@@ -93,8 +93,8 @@ function easeOutCubic(t: number): number {
 }
 
 // AS3: dynamic ball trigger interval based on maxPatternPriority
-// Values doubled from AS3 30fps → 60fps (original: [3,3,4,5,6,7,8,12,15,20,30])
-const TRIGGER_INTERVALS = [6, 6, 8, 10, 12, 14, 16, 24, 30, 40, 60]
+// Original AS3 (30fps): [3,3,4,5,6,7,8,12,15,20,30] frames → converted to ms
+const TRIGGER_INTERVALS_MS = [6, 6, 8, 10, 12, 14, 16, 24, 30, 40, 60].map(f => f / 60 * 1000)
 
 interface Props {
   onBallArrive?: () => void
@@ -132,7 +132,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
 
   // Derived locally
   const maxPriority = round?.maxPatternPriority ?? 0
-  const launchInterval = TRIGGER_INTERVALS[Math.min(maxPriority, TRIGGER_INTERVALS.length - 1)]
+  const launchInterval = TRIGGER_INTERVALS_MS[Math.min(maxPriority, TRIGGER_INTERVALS_MS.length - 1)]
   const zIndex = superFlying ? 100 : 4
   const isIdle = !round || targetBallCount === 0
 
@@ -215,7 +215,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
   const onBallArriveRef = useRef(onBallArrive)
   onBallArriveRef.current = onBallArrive
   useEffect(() => {
-    let framesSinceLaunch = 999
+    let msSinceLaunch = 999999
     const ticker = Ticker.shared
     const onTick = () => {
       const hasItems = queueRef.current.length > 0
@@ -224,7 +224,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
         setFlowing(hasItems)
       }
       if (!hasItems || pausedRef.current) return
-      framesSinceLaunch++
+      msSinceLaunch += ticker.deltaMS
       const nextIndex = queueRef.current[0]
 
       // ── Extra/super ball handling ──
@@ -274,7 +274,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
         }
 
         // Dispatch extra (after peel, or direct if low priority)
-        framesSinceLaunch = 0
+        msSinceLaunch = 0
         const next = queueRef.current.shift()!
         setLaunchedIndices(prev => [...prev, next])
         onBallArriveRef.current?.()
@@ -306,8 +306,8 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
       }
 
       // Regular ball dispatch
-      if (framesSinceLaunch >= intervalRef.current) {
-        framesSinceLaunch = 0
+      if (msSinceLaunch >= intervalRef.current) {
+        msSinceLaunch = 0
         const next = queueRef.current.shift()!
         setLaunchedIndices(prev => [...prev, next])
         onBallArriveRef.current?.()

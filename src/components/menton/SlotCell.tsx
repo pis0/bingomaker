@@ -25,8 +25,10 @@ const FONT_SIZE = 28
 // BitmapFont: single 'slot' font (white) — color via tint prop
 
 // ── Color interpolation (matching AS3 Slot.enterFrame) ───────
-const CYCLE_LENGTH = 20 // frames per color transition
-const RESTORE_LENGTH = 10 // frames to transition back to settled color (AS3: prepareRestore)
+const CYCLE_DURATION_FRAMES = 20 // AS3: 20 frames per color transition at 60fps
+const CYCLE_LENGTH_MS = CYCLE_DURATION_FRAMES / 60 * 1000 // → ms
+const RESTORE_FRAMES = 10 // AS3: 10 frames to transition back at 60fps
+const RESTORE_LENGTH_MS = RESTORE_FRAMES / 60 * 1000 // → ms
 const CYCLE_DURATION_MS = 2500 // auto-restore after this (placeholder until overlay animations exist)
 
 function lerpColor(c1: number, c2: number, t: number): number {
@@ -42,7 +44,7 @@ function lerpColor(c1: number, c2: number, t: number): number {
 interface CycleState {
   active: boolean
   state: number
-  frame: number
+  elapsed: number // ms accumulated within current transition
   colorIndex: number
   c1: number
   c2: number
@@ -94,7 +96,7 @@ export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHi
 
   // Pattern color cycling state
   const bgRef = useRef<Graphics | null>(null)
-  const cycleRef = useRef<CycleState>({ active: false, state: 0, frame: 0, colorIndex: 0, c1: 0, c2: 0, colors: [], startTime: 0 })
+  const cycleRef = useRef<CycleState>({ active: false, state: 0, elapsed: 0, colorIndex: 0, c1: 0, c2: 0, colors: [], startTime: 0 })
   const wasInPattern = useRef(false)
 
   // Detect new match → play marking animation
@@ -137,7 +139,7 @@ export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHi
       cycleRef.current = {
         active: true,
         state: 0,
-        frame: 0,
+        elapsed: 0,
         colorIndex: 0,
         c1: 0x000000, // AS3: NEW_PATTERN_MATCH_STARTING_COLOR
         c2: colors[0],
@@ -209,16 +211,16 @@ export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHi
       const g = bgRef.current
 
       if (cycle.state === 0) {
-        // State 0: color cycling
-        cycle.frame++
-        if (cycle.frame >= CYCLE_LENGTH) {
-          cycle.frame = 0
+        // State 0: color cycling (time-based)
+        cycle.elapsed += ticker.deltaMS
+        if (cycle.elapsed >= CYCLE_LENGTH_MS) {
+          cycle.elapsed = 0
           cycle.c1 = cycle.colors[cycle.colorIndex]
           const nextIndex = (cycle.colorIndex + 1) % cycle.colors.length
           cycle.c2 = cycle.colors[nextIndex]
           cycle.colorIndex = nextIndex
         }
-        const color = lerpColor(cycle.c1, cycle.c2, cycle.frame / CYCLE_LENGTH)
+        const color = lerpColor(cycle.c1, cycle.c2, cycle.elapsed / CYCLE_LENGTH_MS)
         g.clear()
         g.rect(0, 0, SLOT_W, SLOT_H)
         g.fill(color)
@@ -227,18 +229,18 @@ export default function SlotCell({ card, row, col, x, y, zIndex, hasBell, idleHi
         if (performance.now() - cycle.startTime > CYCLE_DURATION_MS) {
           cycle.state = 1
           cycle.c1 = color // transition FROM current cycling color
-          cycle.frame = 0
+          cycle.elapsed = 0
         }
       } else if (cycle.state === 1) {
         // State 1: restore — transition to settled color (AS3: prepareRestore)
-        cycle.frame++
-        const t = Math.min(cycle.frame / RESTORE_LENGTH, 1)
+        cycle.elapsed += ticker.deltaMS
+        const t = Math.min(cycle.elapsed / RESTORE_LENGTH_MS, 1)
         const color = lerpColor(cycle.c1, COLORS.bgMatchedDark, t)
         g.clear()
         g.rect(0, 0, SLOT_W, SLOT_H)
         g.fill(color)
 
-        if (cycle.frame >= RESTORE_LENGTH) {
+        if (cycle.elapsed >= RESTORE_LENGTH_MS) {
           cycle.active = false
           cycle.state = 2
         }
