@@ -149,7 +149,8 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   // ── Pattern event queue ──────────────────────────────────────
   // Fed by handleBallArrive (from Draw.newPatterns), consumed by useEffect.
   // Replaces fragile polling of mutable Sets during render.
-  const patternQueueRef = useRef<{ cardIndex: number; pattern: Pattern; ballNum: number }[]>([])
+  const patternQueueRef = useRef<{ cardIndex: number; pattern: Pattern; ballNum: number; fromBomb?: boolean }[]>([])
+  const [queueBusy, setQueueBusy] = useState(false)
 
   // Round generation counter — drives key-based remount of ALL children
   const roundGenRef = useRef(0)
@@ -194,6 +195,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     || fruitBombActive
     || !!chipFlyPositions // pattern celebration
     || splashActive // MovieSplash prize animation
+    || queueBusy // pending patterns (fruit bomb chain)
 
   // Report bonus state to parent (disables advance/end buttons)
   useEffect(() => {
@@ -215,9 +217,68 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   // Splash fires for the first splash-worthy pattern found.
   useEffect(() => {
     const queue = patternQueueRef.current
-    if (queue.length === 0 || chipFlyPositions) return // wait for current chipFly to finish
+    if (queue.length === 0) {
+      if (queueBusy) setQueueBusy(false)
+      return
+    }
+    if (chipFlyPositions) return // wait for current chipFly to finish
 
-    // Dequeue first item
+    // Fruit bomb: flush ALL bomb patterns at once (simultaneous chipFlys from all cards)
+    const bombItems = queue.filter(q => q.fromBomb)
+    if (bombItems.length > 0) {
+      // Remove bomb items from queue
+      patternQueueRef.current = queue.filter(q => !q.fromBomb)
+      // Merge all chip positions + play all prize SFX
+      let allChips: ChipPosition[] = []
+      for (const item of bombItems) {
+        const group = item.pattern.group
+        const prizeSfxMap: Record<string, string> = {
+          [PatternGroup.LINE.name]: PRIZE_LINE,
+          [PatternGroup.DOUBLE_COLUMN.name]: PRIZE_DOUBLE_COLUMNS,
+          [PatternGroup.DOUBLE_LINE.name]: PRIZE_DOUBLE_LINE,
+          [PatternGroup.TRIPLE_COLUMN.name]: PRIZE_THREE_COLUMNS,
+          [PatternGroup.QUAD_COLUMN.name]: PRIZE_FOUR_COLUMNS,
+          [PatternGroup.QUAD_COLUMN_3.name]: PRIZE_DOUBLE_BOX,
+        }
+        const prizeSfx = prizeSfxMap[group.name]
+        if (prizeSfx) playSFX(prizeSfx, { volume: 0.2 })
+        allChips = allChips.concat(patternChipPositions(item.cardIndex, item.pattern))
+      }
+      chipFlyDelayRef.current = 300
+      setChipFlyPositions(allChips)
+
+      // Splash for best bomb pattern
+      const best = bombItems[0] // already sorted by priority
+      const bestGroup = best.pattern.group
+      if (!splashActive && (
+        bestGroup === PatternGroup.DOUBLE_LINE || bestGroup === PatternGroup.TRIPLE_COLUMN ||
+        bestGroup === PatternGroup.QUAD_COLUMN || bestGroup === PatternGroup.QUAD_COLUMN_3
+      )) {
+        const textMap: Record<string, string> = {
+          [PatternGroup.DOUBLE_LINE.name]: 'DOUBLE LINE',
+          [PatternGroup.TRIPLE_COLUMN.name]: 'TRIPLE COLUMN',
+          [PatternGroup.QUAD_COLUMN.name]: '4 COLUMNS',
+          [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
+        }
+        setSplashActive(true)
+        const voMap: Record<string, string[]> = {
+          [PatternGroup.DOUBLE_LINE.name]: VO_DOUBLE_LINE,
+          [PatternGroup.TRIPLE_COLUMN.name]: VO_THREE_COLUMNS,
+          [PatternGroup.QUAD_COLUMN.name]: VO_FOUR_COLUMNS,
+          [PatternGroup.QUAD_COLUMN_3.name]: VO_DOUBLE_BOX,
+        }
+        const voUrls = voMap[bestGroup.name]
+        splashRef.current?.play(
+          textMap[bestGroup.name] ?? bestGroup.name,
+          String(best.ballNum),
+          () => { setSplashActive(false) },
+          () => { if (voUrls) playVO(voUrls) },
+        )
+      }
+      return
+    }
+
+    // Regular pattern: dequeue one at a time
     const item = queue.shift()!
     const { cardIndex, pattern, ballNum } = item
 
@@ -239,7 +300,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     // Chips bump during liquid+hold, fly when fadeOut starts
     const isBigPrize = group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
       group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3
-    chipFlyDelayRef.current = isBigPrize ? 2650 : 1400 // liquid(900) + hold(1750/500)
+    chipFlyDelayRef.current = isBigPrize ? 2650 : 1400
     setChipFlyPositions(patternChipPositions(cardIndex, pattern))
     if (!splashActive && (
       group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
@@ -252,7 +313,6 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
         [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
       }
       setSplashActive(true)
-      // Voice-over for big prizes — synced to splash text reveal completion
       const voMap: Record<string, string[]> = {
         [PatternGroup.DOUBLE_LINE.name]: VO_DOUBLE_LINE,
         [PatternGroup.TRIPLE_COLUMN.name]: VO_THREE_COLUMNS,
@@ -322,6 +382,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
       for (const p of sorted) {
         patternQueueRef.current.push({ cardIndex: draw.affectedCard, pattern: p, ballNum: draw.ball })
       }
+      setQueueBusy(true)
       // Trigger re-render to consume queue
       setTick(t => t + 1)
     }
@@ -342,14 +403,23 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
 
   // AS3: after fruit animation complete → mark cells, update visual
   const handleFruitBombComplete = useCallback(() => {
-    // Process bomb — marks cells on cards (mutates Card objects)
+    // Process bomb — marks cells on cards, returns newly completed patterns
     if (fruitBombRef.current && round) {
-      fruitBombRef.current.process(round, stake)
+      const newPatterns = fruitBombRef.current.process(round, stake)
+      // Enqueue patterns into the same pipeline as regular draws
+      if (newPatterns.length > 0) {
+        const sorted = [...newPatterns].sort((a, b) => b.pattern.group.priority - a.pattern.group.priority)
+        // Mark as fruit bomb patterns — chipFly delay is short (liquid anims already played in CardView)
+        for (const p of sorted) {
+          patternQueueRef.current.push({ cardIndex: p.cardIndex, pattern: p.pattern, ballNum: p.ballNum, fromBomb: true })
+        }
+        setQueueBusy(true)
+      }
     }
     setFruitBombActive(false)
     setBombPositions([])
     setCardShake({ x: 0, y: 0 })
-    // Force re-render so cards show newly marked cells
+    // Force re-render so cards show newly marked cells + consume pattern queue
     setTick(t => t + 1)
   }, [round, stake])
 

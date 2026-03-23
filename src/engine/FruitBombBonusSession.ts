@@ -2,7 +2,15 @@ import { ROWS, COLS } from './constants'
 import type { Card } from './Card'
 import type { Round } from './Round'
 import { checkForPatterns } from './PatternResolver'
+import type { Pattern } from './Pattern'
 import type { RandomFn } from './types'
+
+export interface FruitBombPattern {
+  cardIndex: number
+  pattern: Pattern
+  /** Ball number of the cell that completed the pattern */
+  ballNum: number
+}
 
 export interface BombPosition {
   cardIndex: number
@@ -60,9 +68,10 @@ export class FruitBombBonusSession {
    * Process: mark 2×2 block on each card, draw balls through Round.
    * Returns draws made (for visual animation of newly marked cells).
    */
-  process(round: Round, stake: number): void {
+  process(round: Round, stake: number): FruitBombPattern[] {
     this.trueMatches = 0
     this.nilMatches = 0
+    const completedPatterns: FruitBombPattern[] = []
 
     for (const pos of this.positions) {
       const card = round.cards[pos.cardIndex]
@@ -86,10 +95,15 @@ export class FruitBombBonusSession {
           const ball = card.numbers[cell.row][cell.col]
           card.setMatch(ball)
           // Check patterns after each match
-          checkForPatterns(card, stake)
+          const result = checkForPatterns(card, stake)
+          for (const p of result.newPatterns) {
+            completedPatterns.push({ cardIndex: pos.cardIndex, pattern: p, ballNum: ball })
+          }
           card.clearLastMatch()
         }
       }
     }
+
+    return completedPatterns
   }
 }

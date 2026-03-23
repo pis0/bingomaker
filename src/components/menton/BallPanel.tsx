@@ -282,7 +282,6 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
         // Dispatch extra (after peel, or direct if low priority)
         msSinceLaunch = 0
         const next = queueRef.current.shift()!
-        playSFX(BALL_SHOT, { volume: rVol(0.35, 0.55) })
         setLaunchedIndices(prev => [...prev, next])
         onBallArriveRef.current?.()
         // Water spray on every extra dispatch
@@ -316,7 +315,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
       if (msSinceLaunch >= intervalRef.current) {
         msSinceLaunch = 0
         const next = queueRef.current.shift()!
-        playSFX(BALL_SHOT, { volume: rVol(0.1, 0.4) })
+        playSFX(BALL_SHOT, { volume: rVol(0.05, 0.2) })
         setLaunchedIndices(prev => [...prev, next])
         onBallArriveRef.current?.()
       }
