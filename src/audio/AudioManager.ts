@@ -43,6 +43,7 @@ let voGain: GainNode
 let bgActive: ActiveSource | null = null
 let voActive: ActiveSource | null = null
 let bgCurrentUrl: string | null = null
+let bgVolume = 0.6
 
 // Mute state
 let _musicEnabled = true
@@ -69,10 +70,19 @@ function getContext(): AudioContext {
 /**
  * Resume AudioContext — must be called from a user gesture (tap/click).
  * Safe to call multiple times; no-op if already running.
+ * Starts pending BG music that was requested while suspended.
  */
 export async function resumeAudio(): Promise<void> {
   const c = getContext()
-  if (c.state === 'suspended') await c.resume()
+  if (c.state === 'suspended') {
+    await c.resume()
+    // Start BG that was requested while context was suspended
+    if (bgCurrentUrl && _musicEnabled && !bgActive) {
+      const url = bgCurrentUrl
+      bgCurrentUrl = null
+      playBG(url, bgVolume)
+    }
+  }
 }
 
 /**
@@ -138,20 +148,20 @@ function createSource(
  * If playing a different track, crossfades.
  */
 export function playBG(url: string, volume = 0.6, fadeDuration = 1): void {
+  bgVolume = volume
   if (!_musicEnabled) { bgCurrentUrl = url; return }
   if (bgCurrentUrl === url && bgActive) return
+
+  // If context is suspended, just store intent — resumeAudio() will start it
+  if (ctx?.state === 'suspended') { bgCurrentUrl = url; return }
 
   // Stop previous with fade
   stopBG(fadeDuration)
   bgCurrentUrl = url
 
-  const active = createSource(url, bgGain, { loop: true, volume: 0 })
+  const active = createSource(url, bgGain, { loop: true, volume })
   if (!active) return
   bgActive = active
-
-  // Fade in
-  active.gain.gain.setValueAtTime(0, ctx!.currentTime)
-  active.gain.gain.linearRampToValueAtTime(volume, ctx!.currentTime + fadeDuration)
   active.source.start()
 }
 

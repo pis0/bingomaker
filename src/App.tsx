@@ -4,6 +4,7 @@ import Menton from './components/menton/Menton'
 import { GAME_WIDTH, GAME_HEIGHT } from './components/menton/Scenery'
 import DebugPanel from './debug/DebugPanel'
 import PixiStats, { PixiStatsBridge } from './debug/PixiStats'
+import SoundToggles from './debug/SoundToggles'
 import { useAssets } from './assets/useAssets'
 import { resumeAudio } from './audio/AudioManager'
 import { useDebugEngine } from './debug/useDebugEngine'
@@ -35,10 +36,18 @@ export default function App() {
   useViewportScale()
 
   // Resume AudioContext on first user gesture (iOS/Android WebView requirement)
+  // Listen to multiple event types and keep retrying until context is running
   useEffect(() => {
-    const handler = () => { resumeAudio(); window.removeEventListener('pointerdown', handler) }
-    window.addEventListener('pointerdown', handler, { once: true })
-    return () => window.removeEventListener('pointerdown', handler)
+    let done = false
+    const handler = async () => {
+      if (done) return
+      await resumeAudio()
+      done = true
+      for (const ev of events) document.removeEventListener(ev, handler, true)
+    }
+    const events = ['pointerdown', 'touchstart', 'mousedown', 'keydown'] as const
+    for (const ev of events) document.addEventListener(ev, handler, { capture: true })
+    return () => { for (const ev of events) document.removeEventListener(ev, handler, true) }
   }, [])
 
   // Button state — must be before early returns (hooks rules)
@@ -111,6 +120,7 @@ export default function App() {
         <PixiStatsBridge />
       </Application>
       <PixiStats />
+      <SoundToggles />
       {showDevtools && <DebugPanel engine={engine} />}
     </>
   )

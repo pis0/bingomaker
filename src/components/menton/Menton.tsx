@@ -27,6 +27,8 @@ import { INTERVAL_PATTERNS, INTERVAL_PATTERN_DELAY, PATTERN_TO_CARD_INDEX } from
 import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 import { CARD_W, CARD_H, CARD_GAP, X_O, Y_O, CELL_W, CELL_H, SLOT_W, SLOT_H } from './cardConstants'
 import { useGameStore } from '../../store/gameStore'
+import { playBG, setBGVolume } from '../../audio/AudioManager'
+import { BG_MENTON } from '../../audio/SoundID'
 
 extend({ Container })
 
@@ -91,8 +93,19 @@ interface Props {
 export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, processNextBall, isCollecting = false, lastPayout = 0, onBonusActiveChange, onPeelChange, buttonPhase = 'play', buttonEnabled = true, showEnd = false, onPlay, onExtra, onEnd, onStakeChange, onShuffle }: Props) {
   const stake = STAKE_LEVELS[stakeIndex]
 
+  // BG music — AS3: MentonView init, volume 0.6
+  useEffect(() => { playBG(BG_MENTON, 0.6) }, [])
+
   // AS3: IntervalCardPatternController — cycles individual patterns during idle
   const drawing = targetBallCount > 0
+
+  // Fade BG during active discharge, restore when balls stop
+  // buttonEnabled=false + non-idle phase = balls actively flying
+  const discharging = drawing && !buttonEnabled
+  useEffect(() => {
+    setBGVolume(discharging ? 0.08 : 0.6, 1)
+  }, [discharging])
+
   const [idlePatternIndex, setIdlePatternIndex] = useState(0)
   const idleTimerRef = useRef(0)
 

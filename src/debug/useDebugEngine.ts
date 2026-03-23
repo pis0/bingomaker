@@ -372,12 +372,20 @@ export function useDebugEngine(): DebugEngine {
     }
   }, [autoNewRound, rerender]);
 
-  // Auto-end: when "Done" (no extras), wait 10s for review then new round
+  // Auto-end: when round is done (no more extras), wait 4s then auto new round
+  const CONFERENCE_TIMEOUT = 4000;
   const autoEndFiredRef = useRef(false);
   if (!round || drawn === 0) {
     autoEndFiredRef.current = false;
   }
-  // No auto-end — Play button handles end+new round via advance()
+  const roundDone = !!round && drawn >= DEFAULT_BALLS &&
+    !round.extraAvailable && !round.superExtraAvailable &&
+    !isSettling && !bonusActive && !isCollecting && !isPeeling;
+  if (roundDone && !autoEndFiredRef.current) {
+    autoEndFiredRef.current = true;
+    if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+    autoEndTimerRef.current = setTimeout(autoNewRound, CONFERENCE_TIMEOUT);
+  }
 
   const advance = useCallback(() => {
     const r = roundRef.current;
