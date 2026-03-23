@@ -29,7 +29,7 @@ function useViewportScale() {
 }
 
 export default function App() {
-  const { status, progress } = useAssets()
+  const { status, progress, retry } = useAssets()
   const engine = useDebugEngine()
   useViewportScale()
 
@@ -49,7 +49,12 @@ export default function App() {
   })
 
   if (status === 'error') {
-    return <div style={errorStyle}>Failed to load assets. Check console.</div>
+    return (
+      <div style={errorStyle}>
+        <span>Failed to load assets</span>
+        <button style={retryBtnStyle} onClick={retry}>Try Again</button>
+      </div>
+    )
   }
 
   if (status === 'loading') {
@@ -136,6 +141,7 @@ const labelStyle: React.CSSProperties = {
 
 const errorStyle: React.CSSProperties = {
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
   height: '100vh',
@@ -143,4 +149,16 @@ const errorStyle: React.CSSProperties = {
   color: '#f44',
   fontSize: 14,
   fontFamily: 'monospace',
+  gap: 16,
+}
+
+const retryBtnStyle: React.CSSProperties = {
+  padding: '10px 28px',
+  fontSize: 14,
+  fontFamily: 'monospace',
+  background: '#333',
+  color: '#fff',
+  border: '1px solid #555',
+  borderRadius: 6,
+  cursor: 'pointer',
 }

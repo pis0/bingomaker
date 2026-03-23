@@ -3,6 +3,7 @@ import { Container, Sprite, BitmapText, Ticker } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import {
+  BALL_TRAVEL_SPEED,
   EXTRA_CHUTE_X, EXTRA_CHUTE_Y,
   EXTRA_WAYPOINT_X, EXTRA_WAYPOINT_Y,
   EXTRA_SPEED_PHASE1, EXTRA_SPEED_PHASE2,
@@ -20,14 +21,18 @@ const PIPE_EXIT_X = 33
 /** Pipe bottom Y — where balls emerge */
 const PIPE_BOTTOM_Y = 77
 
-/** Drop speed: per-second (AS3: 0.096/frame × 60fps) */
-const DROP_SPEED_PS = 0.096 * 60
-/** Duration for roll to ramp up from 0 to full speed (AS3: 4 frames) */
-const ROLL_RAMP_DURATION = 4 / 60
-/** Constant horizontal roll speed in px/second (AS3: 14.4px/frame × 60fps) */
-const ROLL_PX_PS = 14.4 * 60
-/** Ball rotation factor */
-const ROTATION_FACTOR = 18
+/** Drop speed: per-second (AS3: 0.096/frame × 60fps), scaled by travel speed */
+const DROP_SPEED_PS = 0.096 * 60 * BALL_TRAVEL_SPEED
+/** Fixed roll duration — all balls take the same time regardless of distance.
+ *  Far balls roll fast, near balls roll slow (visible spin). AS3 legacy feel. */
+const ROLL_DURATION = 0.5 / BALL_TRAVEL_SPEED
+/** Fraction of roll duration spent ramping from 0 to full speed (smooth start) */
+const ROLL_RAMP_RATIO = 0.1
+/** Rotation factor — maps px traveled to rotation (AS3: 18). Higher = fewer spins. */
+/** Rotation factor — maps px traveled to rotation. Higher = fewer spins. */
+const ROTATION_FACTOR = 36
+/** Minimum full rotations during roll — ensures near-pipe balls still spin visibly */
+const MIN_ROLL_ROTATIONS = 1.5
 
 function easeInQuad(t: number): number { return t * t }
 function easeInSine(t: number): number { return 1 - Math.cos(t * Math.PI / 2) }
@@ -55,8 +60,10 @@ interface Props {
   index: number
   /** Super extra stack position (0, 1, 2...) — used for arc height calculation */
   superPos?: number
-  /** Increments when another extra ball lands — triggers micro-shake on settled balls */
+  /** Increments when another ball lands — triggers micro-shake on settled balls */
   shakeTick?: number
+  /** Y offset in pixels driven by water animation — ball bobs in sync */
+  floatOffset?: number
   onArrive?: () => void
   /** Fires when the full animation completes (all phases done, ball settled) */
   onSettled?: () => void
@@ -69,7 +76,7 @@ interface Props {
  * Extra:   chute (130,-70) → waypoint → grid position (easeOutBack + spin)
  * Super:   chute → phase1 (340,365) → arc → stack position → snap
  */
-export default function AnimatedBall({ number, finalX, finalY, type, index, superPos = 0, shakeTick = 0, onArrive, onSettled }: Props) {
+export default function AnimatedBall({ number, finalX, finalY, type, index, superPos = 0, shakeTick = 0, floatOffset = 0, onArrive, onSettled }: Props) {
   const containerRef = useRef<Container>(null)
   const onArriveRef = useRef(onArrive)
   onArriveRef.current = onArrive
@@ -83,7 +90,7 @@ export default function AnimatedBall({ number, finalX, finalY, type, index, supe
 
     settledRef.current = false
     if (type === 'regular') {
-      return animateRegular(container, finalX, finalY, onArriveRef)
+      return animateRegular(container, finalX, finalY, onArriveRef, settledRef)
     } else if (type === 'extra') {
       return animateExtra(container, finalX, finalY, onArriveRef, settledRef)
     } else {
@@ -91,33 +98,67 @@ export default function AnimatedBall({ number, finalX, finalY, type, index, supe
     }
   }, [finalX, finalY, index, type, superPos])
 
-  // Micro-shake on settled extra balls when another ball lands
+  // AS3: Ball.shake — smooth tween to offset (0.1s) then tween back (0.2s)
+  // Regular: position only. Extra: position + scale ±3% elastic.
+  // Guard: if already shaking, skip (AS3: if (shaking) return)
+  const shakingRef = useRef(false)
   useEffect(() => {
-    if (shakeTick === 0 || !settledRef.current) return
+    if (shakeTick === 0 || !settledRef.current || shakingRef.current) return
     const container = containerRef.current
     if (!container) return
-    const dx = (Math.random() - 0.5) * 4
-    const dy = (Math.random() - 0.5) * 3
+    shakingRef.current = true
+    const isExtra = type !== 'regular'
+    const dx = (Math.random() - 0.5) * 2  // ±1px centered
+    const dy = (Math.random() - 0.5) * 2
     const baseX = container.x, baseY = container.y
-    container.x = baseX + dx
-    container.y = baseY + dy
+    const targetScale = isExtra ? 1 + 0.03 * Math.random() * (Math.random() < 0.5 ? -1 : 1) : 1
     const ticker = Ticker.shared
     let elapsed = 0
+    let phase = 0 // 0 = tween out (0.1s), 1 = tween back (0.2s)
     const onTick = () => {
       elapsed += ticker.deltaMS / 1000
-      const t = Math.min(1, elapsed / 0.3)
-      const decay = 1 - easeOutCubic(t)
-      container.x = baseX + dx * decay
-      container.y = baseY + dy * decay
-      if (t >= 1) {
-        container.x = baseX
-        container.y = baseY
-        ticker.remove(onTick)
+      if (phase === 0) {
+        const t = Math.min(1, elapsed / 0.1)
+        container.x = baseX + dx * t
+        container.y = baseY + dy * t
+        if (isExtra) container.scale.set(1 + (targetScale - 1) * t)
+        if (t >= 1) { phase = 1; elapsed = 0 }
+      } else {
+        const t = Math.min(1, elapsed / 0.2)
+        container.x = baseX + dx * (1 - t)
+        container.y = baseY + dy * (1 - t)
+        if (isExtra) container.scale.set(targetScale + (1 - targetScale) * t)
+        if (t >= 1) {
+          container.x = baseX
+          container.y = baseY
+          if (isExtra) container.scale.set(1)
+          shakingRef.current = false
+          ticker.remove(onTick)
+        }
       }
     }
     ticker.add(onTick)
-    return () => { ticker.remove(onTick) }
-  }, [shakeTick])
+    // Cleanup: always restore position to prevent drift
+    return () => {
+      ticker.remove(onTick)
+      container.x = baseX
+      container.y = baseY
+      if (isExtra) container.scale.set(1)
+      shakingRef.current = false
+    }
+  }, [shakeTick, type])
+
+  // Water float: apply Y offset from water animation (synced with TubeWater)
+  const floatBaseYRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!settledRef.current) return
+    const container = containerRef.current
+    if (!container) return
+    if (floatBaseYRef.current === null) floatBaseYRef.current = container.y
+    container.y = floatBaseYRef.current + floatOffset
+    // Reset base when float ends
+    if (floatOffset === 0) floatBaseYRef.current = null
+  })
 
   const isExtra = type !== 'regular'
   const textureName = isExtra ? 'extraball' : 'ball'
@@ -141,13 +182,13 @@ function animateRegular(
   finalX: number,
   finalY: number,
   onArriveRef: React.RefObject<((()=> void) | undefined) | null>,
+  settledRef: React.MutableRefObject<boolean>,
 ) {
-  const landingDuration = 0.08 + 0.066 * Math.random()
+  const landingDuration = (0.08 + 0.066 * Math.random()) / BALL_TRAVEL_SPEED
   const rollDistance = finalX - PIPE_EXIT_X
 
   let phase = 0
   let movePercent = 0
-  let pixelsTraveled = 0
   let rollElapsed = 0
   let landingElapsed = 0
   let rotationAtLanding = 0
@@ -168,18 +209,21 @@ function animateRegular(
       if (movePercent >= 1) {
         container.y = finalY
         phase = 1
-        pixelsTraveled = 0
         rollElapsed = 0
       }
     } else if (phase === 1) {
       rollElapsed += dt
-      const speedFactor = Math.min(rollElapsed / ROLL_RAMP_DURATION, 1)
-      pixelsTraveled += ROLL_PX_PS * dt * speedFactor
-      const arrived = pixelsTraveled >= rollDistance
-      const px = arrived ? rollDistance : pixelsTraveled
+      // Normalized progress 0→1 with soft ramp-in at start
+      const raw = Math.min(1, rollElapsed / ROLL_DURATION)
+      const t = raw < ROLL_RAMP_RATIO
+        ? (raw / ROLL_RAMP_RATIO) * (raw / ROLL_RAMP_RATIO) * ROLL_RAMP_RATIO // ease-in ramp
+        : raw
+      const px = rollDistance * t
       container.x = PIPE_EXIT_X + px
-      container.rotation = (px / ROTATION_FACTOR) * Math.PI * 2
-      if (arrived) {
+      // Distance-based rotation (rolling on surface) with minimum for near-pipe balls
+      const totalRotations = Math.max(MIN_ROLL_ROTATIONS, rollDistance / ROTATION_FACTOR)
+      container.rotation = totalRotations * Math.PI * 2 * raw
+      if (raw >= 1) {
         container.x = finalX
         rotationAtLanding = container.rotation % (Math.PI * 2)
         phase = 2
@@ -191,6 +235,7 @@ function animateRegular(
       container.rotation = rotationAtLanding * (1 - easeOutBack(t))
       if (t >= 1) {
         container.rotation = 0
+        settledRef.current = true
         ticker.remove(onTick)
       }
     }

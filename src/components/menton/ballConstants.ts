@@ -1,5 +1,10 @@
 /** BallPanel layout constants — AS3 BallPanelMenton positions confirmed by Composer */
 
+// ── Ball travel speed multiplier ─────────────────────────────────
+// Scales drop/roll speeds and shrinks landing duration.
+// 1.0 = AS3 original, >1.0 = faster trajectory (dispatch interval unchanged).
+export const BALL_TRAVEL_SPEED = 1.7
+
 // Tubos (ballcontainer1/2)
 export const TUBING_Y = 340
 

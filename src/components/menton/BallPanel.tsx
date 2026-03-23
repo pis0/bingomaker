@@ -94,7 +94,7 @@ function easeOutCubic(t: number): number {
 
 // AS3: dynamic ball trigger interval based on maxPatternPriority
 // Original AS3 (30fps): [3,3,4,5,6,7,8,12,15,20,30] frames → converted to ms
-const TRIGGER_INTERVALS_MS = [6, 6, 8, 10, 12, 14, 16, 24, 30, 40, 60].map(f => f / 60 * 1000)
+const TRIGGER_INTERVALS_MS = [4, 4, 6, 7, 8, 10, 11, 16, 20, 27, 40].map(f => f / 60 * 1000)
 
 interface Props {
   onBallArrive?: () => void
@@ -317,6 +317,43 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
     return () => { ticker.remove(onTick) }
   }, [])
 
+  // ── Water float offset — synced with TubeWater Water2 Y timing ──
+  // Water2: Y 30→15 (rise) over 2555ms, then 15→30 (fall) over 2000ms
+  // Ball offset mirrors this: 0 → -3px (rise) → 0 (fall back)
+  const FLOAT_AMP = 3 // max px the balls rise
+  const FLOAT_RISE = 2555 // ms — matches W2_PH1
+  const FLOAT_FALL = 2000 // ms — matches W2_PH2
+  const floatStartRef = useRef(0)
+  const [floatOffset, setFloatOffset] = useState(0)
+
+  useEffect(() => {
+    if (launchedIndices.length === 0) {
+      setFloatOffset(0)
+      return
+    }
+    if (floatStartRef.current === 0) floatStartRef.current = performance.now()
+    const ticker = Ticker.shared
+    const onTick = () => {
+      const elapsed = performance.now() - floatStartRef.current
+      if (elapsed < FLOAT_RISE) {
+        // Rise phase: 0 → -FLOAT_AMP
+        setFloatOffset(-FLOAT_AMP * (elapsed / FLOAT_RISE))
+      } else if (elapsed < FLOAT_RISE + FLOAT_FALL) {
+        // Fall phase: -FLOAT_AMP → 0
+        const t = (elapsed - FLOAT_RISE) / FLOAT_FALL
+        setFloatOffset(-FLOAT_AMP * (1 - t))
+      } else {
+        setFloatOffset(0)
+        ticker.remove(onTick)
+      }
+    }
+    ticker.add(onTick)
+    return () => {
+      ticker.remove(onTick)
+      floatStartRef.current = 0
+    }
+  }, [launchedIndices.length > 0]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Derived state ─────────────────────────────────────────────
   const drawing = launchedIndices.length > 0
   const ballCount = launchedIndices.length
@@ -439,8 +476,14 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
   const extraGridRef = useRef<Container>(null)
   const meshRef = useRef<MeshPlane>(null)
   const beatRef = useRef({ active: false, t0: 0, direction: 0 }) // direction: -1 left, +1 right
-  // Shake tick — increments on each extra ball land, propagates to settled balls
-  const [shakeTick, setShakeTick] = useState(0)
+  // Shake ticks — propagate micro-shake to settled balls
+  const [shakeTick, setShakeTick] = useState(0)           // extra ball land → extra balls shake
+  const [regularShakeTick, setRegularShakeTick] = useState(0)  // regular dispatch → settled regulars shake
+
+  // AS3: beatIdleBalls() — triggered when a regular ball ARRIVES (not dispatches)
+  const onRegularBallArrive = useCallback(() => {
+    setRegularShakeTick(t => t + 1)
+  }, [])
 
   // Triggered by AnimatedBall.onArrive when extra ball reaches its slot
   const onExtraBallLand = useCallback((slot: number) => {
@@ -831,6 +874,9 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
               finalY={pos.y}
               type="regular"
               index={i}
+              shakeTick={regularShakeTick}
+              floatOffset={floatOffset}
+              onArrive={onRegularBallArrive}
             />
           )
         } else if (type === 'extra') {
