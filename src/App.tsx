@@ -5,6 +5,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from './components/menton/Scenery'
 import DebugPanel from './debug/DebugPanel'
 import PixiStats, { PixiStatsBridge } from './debug/PixiStats'
 import { useAssets } from './assets/useAssets'
+import { resumeAudio } from './audio/AudioManager'
 import { useDebugEngine } from './debug/useDebugEngine'
 import { useGameStore } from './store/gameStore'
 import { STAKE_LEVELS } from './engine/constants'
@@ -32,6 +33,13 @@ export default function App() {
   const { status, progress, retry } = useAssets()
   const engine = useDebugEngine()
   useViewportScale()
+
+  // Resume AudioContext on first user gesture (iOS/Android WebView requirement)
+  useEffect(() => {
+    const handler = () => { resumeAudio(); window.removeEventListener('pointerdown', handler) }
+    window.addEventListener('pointerdown', handler, { once: true })
+    return () => window.removeEventListener('pointerdown', handler)
+  }, [])
 
   // Button state — must be before early returns (hooks rules)
   const showEnd = engine.canEnd

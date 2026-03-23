@@ -3,6 +3,7 @@ import { Assets, Spritesheet, Texture } from 'pixi.js'
 import { AssetManager } from './AssetManager'
 import { createManifest } from './manifest'
 import { installBitmapFonts } from './bitmapFonts'
+import { preloadSounds } from '../audio/AudioManager'
 
 export type AssetStatus = 'loading' | 'ready' | 'error'
 
@@ -87,12 +88,15 @@ export function useAssets() {
         // 1. Init PixiJS asset registry
         await AssetManager.init(manifest)
 
-        // 2. Load bundles + force font download in parallel
+        // 2. Load bundles + fonts + audio in parallel
         await Promise.all([
           AssetManager.loadBundle(BUNDLES_TO_LOAD, (p) => {
-            if (!cancelled) setProgress(p)
+            if (!cancelled) setProgress(p * 0.85) // visual assets = 85% of bar
           }),
           ...REQUIRED_FONTS.map(spec => document.fonts.load(spec)),
+          preloadSounds((p) => {
+            if (!cancelled) setProgress(0.85 + p * 0.15) // audio = last 15%
+          }),
         ])
 
         // 3. Global font gate — waits for all font-face layout to settle
