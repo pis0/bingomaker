@@ -182,6 +182,7 @@ export function stopBG(fadeDuration = 0.5): void {
 
 /** Set BG volume with smooth transition. */
 export function setBGVolume(volume: number, duration = 0.3): void {
+  bgVolume = volume
   if (!bgActive || !ctx) return
   bgActive.gain.gain.setValueAtTime(bgActive.gain.gain.value, ctx.currentTime)
   bgActive.gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + duration)
@@ -255,7 +256,7 @@ export function setMusicEnabled(enabled: boolean): void {
   if (!enabled) {
     stopBG(0.5)
   } else if (bgCurrentUrl) {
-    playBG(bgCurrentUrl)
+    playBG(bgCurrentUrl, bgVolume)
   }
 }
 
