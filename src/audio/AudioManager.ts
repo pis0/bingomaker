@@ -215,8 +215,11 @@ export function playSFX(url: string, opts: PlayOptions = {}): (() => void) | nul
  * Play a voice-over. Exclusive: new VO stops the previous one.
  * For random variant, pass an array and one is picked at random.
  */
+// Mute state — VO has its own flag, independent of SFX
+let _voEnabled = true
+
 export function playVO(urlOrUrls: string | string[], opts: PlayOptions = {}): void {
-  if (!_sfxEnabled) return
+  if (!_voEnabled) return
 
   // Pick random variant if array
   const url = Array.isArray(urlOrUrls)
@@ -256,9 +259,14 @@ export function setMusicEnabled(enabled: boolean): void {
   }
 }
 
-/** Enable/disable SFX + VO. */
+/** Enable/disable SFX. */
 export function setSFXEnabled(enabled: boolean): void {
   _sfxEnabled = enabled
+}
+
+/** Enable/disable VO (independent channel). */
+export function setVOEnabled(enabled: boolean): void {
+  _voEnabled = enabled
   if (!enabled) stopVO()
 }
 

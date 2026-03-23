@@ -570,7 +570,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
     if (!splashRef) return
     const mutableRef = splashRef as React.MutableRefObject<MovieSplashHandle | null>
     mutableRef.current = {
-      play: (text: string, ballNumber: string, onComplete?: () => void) => {
+      play: (text: string, ballNumber: string, onComplete?: () => void, onTextReady?: () => void) => {
         // Cleanup any previous splash
         splashCleanupRef.current?.()
         const timeouts: ReturnType<typeof setTimeout>[] = []
@@ -641,7 +641,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
               // Restore extra price (large ball stays hidden — React's visible={!inExtraMode} manages it)
               if (extraPriceRef.current) extraPriceRef.current.visible = true
               onComplete?.()
-            })
+            }, onTextReady)
 
             // Hide popperJuice after 0.3s
             delay(() => {

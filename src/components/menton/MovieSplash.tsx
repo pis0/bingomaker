@@ -64,7 +64,7 @@ function easeInOutSine(t: number): number {
 }
 
 export interface MovieSplashHandle {
-  play: (text: string, ballNumber: string, onComplete?: () => void) => void
+  play: (text: string, ballNumber: string, onComplete?: () => void, onTextReady?: () => void) => void
 }
 
 /**
@@ -125,7 +125,7 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
     }
   }, [])
 
-  const play = useCallback((text: string, ballNumber: string, onComplete?: () => void) => {
+  const play = useCallback((text: string, ballNumber: string, onComplete?: () => void, onTextReady?: () => void) => {
     // Cleanup previous animation
     cleanupRef.current?.()
 
@@ -187,6 +187,8 @@ const MovieSplash = forwardRef<MovieSplashHandle>(function MovieSplash(_props, r
       // Label reveal via scaleX (0.1s delay, 0.2s duration)
       tween(0.3, 0.2, (t) => {
         label.scale.x = labelScale * t
+      }, () => {
+        onTextReady?.()
       })
 
       // Label drift (0.28s delay, 2s drift)

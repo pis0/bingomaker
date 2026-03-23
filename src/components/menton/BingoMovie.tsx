@@ -54,9 +54,11 @@ interface Props {
   onHideCards?: () => void
   onShowCards?: () => void
   onComplete?: () => void
+  /** Fires when particle explosion starts (water burst behind card) */
+  onBurst?: () => void
 }
 
-export default function BingoMovie({ cardIndex, onHideCards, onShowCards, onComplete }: Props) {
+export default function BingoMovie({ cardIndex, onHideCards, onShowCards, onComplete, onBurst }: Props) {
   const containerRef = useRef<Container>(null)
   const playerRef = useRef<MovieBytesPlayer | null>(null)
   const phaseRef = useRef<Phase>('idle')
@@ -72,9 +74,9 @@ export default function BingoMovie({ cardIndex, onHideCards, onShowCards, onComp
   const lemonRef = useRef<ParticleEmitter | null>(null)
 
   // Stable callback refs to avoid stale closures in tick
-  const cbRef = useRef({ onHideCards, onShowCards, onComplete })
+  const cbRef = useRef({ onHideCards, onShowCards, onComplete, onBurst })
   useEffect(() => {
-    cbRef.current = { onHideCards, onShowCards, onComplete }
+    cbRef.current = { onHideCards, onShowCards, onComplete, onBurst }
   })
 
   // Track last triggered cardIndex to detect new triggers
@@ -238,6 +240,7 @@ export default function BingoMovie({ cardIndex, onHideCards, onShowCards, onComp
       // Start particles at 1.85s after play begins (AS3: juggler.delayCall 1.85)
       if (!particlesStartedRef.current && playTimerRef.current >= PARTICLES_DELAY_MS) {
         startParticles()
+        cbRef.current.onBurst?.()
       }
     }
   })

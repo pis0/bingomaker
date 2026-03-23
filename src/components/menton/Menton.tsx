@@ -27,8 +27,8 @@ import { INTERVAL_PATTERNS, INTERVAL_PATTERN_DELAY, PATTERN_TO_CARD_INDEX } from
 import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 import { CARD_W, CARD_H, CARD_GAP, X_O, Y_O, CELL_W, CELL_H, SLOT_W, SLOT_H } from './cardConstants'
 import { useGameStore } from '../../store/gameStore'
-import { playBG, setBGVolume } from '../../audio/AudioManager'
-import { BG_MENTON } from '../../audio/SoundID'
+import { playBG, setBGVolume, playVO } from '../../audio/AudioManager'
+import { BG_MENTON, VO_DOUBLE_LINE, VO_THREE_COLUMNS, VO_FOUR_COLUMNS, VO_DOUBLE_BOX } from '../../audio/SoundID'
 
 extend({ Container })
 
@@ -233,9 +233,20 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
         [PatternGroup.QUAD_COLUMN_3.name]: 'DOUBLE BOX',
       }
       setSplashActive(true)
-      splashRef.current?.play(textMap[group.name] ?? group.name, String(ballNum), () => {
-        setSplashActive(false)
-      })
+      // Voice-over for big prizes — synced to splash text reveal completion
+      const voMap: Record<string, string[]> = {
+        [PatternGroup.DOUBLE_LINE.name]: VO_DOUBLE_LINE,
+        [PatternGroup.TRIPLE_COLUMN.name]: VO_THREE_COLUMNS,
+        [PatternGroup.QUAD_COLUMN.name]: VO_FOUR_COLUMNS,
+        [PatternGroup.QUAD_COLUMN_3.name]: VO_DOUBLE_BOX,
+      }
+      const voUrls = voMap[group.name]
+      splashRef.current?.play(
+        textMap[group.name] ?? group.name,
+        String(ballNum),
+        () => { setSplashActive(false) },
+        () => { if (voUrls) playVO(voUrls) },
+      )
     }
   })
 

@@ -9,6 +9,8 @@ import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 import { DEFAULT_BALLS } from '../../engine/constants'
 import { INTERVAL_PATTERNS } from './payoutConstants'
 import { useGameStore } from '../../store/gameStore'
+import { playVO } from '../../audio/AudioManager'
+import { VO_BINGO } from '../../audio/SoundID'
 
 extend({ Container })
 
@@ -90,6 +92,7 @@ export default function CardPanel({ x, y, onShuffle }: Props) {
         onHideCards={handleHideCards}
         onShowCards={handleShowCards}
         onComplete={handleBingoComplete}
+        onBurst={() => playVO(VO_BINGO)}
       />
     </pixiContainer>
   )

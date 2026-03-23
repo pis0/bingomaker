@@ -3,12 +3,7 @@
  * Positioned next to PixiStats overlay.
  */
 import { useState } from 'react'
-import { setMusicEnabled, setSFXEnabled } from '../audio/AudioManager'
-
-// VO shares the SFX enabled flag in AudioManager, but we track it
-// separately here so user can mute VO without muting SFX.
-let _voEnabled = true
-export function isVOEnabled(): boolean { return _voEnabled }
+import { setMusicEnabled, setSFXEnabled, setVOEnabled } from '../audio/AudioManager'
 
 // ── LocalStorage persistence ─────────────────────────────────────
 const LS_KEY = 'bingomaker_sound'
@@ -90,11 +85,11 @@ function FxIcon({ on }: { on: boolean }) {
 export default function SoundToggles() {
   const prefs = loadPrefs()
   const [bg, setBg] = useState(() => { setMusicEnabled(prefs.bg); return prefs.bg })
-  const [vo, setVo] = useState(() => { _voEnabled = prefs.vo; return prefs.vo })
+  const [vo, setVo] = useState(() => { setVOEnabled(prefs.vo); return prefs.vo })
   const [sfx, setSfx] = useState(() => { setSFXEnabled(prefs.sfx); return prefs.sfx })
 
   const toggleBg = () => { const v = !bg; setMusicEnabled(v); setBg(v); savePrefs(v, vo, sfx) }
-  const toggleVo = () => { const v = !vo; _voEnabled = v; setVo(v); savePrefs(bg, v, sfx) }
+  const toggleVo = () => { const v = !vo; setVOEnabled(v); setVo(v); savePrefs(bg, v, sfx) }
   const toggleSfx = () => { const v = !sfx; setSFXEnabled(v); setSfx(v); savePrefs(bg, vo, v) }
 
   return (
