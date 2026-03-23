@@ -9,8 +9,8 @@ import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 import { DEFAULT_BALLS } from '../../engine/constants'
 import { INTERVAL_PATTERNS } from './payoutConstants'
 import { useGameStore } from '../../store/gameStore'
-import { playVO } from '../../audio/AudioManager'
-import { VO_BINGO } from '../../audio/SoundID'
+import { playSFX, playVO } from '../../audio/AudioManager'
+import { BUTTON_SHUFFLE, PRIZE_BINGO, VO_BINGO } from '../../audio/SoundID'
 
 extend({ Container })
 
@@ -66,7 +66,11 @@ export default function CardPanel({ x, y, onShuffle }: Props) {
     triggeredFullRef.current.clear()
   }
 
-  const handleHideCards = useCallback(() => setCardsVisible(false), [])
+  const handleHideCards = useCallback(() => {
+    playSFX(PRIZE_BINGO, { volume: 0.2 })
+    playVO(VO_BINGO)
+    setCardsVisible(false)
+  }, [])
   const handleShowCards = useCallback(() => setCardsVisible(true), [])
   const handleBingoComplete = useCallback(() => setBingoCardIndex(null), [])
 
@@ -82,7 +86,7 @@ export default function CardPanel({ x, y, onShuffle }: Props) {
           visible={cardsVisible}
           eventMode={isIdle && onShuffle ? 'static' : 'auto'}
           cursor={isIdle && onShuffle ? 'pointer' : 'default'}
-          onPointerUp={isIdle ? onShuffle : undefined}
+          onPointerUp={isIdle && onShuffle ? () => { playSFX(BUTTON_SHUFFLE); onShuffle() } : undefined}
         >
           <CardView card={card} stakeIndex={stakeIndex} bellPosition={round.bellPositions[i]} idlePattern={idlePattern} shouldBlink={shouldBlink} />
         </pixiContainer>
@@ -92,7 +96,7 @@ export default function CardPanel({ x, y, onShuffle }: Props) {
         onHideCards={handleHideCards}
         onShowCards={handleShowCards}
         onComplete={handleBingoComplete}
-        onBurst={() => playVO(VO_BINGO)}
+        onBurst={undefined}
       />
     </pixiContainer>
   )

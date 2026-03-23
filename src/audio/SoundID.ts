@@ -7,8 +7,8 @@
 const BASE = import.meta.env.BASE_URL + 'assets/menton/sounds/'
 
 // ── Helpers ──────────────────────────────────────────────────────
-const sfx = (file: string) => `${BASE}${file}.mp3`
-const vo = (file: string) => `${BASE}en/male/${file}.mp3`
+const sfx = (file: string) => `${BASE}${file}.m4a`
+const vo = (file: string) => `${BASE}en/male/${file}.m4a`
 
 // ── Background Music ─────────────────────────────────────────────
 export const BG_MENTON = sfx('menton_trilha_looping')

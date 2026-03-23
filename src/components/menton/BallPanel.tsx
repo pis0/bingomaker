@@ -39,8 +39,13 @@ import type { Round } from '../../engine/Round'
 import { useGameStore } from '../../store/gameStore'
 import { ParticleEmitter } from '../../particles/ParticleEmitter'
 import { mentonExtraWater } from '../../particles/configs/menton_extra_water'
+import { playSFX } from '../../audio/AudioManager'
+import { BALL_SHOT, BALL_HIT, EXTRA_BALL_ACTIVATED, SUPER_BALL_ACTIVATED, PEEL } from '../../audio/SoundID'
 
 extend({ Sprite, Container, BitmapText, AnimatedSprite })
+
+/** Random volume between min and max — avoids robotic repetition */
+const rVol = (min: number, max: number) => min + Math.random() * (max - min)
 
 
 const MAX_EXTRA_INDEX = DEFAULT_BALLS + EXTRA_BALLS
@@ -246,6 +251,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
           peel.dispatchReady = false
           setPeelBallNumber(ballNum)
           setPeelVisible(true)
+          playSFX(PEEL, { volume: 0.2 })
           // Set cover to step 3 rotation
           const ca = coverAnimRef.current
           ca.current = coverRef.current?.rotation ?? ca.current
@@ -276,6 +282,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
         // Dispatch extra (after peel, or direct if low priority)
         msSinceLaunch = 0
         const next = queueRef.current.shift()!
+        playSFX(BALL_SHOT, { volume: rVol(0.35, 0.55) })
         setLaunchedIndices(prev => [...prev, next])
         onBallArriveRef.current?.()
         // Water spray on every extra dispatch
@@ -309,6 +316,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
       if (msSinceLaunch >= intervalRef.current) {
         msSinceLaunch = 0
         const next = queueRef.current.shift()!
+        playSFX(BALL_SHOT, { volume: rVol(0.1, 0.4) })
         setLaunchedIndices(prev => [...prev, next])
         onBallArriveRef.current?.()
       }
@@ -434,6 +442,9 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
     const peel = peelRef.current
     if (!peel.active || peel.step <= 0) return
 
+    // Play peel SFX only on intermediate steps (not the final open that dispatches)
+    if (peel.step > 1) playSFX(PEEL, { volume: 0.2 })
+
     // Advance one step
     peel.step--
     peel.rotation += Math.PI * Math.random()
@@ -482,11 +493,13 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
 
   // AS3: beatIdleBalls() — triggered when a regular ball ARRIVES (not dispatches)
   const onRegularBallArrive = useCallback(() => {
+    playSFX(BALL_HIT, { volume: rVol(0.2, 0.4) })
     setRegularShakeTick(t => t + 1)
   }, [])
 
   // Triggered by AnimatedBall.onArrive when extra ball reaches its slot
   const onExtraBallLand = useCallback((slot: number) => {
+    playSFX(BALL_HIT, { volume: rVol(0.35, 0.55) })
     const beat = beatRef.current
     beat.active = true
     beat.t0 = performance.now()
@@ -688,12 +701,14 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
   useEffect(() => {
     if (isExtraPhase && !overlayShownRef.current.extra) {
       overlayShownRef.current.extra = true
+      playSFX(EXTRA_BALL_ACTIVATED, { volume: 0.4 })
       setOverlayText('extra')
       if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current)
       overlayTimerRef.current = setTimeout(() => setOverlayText(null), TEXT_FADE_IN + TEXT_HOLD + TEXT_FADE_OUT)
     }
     if (isSuperPhase && !overlayShownRef.current.super) {
       overlayShownRef.current.super = true
+      playSFX(SUPER_BALL_ACTIVATED, { volume: 0.6 })
       setOverlayText('super')
       if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current)
       overlayTimerRef.current = setTimeout(() => setOverlayText(null), TEXT_FADE_IN + TEXT_HOLD + TEXT_FADE_OUT)
@@ -904,6 +919,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
               type="super"
               index={i}
               superPos={superPos}
+              onLand={() => playSFX(BALL_HIT, { volume: rVol(0.35, 0.55) })}
               onSettled={handleSuperSettled}
             />
           )

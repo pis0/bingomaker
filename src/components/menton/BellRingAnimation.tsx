@@ -2,6 +2,8 @@ import { useRef, useEffect } from 'react'
 import { Container, Sprite, AnimatedSprite } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { texFrom, texturesFrom } from '../../assets/atlas'
+import { playSFX } from '../../audio/AudioManager'
+import { BELL_RINGING } from '../../audio/SoundID'
 import { CARD_PANEL_X, CARD_PANEL_Y, BELL_PANEL_CENTER_X, BELL_PANEL_CENTER_Y } from './layoutConstants'
 import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
 
@@ -94,6 +96,7 @@ export default function BellRingAnimation({ active, onComplete }: Props) {
     // Detect rising edge of active
     if (active && !wasActiveRef.current) {
       wasActiveRef.current = true
+      playSFX(BELL_RINGING, { volume: 0.6 })
       startRinging()
     }
     if (!active && wasActiveRef.current) {

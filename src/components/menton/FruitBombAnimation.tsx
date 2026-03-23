@@ -2,6 +2,8 @@ import { useRef, useEffect, useCallback } from 'react'
 import { Container, Assets, Spritesheet, Texture } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { loadMovieBytes } from '../../animations/loadMovieBytes'
+import { playSFX } from '../../audio/AudioManager'
+import { BOMB_FALL, BOMB_EXPLODE } from '../../audio/SoundID'
 import { MovieBytesPlayer } from '../../animations/MovieBytesPlayer'
 import type { MovieBytesData } from '../../animations/parseMovieBytes'
 import type { BombPosition } from '../../engine/FruitBombBonusSession'
@@ -235,8 +237,9 @@ export default function FruitBombAnimation({ active, bombPositions, onShake, onC
         }
       }
 
-      // All tweens complete → start shake
+      // All tweens complete → explode + start shake
       if (allDone) {
+        playSFX(BOMB_EXPLODE, { volume: 0.6 })
         phaseRef.current = 'shake'
         phaseTimerRef.current = 0
       }

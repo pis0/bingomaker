@@ -65,6 +65,8 @@ interface Props {
   /** Y offset in pixels driven by water animation — ball bobs in sync */
   floatOffset?: number
   onArrive?: () => void
+  /** Fires when ball lands from arc (super only — visual "hit" moment) */
+  onLand?: () => void
   /** Fires when the full animation completes (all phases done, ball settled) */
   onSettled?: () => void
 }
@@ -76,10 +78,12 @@ interface Props {
  * Extra:   chute (130,-70) → waypoint → grid position (easeOutBack + spin)
  * Super:   chute → phase1 (340,365) → arc → stack position → snap
  */
-export default function AnimatedBall({ number, finalX, finalY, type, index, superPos = 0, shakeTick = 0, floatOffset = 0, onArrive, onSettled }: Props) {
+export default function AnimatedBall({ number, finalX, finalY, type, index, superPos = 0, shakeTick = 0, floatOffset = 0, onArrive, onLand, onSettled }: Props) {
   const containerRef = useRef<Container>(null)
   const onArriveRef = useRef(onArrive)
   onArriveRef.current = onArrive
+  const onLandRef = useRef(onLand)
+  onLandRef.current = onLand
   const onSettledRef = useRef(onSettled)
   onSettledRef.current = onSettled
   const settledRef = useRef(false)
@@ -94,7 +98,7 @@ export default function AnimatedBall({ number, finalX, finalY, type, index, supe
     } else if (type === 'extra') {
       return animateExtra(container, finalX, finalY, onArriveRef, settledRef)
     } else {
-      return animateSuper(container, superPos, onArriveRef, onSettledRef)
+      return animateSuper(container, superPos, onArriveRef, onLandRef, onSettledRef)
     }
   }, [finalX, finalY, index, type, superPos])
 
@@ -365,6 +369,7 @@ function animateSuper(
   container: Container,
   pos: number,
   onArriveRef: React.RefObject<((()=> void) | undefined) | null>,
+  onLandRef: React.RefObject<((()=> void) | undefined) | null>,
   onSettledRef: React.RefObject<((()=> void) | undefined) | null>,
 ) {
   const finalX = SUPER_STACK_X
@@ -436,6 +441,7 @@ function animateSuper(
       if (t >= 1) {
         phase = 3
         elapsed = 0
+        onLandRef.current?.() // impact 1: swoop hits base
       }
     } else if (phase === 3) {
       // Arc: (340, 365) → near-final via parabolic trajectory — AS3 throwObject
@@ -456,6 +462,7 @@ function animateSuper(
       if (t >= 1) {
         phase = 4
         elapsed = 0
+        onLandRef.current?.() // impact 2: arc lands on stack
       }
     } else {
       // Snap: near-final → final, 0.2s, easeOutBounce — AS3 final settle

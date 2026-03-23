@@ -27,8 +27,14 @@ import { INTERVAL_PATTERNS, INTERVAL_PATTERN_DELAY, PATTERN_TO_CARD_INDEX } from
 import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 import { CARD_W, CARD_H, CARD_GAP, X_O, Y_O, CELL_W, CELL_H, SLOT_W, SLOT_H } from './cardConstants'
 import { useGameStore } from '../../store/gameStore'
-import { playBG, setBGVolume, playVO } from '../../audio/AudioManager'
-import { BG_MENTON, VO_DOUBLE_LINE, VO_THREE_COLUMNS, VO_FOUR_COLUMNS, VO_DOUBLE_BOX } from '../../audio/SoundID'
+import { playBG, setBGVolume, playSFX, playVO } from '../../audio/AudioManager'
+import {
+  BG_MENTON, BOMB_FALL,
+  PRIZE_LINE, PRIZE_DOUBLE_LINE, PRIZE_DOUBLE_COLUMNS,
+  PRIZE_THREE_COLUMNS, PRIZE_FOUR_COLUMNS, PRIZE_DOUBLE_BOX,
+  SLOT_PRIZE_2X, SLOT_PRIZE_BOMB, SLOT_PRIZE_BONUS,
+  VO_DOUBLE_LINE, VO_THREE_COLUMNS, VO_FOUR_COLUMNS, VO_DOUBLE_BOX,
+} from '../../audio/SoundID'
 
 extend({ Container })
 
@@ -95,6 +101,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
 
   // BG music — AS3: MentonView init, volume 0.6
   useEffect(() => { playBG(BG_MENTON, 0.6) }, [])
+
 
   // AS3: IntervalCardPatternController — cycles individual patterns during idle
   const drawing = targetBallCount > 0
@@ -214,10 +221,22 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     const item = queue.shift()!
     const { cardIndex, pattern, ballNum } = item
 
+    // Prize SFX — AS3: PrizeController.processNewPatterns, all at 20% volume
+    const group = pattern.group
+    const prizeSfxMap: Record<string, string> = {
+      [PatternGroup.LINE.name]: PRIZE_LINE,
+      [PatternGroup.DOUBLE_COLUMN.name]: PRIZE_DOUBLE_COLUMNS,
+      [PatternGroup.DOUBLE_LINE.name]: PRIZE_DOUBLE_LINE,
+      [PatternGroup.TRIPLE_COLUMN.name]: PRIZE_THREE_COLUMNS,
+      [PatternGroup.QUAD_COLUMN.name]: PRIZE_FOUR_COLUMNS,
+      [PatternGroup.QUAD_COLUMN_3.name]: PRIZE_DOUBLE_BOX,
+    }
+    const prizeSfx = prizeSfxMap[group.name]
+    if (prizeSfx) playSFX(prizeSfx, { volume: 0.2 })
+
     // ChipFly — delay synced with PatternMovie timing
     // PatternMovie: liquid ~900ms + hold (bigPrize: 1750ms, normal: 500ms)
     // Chips bump during liquid+hold, fly when fadeOut starts
-    const group = pattern.group
     const isBigPrize = group === PatternGroup.DOUBLE_LINE || group === PatternGroup.TRIPLE_COLUMN ||
       group === PatternGroup.QUAD_COLUMN || group === PatternGroup.QUAD_COLUMN_3
     chipFlyDelayRef.current = isBigPrize ? 2650 : 1400 // liquid(900) + hold(1750/500)
@@ -276,16 +295,21 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     if (!prize) return
 
     if (prize === SLOT_X2) {
+      playSFX(SLOT_PRIZE_2X, { volume: 0.6 })
       setMultiplierActive(true)
     } else if (prize === SLOT_FRUIT) {
+      playSFX(SLOT_PRIZE_BOMB, { volume: 0.6 })
+      playSFX(BOMB_FALL, { volume: 0.6 })
       // AS3: FruitBombBonusSession — select positions BEFORE animation
       const session = new FruitBombBonusSession()
       session.selectPositions(round.cards)
       fruitBombRef.current = session
       setBombPositions([...session.positions])
-      setFruitBombActive(true)
+      // Delay fruit activation so BOMB_FALL has time to play before BOMB_EXPLODE
+      setTimeout(() => setFruitBombActive(true), 600)
     }
     // SLOT_BONUS → future: Fête du Citron bonus game
+    // playSFX(SLOT_PRIZE_BONUS, { volume: 0.6 })
   }, [round])
 
   // Ball arrives in tube → process engine draw (incremental)

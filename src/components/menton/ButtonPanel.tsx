@@ -13,6 +13,8 @@ import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { BUTTON_PANEL_X, BUTTON_PANEL_Y } from './layoutConstants'
 import { STAKE_LEVELS } from '../../engine/constants'
+import { playSFX } from '../../audio/AudioManager'
+import { BUTTON_CLICK, BUTTON_STAKE } from '../../audio/SoundID'
 
 extend({ Container, Graphics, Sprite, BitmapText })
 
@@ -238,6 +240,8 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
     if (betLabelRef.current) betLabelRef.current.y = betLabelCY
     if (betValueRef.current) betValueRef.current.y = betValueCY
     const next = (stakeIndex + 1) % STAKE_LEVELS.length
+    const nextStake = STAKE_LEVELS[next]
+    if (BUTTON_STAKE[nextStake]) playSFX(BUTTON_STAKE[nextStake])
     onStakeChange?.(next)
   }, [state.stakeOn, stakeIndex, onStakeChange, betLabelCY, betValueCY])
 
@@ -313,7 +317,7 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
         font="btn-end"
         fontSize={33}
         textRect={END_TEXT_RECT}
-        onPress={onEnd}
+        onPress={() => { playSFX(BUTTON_CLICK); onEnd?.() }}
       />
 
       {/* Play button — Composer: text rect (0, 14, 281×70), fontSize 43 */}

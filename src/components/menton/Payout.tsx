@@ -28,6 +28,8 @@ import { Container, Sprite, BitmapText } from 'pixi.js'
 import { extend, useTick } from '@pixi/react'
 import { tex } from '../../assets/atlas'
 import { PAYOUT_X, PAYOUT_Y, PAYOUT_W, PAYOUT_H } from './layoutConstants'
+import { playSFX } from '../../audio/AudioManager'
+import { COINS_COLLECT } from '../../audio/SoundID'
 
 extend({ Container, Sprite, BitmapText })
 
@@ -159,6 +161,11 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
 
       const perLoop = Math.floor(objects / loops)
       const remainder = objects % loops
+
+      // AS3: Sounds.ME.playFx(SoundID.COINS_COLLECT) + stopFx after loops*interval
+      const stopFn = playSFX(COINS_COLLECT, { volume: 0.5 })
+      const duration = loops * intervalLength
+      if (stopFn) setTimeout(stopFn, duration)
 
       c.active = true
       c.startValue = value

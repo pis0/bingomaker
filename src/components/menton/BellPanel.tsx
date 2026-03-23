@@ -3,6 +3,8 @@ import { Container, Sprite, Spritesheet, Assets, Texture, Graphics } from 'pixi.
 import { extend, useTick } from '@pixi/react'
 import { ALL_SLOT_SYMBOLS, type SlotSymbol } from '../../engine/SlotBonusSession'
 import { BELL_PANEL_X, BELL_PANEL_Y } from './layoutConstants'
+import { playSFX } from '../../audio/AudioManager'
+import { SLOT_SPIN } from '../../audio/SoundID'
 
 extend({ Container })
 
@@ -148,6 +150,7 @@ export default function BellPanel({ bellsRevealed, spinSymbols, blinking, onSpin
   const startSpin = useCallback((symbols: SlotSymbol[]) => {
     const stripes = stripesRef.current
     if (!stripes) return
+    playSFX(SLOT_SPIN, { volume: 0.6 })
 
     for (let pos = 0; pos < 3; pos++) {
       const stripe = stripes[pos]
