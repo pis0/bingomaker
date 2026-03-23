@@ -99,12 +99,10 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   // AS3: IntervalCardPatternController — cycles individual patterns during idle
   const drawing = targetBallCount > 0
 
-  // Fade BG during active discharge, restore when balls stop
-  // buttonEnabled=false + non-idle phase = balls actively flying
-  const discharging = drawing && !buttonEnabled
+  // Fade BG during round, restore on idle (auto-end 4s resets targetBallCount → drawing=false)
   useEffect(() => {
-    setBGVolume(discharging ? 0.08 : 0.6, 1)
-  }, [discharging])
+    setBGVolume(drawing ? 0.08 : 0.6, 1)
+  }, [drawing])
 
   const [idlePatternIndex, setIdlePatternIndex] = useState(0)
   const idleTimerRef = useRef(0)
