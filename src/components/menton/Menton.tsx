@@ -293,7 +293,9 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const handleBallArrive = useCallback(() => {
     const draw = processNextBall?.()
     if (draw && draw.newPatterns.length > 0) {
-      for (const p of draw.newPatterns) {
+      // Sort by priority descending — highest payout pattern gets splash/VO
+      const sorted = [...draw.newPatterns].sort((a, b) => b.group.priority - a.group.priority)
+      for (const p of sorted) {
         patternQueueRef.current.push({ cardIndex: draw.affectedCard, pattern: p, ballNum: draw.ball })
       }
       // Trigger re-render to consume queue
