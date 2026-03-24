@@ -268,7 +268,7 @@ export class Round {
   }
 
   /** Evaluate extra/super latch after each draw (AS3: Round.enableExtra) */
-  private evaluateExtraLatch(): void {
+  evaluateExtraLatch(): void {
     const wasPreviouslyEnabled = this._extraEverEnabled;
     for (const card of this.cards) {
       const maxPriority = Math.max(card.maxCompletedPriority, card.maxMissingPriority);

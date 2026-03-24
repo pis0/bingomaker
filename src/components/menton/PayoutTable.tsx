@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Container } from 'pixi.js'
 import { extend } from '@pixi/react'
 import type { Round } from '../../engine/Round'
+import { useGameStore } from '../../store/gameStore'
 import type { Pattern } from '../../engine/Pattern'
 import PayoutCard, { type PayoutCardState, type MissingInfo } from './PayoutCard'
 import {
@@ -73,11 +74,13 @@ function deriveCardStates(round: Round | null): {
 export default function PayoutTable({ round, stake, activeIdleCard = -1, idlePattern = null, x, y }: Props) {
   const posX = x ?? PAYOUT_TABLE_X
   const posY = y ?? PAYOUT_TABLE_Y
+  // Subscribe to tick — re-derive when mutable card state changes (server mode)
+  const tick = useGameStore(s => s.tick)
 
   const { states, missings, winCounts } = useMemo(
     () => deriveCardStates(round),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [round, round?.draws.length],
+    [round, round?.draws.length, tick],
   )
 
   // AS3: PatternsController.stopAnimas() called when draws start

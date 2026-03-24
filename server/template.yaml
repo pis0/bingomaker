@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: BingoMaker Server-Authoritative API V1
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref BingoTable
+        # V2: Legacy server connection props
+        # LEGACY_SERVER_URL: ''
+        # LEGACY_SERVER_KEY: ''
+    Architectures:
+      - arm64
+
+Resources:
+  BingoApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: v1
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Request-Id
+
+  CreateRoundFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/createRound.handler
+
+      CodeUri: dist/
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BingoApi
+            Path: /rounds
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BingoTable
+
+  DrawFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/draw.handler
+      CodeUri: dist/
+      Events:
+        DrawExtra:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BingoApi
+            Path: /rounds/{roundId}/draw
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BingoTable
+
+  GetRoundFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/getRound.handler
+      CodeUri: dist/
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BingoApi
+            Path: /rounds/{roundId}
+            Method: GET
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BingoTable
+
+  EndRoundFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers/endRound.handler
+      CodeUri: dist/
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BingoApi
+            Path: /rounds/{roundId}/end
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BingoTable
+
+  BingoTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: bingomaker-rounds
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${BingoApi}.execute-api.${AWS::Region}.amazonaws.com/v1'
+  TableName:
+    Description: DynamoDB table name
+    Value: !Ref BingoTable

@@ -179,21 +179,19 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
   onPeelChangeRef.current = onPeelChange
   const prevPeelTickRef = useRef(0)
 
-  // Synchronous reset on round change
+  // Reset on round change
   const prevRoundRef = useRef<Round | null>(null)
-  if (round !== prevRoundRef.current) {
-    prevRoundRef.current = round
-    processedCountRef.current = 0
-    queueRef.current = []
-    if (launchedIndices.length > 0) {
+  useEffect(() => {
+    if (round !== prevRoundRef.current) {
+      prevRoundRef.current = round
+      processedCountRef.current = 0
+      queueRef.current = []
       setLaunchedIndices([])
-    }
-    peelRef.current.active = false
-    peelRef.current.dispatchReady = false
-    if (peelVisible) {
+      peelRef.current.active = false
+      peelRef.current.dispatchReady = false
       setPeelVisible(false)
     }
-  }
+  }, [round])
 
   // Detect new draws / undo — now supports ALL ball types (no cap at 30)
   const drawCount = targetBallCount
@@ -383,10 +381,12 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
   const hasLaunchedSupers = launchedIndices.some(i => i >= MAX_EXTRA_INDEX)
   // Detect newly launched super balls → signal "flying" to parent for z-order toggle
   const superCount = launchedIndices.filter(i => i >= MAX_EXTRA_INDEX).length
-  if (superCount > superLaunchedCountRef.current) {
-    superLaunchedCountRef.current = superCount
-    onSuperFlyingChangeRef.current?.(true)
-  }
+  useEffect(() => {
+    if (superCount > superLaunchedCountRef.current) {
+      superLaunchedCountRef.current = superCount
+      onSuperFlyingChangeRef.current?.(true)
+    }
+  }, [superCount])
   // "In extra mode" = extras available OR already launched some
   const inExtraMode = extraReady || hasLaunchedExtras
   // "In super mode" = super available OR already launched some

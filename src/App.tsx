@@ -7,11 +7,13 @@ import PixiStats, { PixiStatsBridge } from './debug/PixiStats'
 import SoundToggles from './debug/SoundToggles'
 import { useAssets } from './assets/useAssets'
 import { resumeAudio } from './audio/AudioManager'
-import { useDebugEngine } from './debug/useDebugEngine'
+import { useServerEngine } from './hooks/useServerEngine'
 import { useGameStore } from './store/gameStore'
 import { STAKE_LEVELS } from './engine/constants'
 
-const showDevtools = new URLSearchParams(window.location.search).has('devtools')
+// Debug panel only available on localhost — never in production
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+const showDevtools = isLocal && new URLSearchParams(window.location.search).has('devtools')
 
 /** Set CSS custom properties for canvas scaling (contain-fit, centered) */
 function useViewportScale() {
@@ -32,7 +34,7 @@ function useViewportScale() {
 
 export default function App() {
   const { status, progress, retry } = useAssets()
-  const engine = useDebugEngine()
+  const engine = useServerEngine()
   useViewportScale()
 
   // Resume AudioContext on first user gesture (iOS/Android WebView requirement)

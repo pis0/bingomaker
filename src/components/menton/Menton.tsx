@@ -26,7 +26,7 @@ import { SLOT_X2, SLOT_FRUIT } from '../../engine/SlotBonusSession'
 import { INTERVAL_PATTERNS, INTERVAL_PATTERN_DELAY, PATTERN_TO_CARD_INDEX } from './payoutConstants'
 import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 import { CARD_W, CARD_H, CARD_GAP, X_O, Y_O, CELL_W, CELL_H, SLOT_W, SLOT_H } from './cardConstants'
-import { useGameStore } from '../../store/gameStore'
+import { useGameStore, bumpTick } from '../../store/gameStore'
 import { playBG, setBGVolume, playSFX, playVO } from '../../audio/AudioManager'
 import {
   BG_MENTON, BOMB_FALL,
@@ -360,9 +360,14 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     } else if (prize === SLOT_FRUIT) {
       playSFX(SLOT_PRIZE_BOMB, { volume: 0.6 })
       playSFX(BOMB_FALL, { volume: 0.6 })
-      // AS3: FruitBombBonusSession — select positions BEFORE animation
+      // Use server bomb positions (deterministic RNG), fallback to local
+      const serverPos = (round as unknown as Record<string, unknown>).serverBombPositions as Array<{ cardIndex: number; row: number; col: number }> | null
       const session = new FruitBombBonusSession()
-      session.selectPositions(round.cards)
+      if (serverPos) {
+        session.positions.push(...serverPos)
+      } else {
+        session.selectPositions(round.cards)
+      }
       fruitBombRef.current = session
       setBombPositions([...session.positions])
       // Delay fruit activation so BOMB_FALL has time to play before BOMB_EXPLODE
@@ -416,10 +421,13 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
         setQueueBusy(true)
       }
     }
+    // Server already processed fruit bomb and set extraAvailable correctly.
+    // No client-side evaluateExtras needed.
     setFruitBombActive(false)
     setBombPositions([])
     setCardShake({ x: 0, y: 0 })
     // Force re-render so cards show newly marked cells + consume pattern queue
+    bumpTick()
     setTick(t => t + 1)
   }, [round, stake])
 
@@ -452,7 +460,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
           </pixiContainer>
           <pixiContainer zIndex={1}>
             <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
-            <Payout value={currentPayout} stake={stake} lastPayout={!drawing ? lastPayout : 0} collecting={isCollecting || !!chipFlyPositions} />
+            <Payout value={currentPayout} stake={stake} lastPayout={!drawing ? lastPayout : 0} collecting={isCollecting} />
           </pixiContainer>
           <BallPanel onBallArrive={handleBallArrive} onPeelChange={onPeelChange} onSuperFlyingChange={setSuperFlying} splashRef={splashRef} />
           <pixiContainer zIndex={6}>

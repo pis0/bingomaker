@@ -1,0 +1,24 @@
+{
+  "name": "bingomaker-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "AWS_PROFILE=vw-admin npx tsx src/local.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy": "npm run build && sam deploy --profile vw-admin",
+    "deploy:guided": "npm run build && sam deploy --guided --profile vw-admin"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0",
+    "ulid": "^2.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "@types/aws-lambda": "^8.10.145",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
