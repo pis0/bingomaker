@@ -99,7 +99,7 @@ export function useServerEngine(): DebugEngine {
     createRound(STAKE_LEVELS[stakeIndex], requestSeed)
       .then(res => {
         lastResponseRef.current = res
-        const round = hydrateRound(res)
+        const round = hydrateRound(res, STAKE_LEVELS[stakeIndex])
         roundRef.current = round
         roundIdRef.current = res.roundId
         drawnIndexRef.current = 0
@@ -417,7 +417,22 @@ export function useServerEngine(): DebugEngine {
   if (roundDone && !autoEndFiredRef.current) {
     autoEndFiredRef.current = true
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current)
-    autoEndTimerRef.current = setTimeout(autoNewRound, CONFERENCE_TIMEOUT)
+    const payout = round?.totalPayout ?? 0
+    if (payout > 0) {
+      // Conference → collect animation → new round
+      autoEndTimerRef.current = setTimeout(() => {
+        setIsCollecting(true)
+        rerender()
+        // End on server
+        const rid = roundIdRef.current
+        if (rid) apiEndRound(rid).catch(() => {})
+        // Wait for collection to finish, then new round
+        autoEndTimerRef.current = setTimeout(autoNewRound, 2000)
+      }, CONFERENCE_TIMEOUT)
+    } else {
+      // No payout — conference → new round
+      autoEndTimerRef.current = setTimeout(autoNewRound, CONFERENCE_TIMEOUT)
+    }
   }
 
   // ── First-click behavior: if no round yet, advance creates one ──
@@ -428,7 +443,7 @@ export function useServerEngine(): DebugEngine {
       fetchingRef.current = true
       createRound(STAKE_LEVELS[stakeIndex])
         .then(res => {
-          const rd = hydrateRound(res)
+          const rd = hydrateRound(res, STAKE_LEVELS[stakeIndex])
           roundRef.current = rd
           roundIdRef.current = res.roundId
           drawnIndexRef.current = 0

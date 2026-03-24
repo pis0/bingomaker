@@ -411,6 +411,10 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     // Process bomb — marks cells on cards, returns newly completed patterns
     if (fruitBombRef.current && round) {
       const newPatterns = fruitBombRef.current.process(round, stake)
+      // Sync round totalPayout from card payouts (bomb modifies cards, not round directly)
+      let total = 0
+      for (const c of round.cards) total += c.payout
+      ;(round as unknown as { totalPayout: number }).totalPayout = total
       // Enqueue patterns into the same pipeline as regular draws
       if (newPatterns.length > 0) {
         const sorted = [...newPatterns].sort((a, b) => b.pattern.group.priority - a.pattern.group.priority)

@@ -54,9 +54,9 @@ const AS3_CONTAINER_H = 60
 
 const FONT_SIZE = 43
 
-// AS3: blinkWonMoney — 0.2s interval, 0.4s duration
+// AS3: blinkWonMoney — 0.2s interval, ~1.6s duration (4 full cycles GLOW↔ON)
 const WON_BLINK_INTERVAL = 200
-const WON_BLINK_DURATION = 400
+const WON_BLINK_DURATION = 1600
 // AS3: blinkCollectMoney — 0.1s interval, continuous
 const COLLECT_BLINK_INTERVAL = 100
 
@@ -131,6 +131,7 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
     blinkTimerRef.current = 0
     blinkToggleRef.current = false
     setBgTexture(BG_GLOW)
+    setBgTextureImperative(BG_GLOW)
   }
   if (value === 0 && !collecting && !collectRef.current.active) {
     prevValueRef.current = 0

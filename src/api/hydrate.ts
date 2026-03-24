@@ -291,31 +291,33 @@ export class ServerRound {
    * Marks the cell, adds completed patterns, updates payout.
    * Returns the Draw or null if no more draws.
    */
+  /** Stake used for payout calculations — set from createRound */
+  private _stake = 1
+
+  set stake(v: number) { this._stake = v }
+
   applyNextDraw(): Draw | null {
     const draw = this.draws[this._currentBallIndex]
     if (!draw) return null
 
     this._currentBallIndex++
 
-    // Apply match to card + recalculate expectations (missing-one patterns)
+    // Apply match to card + full pattern check (expectations, payout, priorities)
     if (draw.affectedCard >= 0 && draw.position) {
       const card = this.cards[draw.affectedCard]
       if (card) {
         card.matches[draw.position.row][draw.position.col] = true
 
-        // Save payout before checkForPatterns (it modifies card.payout internally)
-        const prevPayout = card.payout
-
-        // Full pattern check — updates completedPatterns, inPattern,
-        // patternPriority, expectations, and maxMissingPriority
-        checkForPatterns(card, 1)
-
-        // Restore payout and use server-authoritative value instead
-        card.payout = prevPayout + draw.additionalPayout
+        // checkForPatterns handles everything: completedPatterns, inPattern,
+        // patternPriority, expectations, maxMissingPriority, and payout
+        checkForPatterns(card, this._stake)
       }
     }
 
-    this._totalPayout += draw.additionalPayout
+    // Accumulate round total from card payouts (engine-computed, same as server)
+    let cardPayoutSum = 0
+    for (const c of this.cards) cardPayoutSum += c.payout
+    this._totalPayout = cardPayoutSum
 
     // Update bell hit + mark position as hit
     if (draw.bellHit && draw.affectedCard >= 0) {
@@ -382,6 +384,7 @@ export class ServerRound {
  */
 export function hydrateRound(
   res: CreateRoundResponse | GetRoundResponse,
+  stake = 1,
 ): ServerRound {
   // Create clean cards (numbers only, no matches)
   const cards = res.cards.map(cc => {
@@ -412,6 +415,7 @@ export function hydrateRound(
     res.extraStakes,
     slotBonus,
   )
+  round.stake = stake
   // Store server's final availability for use after all initial draws are consumed
   round._serverExtraAvailable = res.extraAvailable
   round._serverSuperExtraAvailable = res.superExtraAvailable
