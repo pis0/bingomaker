@@ -189,6 +189,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
   const currentPayout = round?.totalPayout ?? 0
 
   // AS3: RoundMotion pauses ball discharge during bonus animations
+  const bingoActive = useGameStore(s => s.bingoActive)
   const bonusActive = bellRingActive
     || (releasedSpinSymbols !== null && !slotBlinking) // slot spinning
     || multiplierActive
@@ -196,6 +197,7 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     || !!chipFlyPositions // pattern celebration
     || splashActive // MovieSplash prize animation
     || queueBusy // pending patterns (fruit bomb chain)
+    || bingoActive // full card bingo animation
 
   // Report bonus state to parent (disables advance/end buttons)
   useEffect(() => {
@@ -440,9 +442,9 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
 
   return (
     <pixiContainer>
-      <Scenery />
       {round && (
         <pixiContainer key={roundGenRef.current} sortableChildren>
+          <Scenery />
           {/* Z-order matches AS3 Menton display list:
               0: Scenery (outside this container)
               1: PayoutTable
@@ -485,19 +487,18 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
               onComplete={handleFruitBombComplete}
             />
           </pixiContainer>
+          <ButtonPanel
+            phase={buttonPhase}
+            enabled={buttonEnabled}
+            stakeIndex={stakeIndex}
+            showEnd={showEnd}
+            onPlay={onPlay}
+            onExtra={onExtra}
+            onEnd={onEnd}
+            onStakeChange={onStakeChange}
+          />
         </pixiContainer>
       )}
-      {/* ButtonPanel — always visible, below game area */}
-      <ButtonPanel
-        phase={buttonPhase}
-        enabled={buttonEnabled}
-        stakeIndex={stakeIndex}
-        showEnd={showEnd}
-        onPlay={onPlay}
-        onExtra={onExtra}
-        onEnd={onEnd}
-        onStakeChange={onStakeChange}
-      />
     </pixiContainer>
   )
 }

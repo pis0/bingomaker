@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import type { DebugEngine } from './useDebugEngine';
 import SimulationSection from './sections/SimulationSection';
-import BonusSection from './sections/BonusSection';
 import CardGridSection from './sections/CardGridSection';
 import DrawLogSection from './sections/DrawLogSection';
 import './DebugPanel.css';
@@ -59,7 +58,6 @@ export default function DebugPanel({ engine }: Props) {
       {!collapsed && (
         <div className="debug-body">
           <SimulationSection engine={engine} />
-          <BonusSection engine={engine} />
 
           {engine.round && (
             <>
@@ -70,7 +68,6 @@ export default function DebugPanel({ engine }: Props) {
                     <CardGridSection
                       key={card.index}
                       card={card}
-                      preview={engine.patternPreview}
                       bellPosition={engine.round!.bellPositions[card.index]}
                     />
                   ))}

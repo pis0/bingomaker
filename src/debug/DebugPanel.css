@@ -251,11 +251,6 @@
   border-color: #ffeb3b;
 }
 
-.debug-cell--preview {
-  border-color: #9c27b0;
-  border-style: dashed;
-}
-
 /* Select */
 .debug-select {
   flex: 1;

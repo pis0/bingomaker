@@ -19,6 +19,11 @@ export function replayRound(seed: number, stake: number, drawCount: number): Rou
   const round = new Round(cards, dist.ballSequence, random)
   round.process(stake) // processes first 30 balls
 
+  // x2 is useless without payout — nullify if base 30 has no payout AND no extras available
+  if (round.slotBonus.prize === 'x' && round.totalPayout === 0 && !round.extraAvailable) {
+    round.slotBonus.prize = null
+  }
+
   // If slot triggered Fruit Bomb, process it (same RNG → deterministic positions)
   if (round.slotBonus.prize === 'F') {
     const bombSession = new FruitBombBonusSession()

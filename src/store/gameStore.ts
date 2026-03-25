@@ -36,6 +36,7 @@ export interface GameState {
   chipFlyPositions: ChipPosition[] | null
   chipFlyDelay: number
   splashActive: boolean
+  bingoActive: boolean
   superFlying: boolean
   cardShake: { x: number; y: number }
 
@@ -56,13 +57,14 @@ export interface GameState {
 }
 
 // Compute bonusActive from individual flags
-function computeBonusActive(s: Partial<GameState> & Pick<GameState, 'bellRingActive' | 'releasedSpinSymbols' | 'slotBlinking' | 'multiplierActive' | 'fruitBombActive' | 'chipFlyPositions' | 'splashActive'>): boolean {
+function computeBonusActive(s: Partial<GameState> & Pick<GameState, 'bellRingActive' | 'releasedSpinSymbols' | 'slotBlinking' | 'multiplierActive' | 'fruitBombActive' | 'chipFlyPositions' | 'splashActive' | 'bingoActive'>): boolean {
   return s.bellRingActive
     || (s.releasedSpinSymbols !== null && !s.slotBlinking)
     || s.multiplierActive
     || s.fruitBombActive
     || !!s.chipFlyPositions
     || s.splashActive
+    || s.bingoActive
 }
 
 export const useGameStore = create<GameState>(() => ({
@@ -85,6 +87,7 @@ export const useGameStore = create<GameState>(() => ({
   chipFlyPositions: null,
   chipFlyDelay: 300,
   splashActive: false,
+  bingoActive: false,
   superFlying: false,
   cardShake: { x: 0, y: 0 },
 
@@ -143,6 +146,7 @@ export function resetAnimations() {
     bombPositions: [],
     chipFlyPositions: null,
     splashActive: false,
+    bingoActive: false,
     superFlying: false,
     cardShake: { x: 0, y: 0 },
     bonusActive: false,

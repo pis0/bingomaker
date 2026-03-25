@@ -990,8 +990,10 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
           </pixiContainer>
         )}
 
-        {/* Extra price display — same z-level as large ball */}
-        {inExtraMode && (
+        {/* Extra price display — same z-level as large ball.
+            Only visible when player can actually buy the next ball:
+            not during animations (bonusActive) and only when extras/supers are available. */}
+        {inExtraMode && !paused && (extraReady || superReady) && (
           <pixiContainer ref={extraPriceRef}>
             <pixiSprite
               texture={tex(nextExtraStake === 'free' ? 'extragratis' : nextExtraStake === 'cash' ? 'dindin77_sk' : 'ficha78_sk')}

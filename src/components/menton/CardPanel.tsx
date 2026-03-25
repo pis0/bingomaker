@@ -8,7 +8,7 @@ import { CARD_W, CARD_H, CARD_GAP } from './cardConstants'
 import { CARD_PANEL_X, CARD_PANEL_Y } from './layoutConstants'
 import { DEFAULT_BALLS } from '../../engine/constants'
 import { INTERVAL_PATTERNS } from './payoutConstants'
-import { useGameStore } from '../../store/gameStore'
+import { useGameStore, setAnimFlag } from '../../store/gameStore'
 import { playSFX, playVO } from '../../audio/AudioManager'
 import { BUTTON_SHUFFLE, PRIZE_BINGO, VO_BINGO } from '../../audio/SoundID'
 
@@ -70,9 +70,13 @@ export default function CardPanel({ x, y, onShuffle }: Props) {
     playSFX(PRIZE_BINGO, { volume: 0.2 })
     playVO(VO_BINGO)
     setCardsVisible(false)
+    setAnimFlag('bingoActive', true)
   }, [])
   const handleShowCards = useCallback(() => setCardsVisible(true), [])
-  const handleBingoComplete = useCallback(() => setBingoCardIndex(null), [])
+  const handleBingoComplete = useCallback(() => {
+    setBingoCardIndex(null)
+    setAnimFlag('bingoActive', false)
+  }, [])
 
   if (!round) return null
 

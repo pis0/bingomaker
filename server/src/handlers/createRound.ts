@@ -38,6 +38,11 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const round = new Round(cards, dist.ballSequence, random)
     round.process(stake)
 
+    // x2 is useless without payout — nullify if base 30 has no payout AND no extras available
+    if (round.slotBonus.prize === 'x' && round.totalPayout === 0 && !round.extraAvailable) {
+      round.slotBonus.prize = null
+    }
+
     // If slot bonus triggered with Fruit Bomb prize, process it server-side
     // This ensures extras availability and bomb positions are deterministic
     let bombPositions: Array<{ cardIndex: number; row: number; col: number }> | undefined

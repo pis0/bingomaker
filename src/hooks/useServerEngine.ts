@@ -16,11 +16,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { bumpTick } from '../store/gameStore'
 import type { Draw } from '../engine/Draw'
-import type { Pattern } from '../engine/Pattern'
-import type { SlotSymbol } from '../engine/SlotBonusSession'
 import { DEFAULT_BALLS, STAKE_LEVELS } from '../engine/constants'
 import type { Round } from '../engine/Round'
-import type { DebugEngine, ForceConfig } from '../debug/useDebugEngine'
+import type { DebugEngine } from '../debug/useDebugEngine'
 import { createRound, drawBall, endRound as apiEndRound } from '../api/client'
 import type { CreateRoundResponse } from '../../server/src/types/api'
 import {
@@ -75,8 +73,7 @@ export function useServerEngine(): DebugEngine {
 
   // ── newRound — POST /rounds ───────────────────────────────────
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const newRound = useCallback((_force?: ForceConfig) => {
+  const newRound = useCallback(() => {
     if (fetchingRef.current) return
     // Cancel pending auto-end
     if (autoEndTimerRef.current) {
@@ -463,12 +460,6 @@ export function useServerEngine(): DebugEngine {
     advance()
   }, [stakeIndex, advance, rerender])
 
-  // ── Stub debug-only features ──────────────────────────────────
-
-  const noop = useCallback(() => { /* stub */ }, [])
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const noopPattern = useCallback((_pattern: Pattern | null, _cardIndex: number) => { /* stub */ }, [])
-
   return {
     // Cast ServerRound as Round — they're duck-type compatible for all component access
     round: round as unknown as Round | null,
@@ -494,7 +485,6 @@ export function useServerEngine(): DebugEngine {
     bonusActive,
     setBonusActive,
     endRound: endRoundHandler,
-    patternPreview: null,
     setSeed: (s: number) => {
       seedRef.current = s
       setSeed(s)
@@ -507,17 +497,12 @@ export function useServerEngine(): DebugEngine {
     setStakeIndex: (i: number) => setStakeIndex(Math.max(0, Math.min(i, STAKE_LEVELS.length - 1))),
     newRound,
     shuffle,
-    forceNow: noop as (config: ForceConfig) => void,
     advance: advanceWithInit,
     drawNext,
     drawAll,
     drawExtra,
     drawSuperExtra,
     processNextBall,
-    setPreview: noopPattern,
-    forceSlotPrize: null,
-    setForceSlotPrize: noop as (prize: SlotSymbol | null) => void,
-    triggerSlot: noop,
     isPeeling,
     peelAdvanceTick: peelAdvanceTickRef.current,
     handlePeelChange,

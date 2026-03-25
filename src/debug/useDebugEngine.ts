@@ -3,11 +3,8 @@ import { Card } from '../engine/Card';
 import { distributeCards } from '../engine/CardDistributor';
 import { DEFAULT_BALLS, NUM_CARDS, STAKE_LEVELS } from '../engine/constants';
 import type { Draw } from '../engine/Draw';
-import type { Pattern } from '../engine/Pattern';
 import { Round } from '../engine/Round';
-import type { SlotSymbol } from '../engine/SlotBonusSession';
 import { logDraw, logNewRound } from './helpers/formatters';
-import { prioritizePatternBalls, forcePatternMidRound, forceBellBalls } from './helpers/patternForcer';
 
 function makeSeededRandom(seed: number) {
   let s = seed;
@@ -15,11 +12,6 @@ function makeSeededRandom(seed: number) {
     s = (s * 16807 + 0) % 2147483647;
     return s / 2147483647;
   };
-}
-
-export interface ForceConfig {
-  pattern: Pattern;
-  cardIndex: number;
 }
 
 export interface DebugEngine {
@@ -47,14 +39,12 @@ export interface DebugEngine {
   setBonusActive: (active: boolean) => void;
   /** Skip remaining extras — triggers payout collect then auto new round */
   endRound: () => void;
-  patternPreview: { pattern: Pattern; cardIndex: number } | null;
   setSeed: (seed: number) => void;
   lockSeed: boolean;
   setLockSeed: (locked: boolean) => void;
   setStakeIndex: (index: number) => void;
-  newRound: (force?: ForceConfig) => void;
+  newRound: () => void;
   shuffle: () => void;
-  forceNow: (config: ForceConfig) => void;
   /** Unified advance: starts discharge, resumes after halt, draws extra/super */
   advance: () => void;
   drawNext: () => void;
@@ -63,10 +53,6 @@ export interface DebugEngine {
   drawSuperExtra: () => void;
   /** Process one ball draw (called by Menton when ball arrives in tube) */
   processNextBall: () => Draw | null;
-  setPreview: (pattern: Pattern | null, cardIndex: number) => void;
-  forceSlotPrize: SlotSymbol | null;
-  setForceSlotPrize: (prize: SlotSymbol | null) => void;
-  triggerSlot: () => void;
   /** True when BallPanel peel animation is waiting for user input */
   isPeeling: boolean;
   /** Tick counter — increments advance peel one step in BallPanel */
@@ -86,11 +72,9 @@ export function useDebugEngine(): DebugEngine {
   const [stakeIndex, setStakeIndex] = useState(0);
   const stake = STAKE_LEVELS[stakeIndex];
   const [, setTick] = useState(0);
-  const [patternPreview, setPatternPreview] = useState<{ pattern: Pattern; cardIndex: number } | null>(null);
   const [isCollecting, setIsCollecting] = useState(false);
   const [lastPayout, setLastPayout] = useState(0);
   const [bonusActive, setBonusActive] = useState(false);
-  const [forceSlotPrize, setForceSlotPrize] = useState<SlotSymbol | null>(null);
   const [isPeeling, setIsPeeling] = useState(false);
   const isPeelingRef = useRef(false);
   const peelAdvanceTickRef = useRef(0);
@@ -113,12 +97,10 @@ export function useDebugEngine(): DebugEngine {
   })[0];
   const roundRef = useRef<Round | null>(initialRound);
   const targetBallCountRef = useRef(0);
-  const lastForceRef = useRef<ForceConfig | undefined>(undefined);
-  const forceSlotRef = useRef<SlotSymbol | null>(null);
 
   const rerender = useCallback(() => setTick((t) => t + 1), []);
 
-  const buildRound = useCallback((force?: ForceConfig): Round => {
+  const buildRound = useCallback((): Round => {
     const random = makeSeededRandom(seed);
     const dist = distributeCards(random);
     const cards: Card[] = [];
@@ -127,21 +109,10 @@ export function useDebugEngine(): DebugEngine {
       card.setNumbers(dist.cardNumbers[i]);
       cards.push(card);
     }
-
-    let ballSequence = dist.ballSequence;
-    if (force) {
-      const card = cards[force.cardIndex];
-      if (card) {
-        ballSequence = prioritizePatternBalls(ballSequence, card, force.pattern);
-      }
-    }
-
-    const round = new Round(cards, ballSequence, random);
-    round.slotBonus.forcedPrize = forceSlotRef.current;
-    return round;
+    return new Round(cards, dist.ballSequence, random);
   }, [seed]);
 
-  const newRound = useCallback((force?: ForceConfig) => {
+  const newRound = useCallback(() => {
     // Cancel any pending auto-end timer
     if (autoEndTimerRef.current) { clearTimeout(autoEndTimerRef.current); autoEndTimerRef.current = null; }
     setIsCollecting(false);
@@ -151,11 +122,9 @@ export function useDebugEngine(): DebugEngine {
     peelAdvanceTickRef.current = 0;
     // Increment seed unless locked
     if (!lockSeed) setSeed(s => s + 1);
-    const round = buildRound(force);
+    const round = buildRound();
     roundRef.current = round;
     targetBallCountRef.current = 0;
-    lastForceRef.current = force;
-    setPatternPreview(null);
     logNewRound(round, seed);
     rerender();
   }, [seed, lockSeed, buildRound, rerender]);
@@ -172,17 +141,9 @@ export function useDebugEngine(): DebugEngine {
       card.setNumbers(dist.cardNumbers[i]);
       cards.push(card);
     }
-    let ballSequence = dist.ballSequence;
-    const force = lastForceRef.current;
-    if (force) {
-      const card = cards[force.cardIndex];
-      if (card) ballSequence = prioritizePatternBalls(ballSequence, card, force.pattern);
-    }
-    const round = new Round(cards, ballSequence, random);
-    round.slotBonus.forcedPrize = forceSlotRef.current;
+    const round = new Round(cards, dist.ballSequence, random);
     roundRef.current = round;
     targetBallCountRef.current = 0;
-    setPatternPreview(null);
     logNewRound(round, nextSeed);
     rerender();
   }, [seed, setSeed, rerender]);
@@ -232,46 +193,6 @@ export function useDebugEngine(): DebugEngine {
     const round = roundRef.current;
     if (!round) return;
     targetBallCountRef.current = round.currentBallIndex + 1;
-    rerender();
-  }, [rerender]);
-
-  const forceNow = useCallback((config: ForceConfig) => {
-    const round = roundRef.current;
-    if (!round) return;
-    forcePatternMidRound(round, config.cardIndex, config.pattern);
-    rerender();
-  }, [rerender]);
-
-  const setPreview = useCallback((pattern: Pattern | null, cardIndex: number) => {
-    setPatternPreview(pattern ? { pattern, cardIndex } : null);
-  }, []);
-
-  const handleSetForceSlotPrize = useCallback((prize: SlotSymbol | null) => {
-    forceSlotRef.current = prize;
-    setForceSlotPrize(prize);
-    const round = roundRef.current;
-    if (round) {
-      round.slotBonus.forcedPrize = prize;
-    }
-  }, []);
-
-  const triggerSlot = useCallback(() => {
-    const round = roundRef.current;
-    if (!round || round.slotBonus.triggered) return;
-    // Reorder remaining balls so unhit bell balls come next → natural trigger
-    const extraBalls = forceBellBalls(round);
-    if (extraBalls > 0) {
-      // If idle (0 drawn), start full discharge with bells prioritized at the front
-      if (round.currentBallIndex === 0) {
-        targetBallCountRef.current = DEFAULT_BALLS;
-      } else {
-        // Mid-round: just extend to cover the bell balls
-        targetBallCountRef.current = Math.max(
-          targetBallCountRef.current,
-          round.currentBallIndex + extraBalls,
-        );
-      }
-    }
     rerender();
   }, [rerender]);
 
@@ -342,11 +263,8 @@ export function useDebugEngine(): DebugEngine {
       cards.push(card);
     }
     const r = new Round(cards, dist.ballSequence, random);
-    r.slotBonus.forcedPrize = forceSlotRef.current;
     roundRef.current = r;
     targetBallCountRef.current = 0;
-    lastForceRef.current = undefined;
-    setPatternPreview(null);
     logNewRound(r, nextSeed);
     rerender();
   }, [seed, rerender]);
@@ -417,7 +335,7 @@ export function useDebugEngine(): DebugEngine {
       const prevPayout = r.totalPayout;
       if (prevPayout > 0) setLastPayout(prevPayout);
       setIsCollecting(false);
-      newRound(lastForceRef.current ?? undefined);
+      newRound();
       // Start discharge immediately (newRound resets target to 0, override)
       targetBallCountRef.current = DEFAULT_BALLS;
       return;
@@ -442,22 +360,16 @@ export function useDebugEngine(): DebugEngine {
     bonusActive,
     setBonusActive,
     endRound,
-    patternPreview,
     setSeed,
     setStakeIndex: (i: number) => setStakeIndex(Math.max(0, Math.min(i, STAKE_LEVELS.length - 1))),
     newRound,
     shuffle,
-    forceNow,
     advance,
     drawNext,
     drawAll,
     drawExtra,
     drawSuperExtra,
     processNextBall,
-    setPreview,
-    forceSlotPrize,
-    setForceSlotPrize: handleSetForceSlotPrize,
-    triggerSlot,
     isPeeling,
     peelAdvanceTick: peelAdvanceTickRef.current,
     handlePeelChange,

@@ -1,19 +1,22 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Application } from '@pixi/react'
 import Menton from './components/menton/Menton'
 import { GAME_WIDTH, GAME_HEIGHT } from './components/menton/Scenery'
-import DebugPanel from './debug/DebugPanel'
-import PixiStats, { PixiStatsBridge } from './debug/PixiStats'
-import SoundToggles from './debug/SoundToggles'
 import { useAssets } from './assets/useAssets'
 import { resumeAudio } from './audio/AudioManager'
 import { useServerEngine } from './hooks/useServerEngine'
 import { useGameStore } from './store/gameStore'
 import { STAKE_LEVELS } from './engine/constants'
 
-// Debug panel only available on localhost — never in production
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-const showDevtools = isLocal && new URLSearchParams(window.location.search).has('devtools')
+// Dev-only components — lazy-loaded, completely excluded from production bundle
+const DebugPanel = import.meta.env.DEV ? lazy(() => import('./debug/DebugPanel')) : null
+const PixiStats = import.meta.env.DEV ? lazy(() => import('./debug/PixiStats')) : null
+const PixiStatsBridge = import.meta.env.DEV
+  ? lazy(() => import('./debug/PixiStats').then(m => ({ default: m.PixiStatsBridge })))
+  : null
+const SoundToggles = import.meta.env.DEV ? lazy(() => import('./debug/SoundToggles')) : null
+const showDevtools = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).has('devtools')
 
 /** Set CSS custom properties for canvas scaling (contain-fit, centered) */
 function useViewportScale() {
@@ -119,11 +122,13 @@ export default function App() {
           onStakeChange={engine.setStakeIndex}
           onShuffle={engine.shuffle}
         />
-        <PixiStatsBridge />
+        {PixiStatsBridge && <Suspense fallback={null}><PixiStatsBridge /></Suspense>}
       </Application>
-      <PixiStats />
-      <SoundToggles />
-      {showDevtools && <DebugPanel engine={engine} />}
+      {PixiStats && <Suspense fallback={null}><PixiStats /></Suspense>}
+      {SoundToggles && <Suspense fallback={null}><SoundToggles /></Suspense>}
+      {showDevtools && DebugPanel && (
+        <Suspense fallback={null}><DebugPanel engine={engine} /></Suspense>
+      )}
     </>
   )
 }

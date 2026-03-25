@@ -1,19 +1,16 @@
 import { COLS, ROWS } from '../../engine/constants';
 import type { Card } from '../../engine/Card';
-import type { Pattern } from '../../engine/Pattern';
 import type { BellPosition } from '../../engine/Round';
 
 interface Props {
   card: Card;
-  preview: { pattern: Pattern; cardIndex: number } | null;
   bellPosition?: BellPosition;
 }
 
-function cellClass(card: Card, row: number, col: number, preview: Props['preview']): string {
+function cellClass(card: Card, row: number, col: number): string {
   const matched = card.matches[row][col];
   const inPat = card.inPattern[row][col];
   const hasMissing = card.expectations[row][col] !== null;
-  const isPreview = preview && preview.cardIndex === card.index && preview.pattern.getMaskIndex(row, col);
 
   let cls = 'debug-cell';
 
@@ -27,21 +24,10 @@ function cellClass(card: Card, row: number, col: number, preview: Props['preview
     cls += ' debug-cell--empty';
   }
 
-  if (isPreview) {
-    cls += ' debug-cell--preview';
-  }
-
   return cls;
 }
 
-/**
- * For "last draw" highlighting, we check the most recent draw that affected this card.
- * We use the card's current MatchType state via produceCardMatches-like logic,
- * but since the card's lastMatch is already cleared, we rely on matches + inPattern.
- * The NEW_MATCH highlight only appears on the tick where the draw happened.
- * For simplicity in the debug panel, we just use matched/inPattern/expectations.
- */
-export default function CardGridSection({ card, preview, bellPosition }: Props) {
+export default function CardGridSection({ card, bellPosition }: Props) {
   const patternNames = [...card.completedPatterns].map((p) => p.name);
 
   return (
@@ -55,7 +41,7 @@ export default function CardGridSection({ card, preview, bellPosition }: Props) 
           Array.from({ length: COLS }, (_, col) => {
             const isBell = bellPosition?.row === row && bellPosition?.col === col;
             return (
-              <div key={row * COLS + col} className={cellClass(card, row, col, preview)}>
+              <div key={row * COLS + col} className={cellClass(card, row, col)}>
                 {card.numbers[row][col]}
                 {isBell && <span className="debug-bell" title="Bell">&#128276;</span>}
               </div>

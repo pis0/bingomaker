@@ -445,12 +445,13 @@ export function applyDrawResponse(round: ServerRound, res: DrawResponse): Draw {
   round._serverSuperExtraAvailable = res.superExtraAvailable
 
   // Update live extra prices from server (UI can show price before ball animates)
-  const currentSlot = round.draws.length - DEFAULT_BALLS
-  if (currentSlot >= 0) {
-    round.setLivePrice(currentSlot, res.extraPrice)
+  // draws.length already includes the just-pushed draw, so subtract 1 for its slot
+  const drawnSlot = round.draws.length - 1 - DEFAULT_BALLS
+  if (drawnSlot >= 0) {
+    round.setLivePrice(drawnSlot, res.extraPrice)
   }
-  if (currentSlot + 1 >= 0) {
-    round.setLivePrice(currentSlot + 1, res.nextExtraPrice)
+  if (drawnSlot + 1 >= 0) {
+    round.setLivePrice(drawnSlot + 1, res.nextExtraPrice)
   }
 
   return draw
