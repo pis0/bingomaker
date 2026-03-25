@@ -13,7 +13,7 @@ import MultiplierCollect from './MultiplierCollect'
 import FruitBombAnimation from './FruitBombAnimation'
 import ChipFlyAnimation, { type ChipPosition } from './ChipFlyAnimation'
 import Payout from './Payout'
-import JackpotPanel from './JackpotPanel'
+// import JackpotPanel from './JackpotPanel'  // on hold — sem conexão com server real
 import type { Round } from '../../engine/Round'
 import type { Draw } from '../../engine/Draw'
 import type { Pattern } from '../../engine/Pattern'
@@ -461,9 +461,11 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
               onSpinComplete={handleSlotComplete}
             />
           </pixiContainer>
+          {/* JackpotPanel — on hold, sem conexão com server real ainda
           <pixiContainer zIndex={3}>
             <JackpotPanel />
           </pixiContainer>
+          */}
           <pixiContainer zIndex={1}>
             <PayoutTable round={round} stake={stake} activeIdleCard={activeIdleCard} idlePattern={idlePattern} />
             <Payout value={currentPayout} stake={stake} lastPayout={!drawing ? lastPayout : 0} collecting={isCollecting} />
