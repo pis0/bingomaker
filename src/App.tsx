@@ -8,13 +8,13 @@ import { useServerEngine } from './hooks/useServerEngine'
 import { useGameStore } from './store/gameStore'
 import { STAKE_LEVELS } from './engine/constants'
 
-// Dev-only components — lazy-loaded, completely excluded from production bundle
+// Always available — lazy-loaded for code splitting
+const PixiStats = lazy(() => import('./debug/PixiStats'))
+const PixiStatsBridge = lazy(() => import('./debug/PixiStats').then(m => ({ default: m.PixiStatsBridge })))
+const SoundToggles = lazy(() => import('./debug/SoundToggles'))
+
+// Dev-only components — completely excluded from production bundle
 const DebugPanel = import.meta.env.DEV ? lazy(() => import('./debug/DebugPanel')) : null
-const PixiStats = import.meta.env.DEV ? lazy(() => import('./debug/PixiStats')) : null
-const PixiStatsBridge = import.meta.env.DEV
-  ? lazy(() => import('./debug/PixiStats').then(m => ({ default: m.PixiStatsBridge })))
-  : null
-const SoundToggles = import.meta.env.DEV ? lazy(() => import('./debug/SoundToggles')) : null
 const showDevtools = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('devtools')
 
@@ -122,10 +122,10 @@ export default function App() {
           onStakeChange={engine.setStakeIndex}
           onShuffle={engine.shuffle}
         />
-        {PixiStatsBridge && <Suspense fallback={null}><PixiStatsBridge /></Suspense>}
+        <Suspense fallback={null}><PixiStatsBridge /></Suspense>
       </Application>
-      {PixiStats && <Suspense fallback={null}><PixiStats /></Suspense>}
-      {SoundToggles && <Suspense fallback={null}><SoundToggles /></Suspense>}
+      <Suspense fallback={null}><PixiStats /></Suspense>
+      <Suspense fallback={null}><SoundToggles /></Suspense>
       {showDevtools && DebugPanel && (
         <Suspense fallback={null}><DebugPanel engine={engine} /></Suspense>
       )}
