@@ -11,7 +11,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:sim": "vitest run src/engine/__tests__/simulation.test.ts --reporter=verbose",
-    "test:sim:watch": "vitest src/engine/__tests__/simulation.test.ts --reporter=verbose"
+    "test:sim:watch": "vitest src/engine/__tests__/simulation.test.ts --reporter=verbose",
+    "deploy": "npm run build && aws s3 sync dist s3://virtuware.io/bingomaker/ --delete --profile vw-admin && aws s3 cp s3://virtuware.io/bingomaker/index.html s3://virtuware.io/bingomaker/index.html --cache-control 'no-cache, no-store, must-revalidate' --content-type 'text/html' --metadata-directive REPLACE --profile vw-admin && aws cloudfront create-invalidation --distribution-id E22CDK3ML9CMUJ --paths '/bingomaker/*' --profile vw-admin"
   },
   "dependencies": {
     "@pixi/react": "^8.0.5",
