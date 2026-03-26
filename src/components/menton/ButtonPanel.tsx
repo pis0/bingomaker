@@ -255,7 +255,7 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
   const stakeColor = STAKE_COLORS[stakeIndex % STAKE_COLORS.length]
 
   return (
-    <pixiContainer x={BUTTON_PANEL_X} y={BUTTON_PANEL_Y}>
+    <pixiContainer x={BUTTON_PANEL_X} y={BUTTON_PANEL_Y} zIndex={5}>
       {/* Tongue — slides behind bet button (AS3: mCompTotalPayout) */}
       <pixiContainer ref={tongueRef} x={STAKES_X + TONGUE_X} y={STAKES_Y + TONGUE_CLOSED_Y} visible={false}>
         <pixiGraphics draw={drawTongue} />
