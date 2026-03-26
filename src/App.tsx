@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Application } from '@pixi/react'
 import Menton from './components/menton/Menton'
+import ConnectionOverlay from './components/ConnectionOverlay'
 import { GAME_WIDTH, GAME_HEIGHT } from './components/menton/Scenery'
 import { useAssets } from './assets/useAssets'
 import { resumeAudio } from './audio/AudioManager'
@@ -39,6 +40,7 @@ export default function App() {
   const { status, progress, retry } = useAssets()
   const engine = useServerEngine()
   useViewportScale()
+
 
   // Resume AudioContext on first user gesture (iOS/Android WebView requirement)
   // Listen to multiple event types and keep retrying until context is running
@@ -129,6 +131,7 @@ export default function App() {
       {showDevtools && DebugPanel && (
         <Suspense fallback={null}><DebugPanel engine={engine} /></Suspense>
       )}
+      {engine.retrying && <ConnectionOverlay />}
     </>
   )
 }

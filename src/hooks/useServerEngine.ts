@@ -65,6 +65,58 @@ export function useServerEngine(): DebugEngine {
 
   const rerender = useCallback(() => setTick(t => t + 1), [])
 
+  // ── Network retry state ─────────────────────────────────────
+  const [retrying, setRetrying] = useState(false)
+  const retryCountRef = useRef(0)
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Refs to hold latest callback versions — avoids forward-reference in self-retrying useCallbacks
+  const retryTargetRef = useRef<(() => void) | null>(null)
+
+  // Stable refs for self-retrying useCallbacks (avoids ESLint forward-reference error)
+  const newRoundRef = useRef<() => void>(() => {})
+  const fetchExtraDrawRef = useRef<() => void>(() => {})
+  const advanceWithInitRef = useRef<() => void>(() => {})
+
+  const isNetworkError = (err: unknown): boolean => err instanceof TypeError
+
+  /** Schedule a retry — uses retryTargetRef (must be set by caller before calling) */
+  const scheduleRetry = useCallback(() => {
+    setRetrying(true)
+    const delay = Math.min(2000 * Math.pow(2, retryCountRef.current), 10000)
+    retryCountRef.current++
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
+    retryTimerRef.current = setTimeout(() => {
+      retryTargetRef.current?.()
+    }, delay)
+  }, [])
+
+  const clearRetry = useCallback(() => {
+    setRetrying(false)
+    retryCountRef.current = 0
+    retryTargetRef.current = null
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current)
+      retryTimerRef.current = null
+    }
+  }, [])
+
+  // Immediate retry when browser comes back online
+  useEffect(() => {
+    const handler = () => {
+      const fn = retryTargetRef.current
+      if (fn) {
+        if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
+        retryTimerRef.current = null
+        fn()
+      }
+    }
+    window.addEventListener('online', handler)
+    return () => {
+      window.removeEventListener('online', handler)
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
+    }
+  }, [])
+
   const handlePeelChange = useCallback((peeling: boolean) => {
     isPeelingRef.current = peeling
     setIsPeeling(peeling)
@@ -95,6 +147,7 @@ export function useServerEngine(): DebugEngine {
     console.log(`[newRound] lock=${lockSeedRef.current} seed=${seedRef.current} sending=${requestSeed ?? 'random'}`)
     createRound(STAKE_LEVELS[stakeIndex], requestSeed)
       .then(res => {
+        clearRetry()
         lastResponseRef.current = res
         const round = hydrateRound(res, STAKE_LEVELS[stakeIndex])
         roundRef.current = round
@@ -114,12 +167,19 @@ export function useServerEngine(): DebugEngine {
       })
       .catch(err => {
         console.error('[useServerEngine] newRound failed:', err)
+        if (isNetworkError(err)) {
+          retryTargetRef.current = () => { fetchingRef.current = false; newRoundRef.current() }
+          scheduleRetry()
+          // Prevent auto-end from re-firing while retrying (old round still in state)
+          autoEndFiredRef.current = true
+        }
       })
       .finally(() => {
         fetchingRef.current = false
         rerender()
       })
-  }, [stakeIndex, rerender])
+  }, [stakeIndex, rerender, scheduleRetry, clearRetry])
+  newRoundRef.current = newRound
 
   // Auto-create first round on mount (idle with cards visible)
   const mountedRef = useRef(false)
@@ -174,6 +234,7 @@ export function useServerEngine(): DebugEngine {
     rerender() // disable button immediately
     drawBall(roundId)
       .then(res => {
+        clearRetry()
         const round = roundRef.current
         if (!round) return
         applyDrawResponse(round, res)
@@ -183,19 +244,25 @@ export function useServerEngine(): DebugEngine {
       })
       .catch(err => {
         console.warn('[useServerEngine] drawExtra failed:', err)
-        // Server says no extras — sync client state
-        const round = roundRef.current
-        if (round) {
-          round.extraAvailable = false
-          round.superExtraAvailable = false
-          rerender()
+        if (isNetworkError(err)) {
+          retryTargetRef.current = () => { fetchingRef.current = false; fetchExtraDrawRef.current() }
+          scheduleRetry()
+        } else {
+          // Server says no extras — sync client state
+          const round = roundRef.current
+          if (round) {
+            round.extraAvailable = false
+            round.superExtraAvailable = false
+            rerender()
+          }
         }
       })
       .finally(() => {
         fetchingRef.current = false
         rerender()
       })
-  }, [rerender])
+  }, [rerender, scheduleRetry, clearRetry])
+  fetchExtraDrawRef.current = fetchExtraDraw
 
   const drawExtra = useCallback(() => {
     fetchExtraDraw()
@@ -440,6 +507,7 @@ export function useServerEngine(): DebugEngine {
       fetchingRef.current = true
       createRound(STAKE_LEVELS[stakeIndex])
         .then(res => {
+          clearRetry()
           const rd = hydrateRound(res, STAKE_LEVELS[stakeIndex])
           roundRef.current = rd
           roundIdRef.current = res.roundId
@@ -450,6 +518,10 @@ export function useServerEngine(): DebugEngine {
         })
         .catch(err => {
           console.error('[useServerEngine] initial newRound failed:', err)
+          if (isNetworkError(err)) {
+            retryTargetRef.current = () => { fetchingRef.current = false; advanceWithInitRef.current() }
+            scheduleRetry()
+          }
         })
         .finally(() => {
           fetchingRef.current = false
@@ -458,7 +530,8 @@ export function useServerEngine(): DebugEngine {
       return
     }
     advance()
-  }, [stakeIndex, advance, rerender])
+  }, [stakeIndex, advance, rerender, scheduleRetry, clearRetry])
+  advanceWithInitRef.current = advanceWithInit
 
   return {
     // Cast ServerRound as Round — they're duck-type compatible for all component access
@@ -506,6 +579,7 @@ export function useServerEngine(): DebugEngine {
     isPeeling,
     peelAdvanceTick: peelAdvanceTickRef.current,
     handlePeelChange,
+    retrying,
   }
 }
 

@@ -59,6 +59,8 @@ export interface DebugEngine {
   peelAdvanceTick: number;
   /** BallPanel calls this to report peel start/end */
   handlePeelChange: (peeling: boolean) => void;
+  /** True while retrying a failed network request */
+  retrying: boolean;
 }
 
 export function useDebugEngine(): DebugEngine {
@@ -373,5 +375,6 @@ export function useDebugEngine(): DebugEngine {
     isPeeling,
     peelAdvanceTick: peelAdvanceTickRef.current,
     handlePeelChange,
+    retrying: false,
   };
 }
