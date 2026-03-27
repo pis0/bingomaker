@@ -37,12 +37,30 @@ function getRequiredAliases(): string[] {
 
 // ── Verification helpers ────────────────────────────────────────
 
+const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
+
 function verifyFonts(): string[] {
   const missing: string[] = []
   for (const spec of REQUIRED_FONTS) {
     if (!document.fonts.check(spec)) missing.push(spec)
   }
   return missing
+}
+
+/**
+ * Some WebViews report fonts as not ready immediately after
+ * document.fonts.ready resolves. Poll a few times before giving up.
+ */
+async function verifyFontsWithGrace(maxPolls = 10, intervalMs = 300): Promise<string[]> {
+  for (let i = 0; i < maxPolls; i++) {
+    const missing = verifyFonts()
+    if (missing.length === 0) return []
+    // Re-trigger load for missing fonts each poll
+    await Promise.all(missing.map(spec => document.fonts.load(spec)))
+    await document.fonts.ready
+    if (i < maxPolls - 1) await delay(intervalMs)
+  }
+  return verifyFonts()
 }
 
 function verifyAssets(): string[] {
@@ -102,8 +120,8 @@ export function useAssets() {
         // 3. Global font gate — waits for all font-face layout to settle
         await document.fonts.ready
 
-        // 4. Verify everything actually loaded
-        const missingFonts = verifyFonts()
+        // 4. Verify everything actually loaded (with grace period for WebView timing)
+        const missingFonts = await verifyFontsWithGrace()
         const missingAssets = verifyAssets()
 
         if (missingFonts.length || missingAssets.length) {
@@ -127,8 +145,10 @@ export function useAssets() {
         if (cancelled) return
 
         if (attempt <= MAX_RETRIES) {
-          console.log(`${tag} retrying…`)
+          console.log(`${tag} retrying in 1s…`)
           setProgress(0)
+          await delay(1000)
+          if (cancelled) return
           load()
         } else {
           // Retries exhausted — check if we can still reload
