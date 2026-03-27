@@ -53,6 +53,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       draw: sanitizeDraw(draw),
       cards: round.cards.map(sanitizeCard),
       totalPayout: round.totalPayout,
+      winMultiplierPayout: round.winMultiplierPayout,
       extraAvailable: round.extraAvailable,
       superExtraAvailable: round.superExtraAvailable,
       extraPrice,

@@ -323,6 +323,9 @@ export function useServerEngine(): DebugEngine {
       console.error('[useServerEngine] endRound API failed:', err)
     })
 
+    // AS3: apply x2 multiplier bonus at end of round (server-authoritative, idempotent)
+    roundRef.current?.applyMultiplierBonus()
+
     if (round.totalPayout > 0) {
       setIsCollecting(true)
       rerender()
@@ -363,6 +366,8 @@ export function useServerEngine(): DebugEngine {
         clearTimeout(autoEndTimerRef.current)
         autoEndTimerRef.current = null
       }
+      // AS3: apply x2 multiplier bonus (server-authoritative, idempotent)
+      roundRef.current?.applyMultiplierBonus()
       const prevPayout = round.totalPayout
       if (prevPayout > 0) setLastPayout(prevPayout)
       setIsCollecting(false)
@@ -481,6 +486,11 @@ export function useServerEngine(): DebugEngine {
   if (roundDone && !autoEndFiredRef.current) {
     autoEndFiredRef.current = true
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current)
+
+    // AS3: apply x2 multiplier bonus at end of round (server-authoritative, idempotent)
+    roundRef.current?.applyMultiplierBonus()
+    rerender()
+
     const payout = round?.totalPayout ?? 0
     if (payout > 0) {
       // Conference → collect animation → new round

@@ -281,6 +281,8 @@ export function useDebugEngine(): DebugEngine {
     isPeelingRef.current = false;
     setIsPeeling(false);
     peelAdvanceTickRef.current = 0;
+    // AS3: apply x2 multiplier bonus at end of round (idempotent)
+    r.applyMultiplierBonus();
     if (r.totalPayout > 0) {
       setIsCollecting(true);
       rerender();
@@ -304,6 +306,8 @@ export function useDebugEngine(): DebugEngine {
   if (roundDone && !autoEndFiredRef.current) {
     autoEndFiredRef.current = true;
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
+    // AS3: apply x2 multiplier bonus at end of round (idempotent)
+    roundRef.current?.applyMultiplierBonus();
     autoEndTimerRef.current = setTimeout(autoNewRound, CONFERENCE_TIMEOUT);
   }
 

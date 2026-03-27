@@ -42,17 +42,18 @@ export async function incrementDrawCount(
   }))
 }
 
-export async function completeRound(roundId: string, finalPayout: number): Promise<void> {
+export async function completeRound(roundId: string, finalPayout: number, winMultiplierPayout = 0): Promise<void> {
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME,
     Key: { PK: `ROUND#${roundId}`, SK: 'META' },
-    UpdateExpression: 'SET #s = :completed, totalPayout = :payout, updatedAt = :now',
+    UpdateExpression: 'SET #s = :completed, totalPayout = :payout, winMultiplierPayout = :wmp, updatedAt = :now',
     ConditionExpression: '#s = :active',
     ExpressionAttributeNames: { '#s': 'status' },
     ExpressionAttributeValues: {
       ':completed': 'completed',
       ':active': 'active',
       ':payout': finalPayout,
+      ':wmp': winMultiplierPayout,
       ':now': new Date().toISOString(),
     },
   }))

@@ -7,6 +7,7 @@ export interface RoundItem {
   stake: number
   drawCount: number       // Current number of balls drawn (starts at 30 after process)
   totalPayout: number
+  winMultiplierPayout?: number  // x2 slot bonus — stored on completeRound
   status: 'active' | 'completed'
   cardNumbers: number[][] // 4x15 — cached for quick client response
   bellPositions: Array<{ row: number; col: number }>

@@ -90,6 +90,7 @@ export function sanitizeRoundFull(
     cards: round.cards.map(sanitizeCard),
     draws: round.draws.map(sanitizeDraw),
     totalPayout: round.totalPayout,
+    winMultiplierPayout: round.winMultiplierPayout,
     extraAvailable: round.extraAvailable,
     superExtraAvailable: round.superExtraAvailable,
     extraStakes: round.extraStakes.map((type, i) => ({
@@ -114,6 +115,7 @@ export function sanitizeDrawResponse(
     draw: sanitizeDraw(draw),
     cards: round.cards.map(sanitizeCard),
     totalPayout: round.totalPayout,
+    winMultiplierPayout: round.winMultiplierPayout,
     extraAvailable: round.extraAvailable,
     superExtraAvailable: round.superExtraAvailable,
     extraPrice: round.extraPriceAt(drawIndex, stake),

@@ -65,6 +65,8 @@ export interface CreateRoundResponse {
   cards: ClientCard[]
   draws: ClientDraw[]
   totalPayout: number
+  /** AS3: Round.winMultiplierPayout — bonus from x2 slot prize (server-authoritative) */
+  winMultiplierPayout: number
   extraAvailable: boolean
   superExtraAvailable: boolean
   extraStakes: Array<{ type: ExtraStakeType; price: number }>
@@ -78,6 +80,8 @@ export interface DrawResponse {
   draw: ClientDraw
   cards: ClientCard[]
   totalPayout: number
+  /** AS3: Round.winMultiplierPayout — bonus from x2 slot prize (server-authoritative) */
+  winMultiplierPayout: number
   extraAvailable: boolean
   superExtraAvailable: boolean
   extraPrice: number
@@ -90,6 +94,8 @@ export interface GetRoundResponse {
   cards: ClientCard[]
   draws: ClientDraw[]
   totalPayout: number
+  /** AS3: Round.winMultiplierPayout — bonus from x2 slot prize (server-authoritative) */
+  winMultiplierPayout: number
   extraAvailable: boolean
   superExtraAvailable: boolean
   extraStakes: Array<{ type: ExtraStakeType; price: number }>
@@ -99,5 +105,6 @@ export interface GetRoundResponse {
 
 export interface EndRoundResponse {
   totalPayout: number
+  winMultiplierPayout: number
   status: 'completed'
 }

@@ -18,6 +18,11 @@ const isLocal = typeof window !== 'undefined' &&
 const API_BASE = import.meta.env.VITE_API_URL
   || (isLocal ? 'http://localhost:3001/v1' : 'https://s674gq6ckl.execute-api.us-east-1.amazonaws.com/v1')
 
+if (isLocal) {
+  const env = import.meta.env.VITE_API_URL ? 'PROD (via VITE_API_URL)' : 'LOCAL (localhost:3001)'
+  console.log(`[API] ${env} → ${API_BASE}`)
+}
+
 /** Shared fetch helper — throws with server error message on failure */
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`

@@ -201,6 +201,10 @@ export class ServerRound {
   _serverSuperExtraAvailable = false
   /** Fruit bomb positions from server (deterministic, RNG-based) */
   serverBombPositions: Array<{ cardIndex: number; row: number; col: number }> | null = null
+  /** x2 slot bonus payout — server-authoritative, updated on each draw response */
+  private _winMultiplierPayout = 0
+  /** Applied multiplier bonus — added once at end of round */
+  private _appliedMultiplierBonus = 0
 
   constructor(
     cards: Card[],
@@ -224,8 +228,18 @@ export class ServerRound {
     this._currentBallIndex = 0
   }
 
-  get totalPayout(): number { return this._totalPayout }
+  get totalPayout(): number { return this._totalPayout + this._appliedMultiplierBonus }
   set totalPayout(v: number) { this._totalPayout = v }
+
+  /** AS3: Round.winMultiplierPayout — x2 bonus from server (not calculated locally) */
+  get winMultiplierPayout(): number { return this._winMultiplierPayout }
+  set winMultiplierPayout(v: number) { this._winMultiplierPayout = v }
+
+  /** Apply x2 multiplier bonus (call once at end of round). Idempotent. */
+  applyMultiplierBonus(): void {
+    if (this._appliedMultiplierBonus > 0) return
+    this._appliedMultiplierBonus = this._winMultiplierPayout
+  }
 
   get currentBallIndex(): number { return this._currentBallIndex }
   set currentBallIndex(v: number) { this._currentBallIndex = v }
@@ -416,6 +430,8 @@ export function hydrateRound(
     slotBonus,
   )
   round.stake = stake
+  // Store server's x2 multiplier payout (server-authoritative)
+  round.winMultiplierPayout = res.winMultiplierPayout ?? 0
   // Store server's final availability for use after all initial draws are consumed
   round._serverExtraAvailable = res.extraAvailable
   round._serverSuperExtraAvailable = res.superExtraAvailable
@@ -439,6 +455,9 @@ export function applyDrawResponse(round: ServerRound, res: DrawResponse): Draw {
 
   // Card state NOT synced here — deferred to applyNextDraw() when ball animates.
   // This ensures ChipFly/PatternMovie trigger at the right visual moment.
+
+  // Update x2 multiplier payout from server (grows as extras add payout)
+  round.winMultiplierPayout = res.winMultiplierPayout ?? 0
 
   // Defer availability until ball arrives (applyNextDraw)
   round._serverExtraAvailable = res.extraAvailable

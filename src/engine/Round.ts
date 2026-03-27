@@ -48,6 +48,8 @@ export class Round {
 
   private ballIndex = 0;
   private _totalPayout = 0;
+  /** Applied multiplier bonus — added once at end of round, never recalculated */
+  private _appliedMultiplierBonus = 0;
   private _random: RandomFn;
 
   /** AS3 latch: once extra is enabled, stays enabled for the round */
@@ -92,7 +94,22 @@ export class Round {
   }
 
   get totalPayout(): number {
-    return this._totalPayout;
+    return this._totalPayout + this._appliedMultiplierBonus;
+  }
+
+  /** AS3: Round.winMultiplierPayout — bonus from x2 slot prize: straightPayout * (multiplier - 1) */
+  get winMultiplierPayout(): number {
+    return this._totalPayout * (this.slotBonus.winMultiplier - 1);
+  }
+
+  /**
+   * Apply x2 multiplier bonus to payout (call once at end of round).
+   * Adds winMultiplierPayout as a fixed bonus on top of straightPayout.
+   * Idempotent — calling again has no effect.
+   */
+  applyMultiplierBonus(): void {
+    if (this._appliedMultiplierBonus > 0) return; // already applied
+    this._appliedMultiplierBonus = this.winMultiplierPayout;
   }
 
   get currentBallIndex(): number {

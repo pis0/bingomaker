@@ -14,14 +14,16 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (item.status !== 'active') return ok({
       roundId,
       totalPayout: item.totalPayout,
+      winMultiplierPayout: item.winMultiplierPayout ?? 0,
       status: 'completed',
     })
 
-    // Replay to get final payout
+    // Replay to get final payout (including x2 multiplier bonus)
     const round = replayRound(item.seed, item.stake, item.drawCount)
+    const finalPayout = round.totalPayout + round.winMultiplierPayout
 
     try {
-      await completeRound(roundId, round.totalPayout)
+      await completeRound(roundId, finalPayout, round.winMultiplierPayout)
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
         return error(409, 'Round already completed')
@@ -31,7 +33,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     return ok({
       roundId,
-      totalPayout: round.totalPayout,
+      totalPayout: finalPayout,
+      winMultiplierPayout: round.winMultiplierPayout,
       status: 'completed',
     })
   } catch (err) {
