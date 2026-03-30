@@ -65,6 +65,9 @@ export function useServerEngine(): DebugEngine {
 
   const rerender = useCallback(() => setTick(t => t + 1), [])
 
+  // Track previous stakeIndex for idle-round refresh
+  const prevStakeIndexRef = useRef(stakeIndex)
+
   // ── Network retry state ─────────────────────────────────────
   const [retrying, setRetrying] = useState(false)
   const retryCountRef = useRef(0)
@@ -303,6 +306,19 @@ export function useServerEngine(): DebugEngine {
     if (oldId) apiEndRound(oldId).catch(() => { /* already completed — ok */ })
     newRound()
   }, [newRound])
+  // Stable ref — avoids stale closures in setTimeout callbacks
+  const autoNewRoundRef = useRef(autoNewRound)
+  autoNewRoundRef.current = autoNewRound
+
+  // ── Stake change during idle → create new round with new stake ──
+  useEffect(() => {
+    if (stakeIndex === prevStakeIndexRef.current) return
+    prevStakeIndexRef.current = stakeIndex
+    // Only re-create if idle (round exists, no draws consumed, not fetching)
+    if (roundRef.current && drawnIndexRef.current === 0 && !fetchingRef.current) {
+      newRound()
+    }
+  }, [stakeIndex, newRound])
 
   // ── endRound — manual end (skip extras) ───────────────────────
 
@@ -329,11 +345,11 @@ export function useServerEngine(): DebugEngine {
     if (round.totalPayout > 0) {
       setIsCollecting(true)
       rerender()
-      autoEndTimerRef.current = setTimeout(autoNewRound, 1500)
+      autoEndTimerRef.current = setTimeout(() => autoNewRoundRef.current(), 1500)
     } else {
-      autoEndTimerRef.current = setTimeout(autoNewRound, 300)
+      autoEndTimerRef.current = setTimeout(() => autoNewRoundRef.current(), 300)
     }
-  }, [autoNewRound, rerender])
+  }, [rerender])
 
   // ── Advance — unified button handler ──────────────────────────
 
@@ -501,11 +517,11 @@ export function useServerEngine(): DebugEngine {
         const rid = roundIdRef.current
         if (rid) apiEndRound(rid).catch(() => {})
         // Wait for collection to finish, then new round
-        autoEndTimerRef.current = setTimeout(autoNewRound, 2000)
+        autoEndTimerRef.current = setTimeout(() => autoNewRoundRef.current(), 2000)
       }, CONFERENCE_TIMEOUT)
     } else {
       // No payout — conference → new round
-      autoEndTimerRef.current = setTimeout(autoNewRound, CONFERENCE_TIMEOUT)
+      autoEndTimerRef.current = setTimeout(() => autoNewRoundRef.current(), CONFERENCE_TIMEOUT)
     }
   }
 
