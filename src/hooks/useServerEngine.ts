@@ -129,7 +129,7 @@ export function useServerEngine(): DebugEngine {
   }, [])
 
   // ── newRound — POST /rounds ───────────────────────────────────
-  // reuseSeed=true → keep same cards (bet change); false → new cards (shuffle, auto-play)
+  // reuseSeed=true → keep same cards (bet change, auto-play); false → new cards (shuffle only)
 
   const newRoundImpl = useCallback((reuseSeed: boolean) => {
     if (fetchingRef.current) return
@@ -186,7 +186,7 @@ export function useServerEngine(): DebugEngine {
       })
   }, [stakeIndex, rerender, scheduleRetry, clearRetry])
 
-  const newRound = useCallback(() => newRoundImpl(false), [newRoundImpl])
+  const newRound = useCallback(() => newRoundImpl(true), [newRoundImpl])
   newRoundRef.current = newRound
 
   // Auto-create first round on mount (idle with cards visible)
@@ -198,12 +198,12 @@ export function useServerEngine(): DebugEngine {
     }
   }, [newRound])
 
-  // ── shuffle — new round with same stake (new cards) ───────────
+  // ── shuffle — new cards (new seed) with same stake ───────────
 
   const shuffle = useCallback(() => {
     if (!roundRef.current) return
-    newRound()
-  }, [newRound])
+    newRoundImpl(false)
+  }, [newRoundImpl])
 
   // ── processNextBall — called by BallPanel when ball arrives ───
 
