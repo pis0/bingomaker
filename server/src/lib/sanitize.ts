@@ -81,12 +81,14 @@ export function sanitizeSlotBonus(round: Round): ClientSlotBonus {
 
 export function sanitizeRoundFull(
   roundId: string,
+  seed: number,
   round: Round,
   stake: number,
   bombPositions?: Array<{ cardIndex: number; row: number; col: number }>,
 ): CreateRoundResponse & GetRoundResponse {
   return {
     roundId,
+    seed,
     cards: round.cards.map(sanitizeCard),
     draws: round.draws.map(sanitizeDraw),
     totalPayout: round.totalPayout,

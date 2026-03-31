@@ -52,6 +52,8 @@ export function useServerEngine(): DebugEngine {
   const roundIdRef = useRef<string | null>(null)
   /** Cached server response for locked-seed reset (replay without server call) */
   const lastResponseRef = useRef<CreateRoundResponse | null>(null)
+  /** Seed of the current round — reused on bet change to keep same cards */
+  const roundSeedRef = useRef<number | null>(null)
   /** Auto-start discharge after next newRound completes */
   const autoPlayAfterNewRef = useRef(false)
   const targetBallCountRef = useRef(0)
@@ -127,8 +129,9 @@ export function useServerEngine(): DebugEngine {
   }, [])
 
   // ── newRound — POST /rounds ───────────────────────────────────
+  // reuseSeed=true → keep same cards (bet change); false → new cards (shuffle, auto-play)
 
-  const newRound = useCallback(() => {
+  const newRoundImpl = useCallback((reuseSeed: boolean) => {
     if (fetchingRef.current) return
     // Cancel pending auto-end
     if (autoEndTimerRef.current) {
@@ -142,16 +145,16 @@ export function useServerEngine(): DebugEngine {
     setIsPeeling(false)
     peelAdvanceTickRef.current = 0
 
-    // Locked seed → always create on server (need valid roundId for extras)
-    // Same seed = same cards/draws = deterministic replay
-
     fetchingRef.current = true
-    const requestSeed = lockSeedRef.current ? seedRef.current : undefined
-    console.log(`[newRound] lock=${lockSeedRef.current} seed=${seedRef.current} sending=${requestSeed ?? 'random'}`)
+    const requestSeed = lockSeedRef.current
+      ? seedRef.current
+      : reuseSeed ? roundSeedRef.current ?? undefined : undefined
+    console.log(`[newRound] lock=${lockSeedRef.current} reuseSeed=${reuseSeed} seed=${requestSeed ?? 'random'}`)
     createRound(STAKE_LEVELS[stakeIndex], requestSeed)
       .then(res => {
         clearRetry()
         lastResponseRef.current = res
+        roundSeedRef.current = res.seed
         const round = hydrateRound(res, STAKE_LEVELS[stakeIndex])
         roundRef.current = round
         roundIdRef.current = res.roundId
@@ -182,6 +185,8 @@ export function useServerEngine(): DebugEngine {
         rerender()
       })
   }, [stakeIndex, rerender, scheduleRetry, clearRetry])
+
+  const newRound = useCallback(() => newRoundImpl(false), [newRoundImpl])
   newRoundRef.current = newRound
 
   // Auto-create first round on mount (idle with cards visible)
@@ -310,7 +315,7 @@ export function useServerEngine(): DebugEngine {
   const autoNewRoundRef = useRef(autoNewRound)
   autoNewRoundRef.current = autoNewRound
 
-  // ── Stake change → create new round with new stake ──
+  // ── Stake change → new round with same cards (reuse seed) ──
   // Triggers when idle (drawnIndex === 0) OR settled/conference (not actively drawing)
   useEffect(() => {
     if (stakeIndex === prevStakeIndexRef.current) return
@@ -326,9 +331,9 @@ export function useServerEngine(): DebugEngine {
       }
       autoEndFiredRef.current = false
       setIsCollecting(false)
-      newRound()
+      newRoundImpl(true) // reuse seed → same cards, new payouts
     }
-  }, [stakeIndex, newRound])
+  }, [stakeIndex, newRoundImpl])
 
   // ── endRound — manual end (skip extras) ───────────────────────
 
@@ -544,6 +549,7 @@ export function useServerEngine(): DebugEngine {
       createRound(STAKE_LEVELS[stakeIndex])
         .then(res => {
           clearRetry()
+          roundSeedRef.current = res.seed
           const rd = hydrateRound(res, STAKE_LEVELS[stakeIndex])
           roundRef.current = rd
           roundIdRef.current = res.roundId

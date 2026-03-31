@@ -15,7 +15,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     // Replay to current state
     const round = replayRound(item.seed, item.stake, item.drawCount)
 
-    return ok(sanitizeRoundFull(roundId, round, item.stake))
+    return ok(sanitizeRoundFull(roundId, item.seed, round, item.stake))
   } catch (err) {
     console.error('getRound error:', err)
     return error(500, 'Internal server error')

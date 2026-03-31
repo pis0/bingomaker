@@ -62,6 +62,7 @@ export interface ClientSlotBonus {
 
 export interface CreateRoundResponse {
   roundId: string
+  seed: number
   cards: ClientCard[]
   draws: ClientDraw[]
   totalPayout: number

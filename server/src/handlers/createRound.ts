@@ -77,8 +77,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       ttl: Math.floor(Date.now() / 1000) + 86400, // 24h TTL
     })
 
-    // Return sanitized response (NO seed, NO ballSequence)
-    return created(sanitizeRoundFull(roundId, round, stake, bombPositions))
+    return created(sanitizeRoundFull(roundId, seed, round, stake, bombPositions))
   } catch (err) {
     console.error('createRound error:', err)
     return error(500, 'Internal server error')
