@@ -82,10 +82,11 @@ interface Props {
 }
 
 export default function Payout({ value, stake = 1, lastPayout = 0, tween = false, collecting = false }: Props) {
-  // BgPayout state — driven imperatively from useTick to avoid per-frame re-renders
-  const [bgTexture, setBgTexture] = useState(BG_OFF)
+  // BgPayout state — initialized from props to avoid flicker on key-based remount
+  const initialBg = (value > 0 || lastPayout > 0) ? BG_ON : BG_OFF
+  const [bgTexture, setBgTexture] = useState(initialBg)
   const bgSpriteRef = useRef<Sprite>(null)
-  const bgTextureRef = useRef(BG_OFF)
+  const bgTextureRef = useRef(initialBg)
   const setBgTextureImperative = useCallback((name: string) => {
     if (name === bgTextureRef.current) return
     bgTextureRef.current = name
@@ -317,6 +318,8 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
   const [containerPos, setContainerPos] = useState({ x: 0, y: 0 })
   const [contentScale, setContentScale] = useState(1)
 
+  const [contentVisible, setContentVisible] = useState(false)
+
   const updateAlign = useCallback(() => {
     const cont = contentContainerRef.current
     if (!cont) return
@@ -329,13 +332,17 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
     const cy = Math.floor(PAYOUT_H / 2 - AS3_CONTAINER_H / 2 + ALIGN_Y_OFFSET)
     setContentScale(scale)
     setContainerPos({ x: cx, y: cy })
+    setContentVisible(true)
   }, [])
 
-  // Re-align when displayed value changes
+  // Re-align when displayed value changes; hide until centered
   useEffect(() => {
     let rafId: number | undefined
     if (showValue > 0) {
+      setContentVisible(false)
       rafId = requestAnimationFrame(updateAlign)
+    } else {
+      setContentVisible(false)
     }
     return () => {
       if (rafId !== undefined) cancelAnimationFrame(rafId)
@@ -355,6 +362,7 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
           y={containerPos.y}
           scale={contentScale}
           alpha={displayAlpha}
+          visible={contentVisible}
         >
           <pixiSprite
             texture={tex('ficha78_sk')}

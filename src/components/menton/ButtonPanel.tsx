@@ -159,18 +159,29 @@ export default function ButtonPanel({ phase, enabled, stakeIndex, showEnd: force
   const tongueAnimRef = useRef({ t0: 0, from: 0, to: 0, active: false })
   const [tongueOpen, setTongueOpen] = useState(false)
 
-  // Open tongue when stake changes, close when phase leaves 'play'
+  // Open tongue when stake changes; skip the next enabled→false (newRound fetch flicker)
   const prevStakeRef = useRef(stakeIndex)
+  const skipNextDisableRef = useRef(false)
   useEffect(() => {
     if (stakeIndex !== prevStakeRef.current) {
       prevStakeRef.current = stakeIndex
       setTongueOpen(true)
+      skipNextDisableRef.current = true
     }
   }, [stakeIndex])
 
-  // Close tongue when round starts (phase leaves 'play' or button disables)
+  // Close tongue when phase leaves 'play' or Play is clicked (enabled→false)
   useEffect(() => {
-    if (phase !== 'play' || !enabled) setTongueOpen(false)
+    if (phase !== 'play') {
+      setTongueOpen(false)
+      skipNextDisableRef.current = false
+    } else if (!enabled) {
+      if (skipNextDisableRef.current) {
+        skipNextDisableRef.current = false // consumed — don't skip next time (Play click)
+      } else {
+        setTongueOpen(false)
+      }
+    }
   }, [phase, enabled])
 
   // Tween tongue position

@@ -489,17 +489,19 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
               onComplete={handleFruitBombComplete}
             />
           </pixiContainer>
-          <ButtonPanel
-            phase={buttonPhase}
-            enabled={buttonEnabled}
-            stakeIndex={stakeIndex}
-            showEnd={showEnd}
-            onPlay={onPlay}
-            onExtra={onExtra}
-            onEnd={onEnd}
-            onStakeChange={onStakeChange}
-          />
         </pixiContainer>
+      )}
+      {round && (
+        <ButtonPanel
+          phase={buttonPhase}
+          enabled={buttonEnabled}
+          stakeIndex={stakeIndex}
+          showEnd={showEnd}
+          onPlay={onPlay}
+          onExtra={onExtra}
+          onEnd={onEnd}
+          onStakeChange={onStakeChange}
+        />
       )}
     </pixiContainer>
   )
