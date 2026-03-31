@@ -52,8 +52,8 @@ export function useServerEngine(): DebugEngine {
   const roundIdRef = useRef<string | null>(null)
   /** Cached server response for locked-seed reset (replay without server call) */
   const lastResponseRef = useRef<CreateRoundResponse | null>(null)
-  /** Seed of the current round — reused on bet change to keep same cards */
-  const roundSeedRef = useRef<number | null>(null)
+  /** Card numbers from current round — reused on newRound to keep same cards */
+  const cardNumbersRef = useRef<number[][] | null>(null)
   /** Auto-start discharge after next newRound completes */
   const autoPlayAfterNewRef = useRef(false)
   const targetBallCountRef = useRef(0)
@@ -129,9 +129,10 @@ export function useServerEngine(): DebugEngine {
   }, [])
 
   // ── newRound — POST /rounds ───────────────────────────────────
-  // reuseSeed=true → keep same cards (bet change, auto-play); false → new cards (shuffle only)
+  // reuseCards=true → same cards, new draws (newRound / bet change)
+  // reuseCards=false → new cards + new draws (shuffle only)
 
-  const newRoundImpl = useCallback((reuseSeed: boolean) => {
+  const newRoundImpl = useCallback((reuseCards: boolean) => {
     if (fetchingRef.current) return
     // Cancel pending auto-end
     if (autoEndTimerRef.current) {
@@ -146,15 +147,22 @@ export function useServerEngine(): DebugEngine {
     peelAdvanceTickRef.current = 0
 
     fetchingRef.current = true
-    const requestSeed = lockSeedRef.current
-      ? seedRef.current
-      : reuseSeed ? roundSeedRef.current ?? undefined : undefined
-    console.log(`[newRound] lock=${lockSeedRef.current} reuseSeed=${reuseSeed} seed=${requestSeed ?? 'random'}`)
-    createRound(STAKE_LEVELS[stakeIndex], requestSeed)
+    const opts: { seed?: number; cardNumbers?: number[][] } = {}
+    if (lockSeedRef.current) opts.seed = seedRef.current
+    if (reuseCards && cardNumbersRef.current) opts.cardNumbers = cardNumbersRef.current
+    console.log(`[newRound] reuseCards=${reuseCards} cards=${opts.cardNumbers ? 'yes' : 'no'} seed=${opts.seed ?? 'random'}`)
+    createRound(STAKE_LEVELS[stakeIndex], Object.keys(opts).length > 0 ? opts : undefined)
       .then(res => {
         clearRetry()
         lastResponseRef.current = res
-        roundSeedRef.current = res.seed
+        // Store card numbers for reuse — extract in column-major order (matches setNumbers)
+        cardNumbersRef.current = res.cards.map(c => {
+          const nums: number[] = []
+          for (let col = 0; col < c.numbers[0].length; col++)
+            for (let row = 0; row < c.numbers.length; row++)
+              if (c.numbers[row][col] > 0) nums.push(c.numbers[row][col])
+          return nums
+        })
         const round = hydrateRound(res, STAKE_LEVELS[stakeIndex])
         roundRef.current = round
         roundIdRef.current = res.roundId
@@ -549,7 +557,13 @@ export function useServerEngine(): DebugEngine {
       createRound(STAKE_LEVELS[stakeIndex])
         .then(res => {
           clearRetry()
-          roundSeedRef.current = res.seed
+          cardNumbersRef.current = res.cards.map(c => {
+            const nums: number[] = []
+            for (let col = 0; col < c.numbers[0].length; col++)
+              for (let row = 0; row < c.numbers.length; row++)
+                if (c.numbers[row][col] > 0) nums.push(c.numbers[row][col])
+            return nums
+          })
           const rd = hydrateRound(res, STAKE_LEVELS[stakeIndex])
           roundRef.current = rd
           roundIdRef.current = res.roundId

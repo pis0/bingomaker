@@ -5,37 +5,51 @@ import { Card } from '../../../src/engine/Card'
 import { distributeCards } from '../../../src/engine/CardDistributor'
 import { Round } from '../../../src/engine/Round'
 import { FruitBombBonusSession } from '../../../src/engine/FruitBombBonusSession'
-import { STAKE_LEVELS, DEFAULT_BALLS } from '../../../src/engine/constants'
+import { STAKE_LEVELS, DEFAULT_BALLS, NUM_CARDS, CELLS } from '../../../src/engine/constants'
 import { makeSeededRandom } from '../lib/rng'
 import { putRoundItem } from '../lib/dynamo'
 import { sanitizeRoundFull } from '../lib/sanitize'
 import { created, error } from '../lib/responses'
+import { shuffle } from '../../../src/engine/utils'
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
     const body = JSON.parse(event.body ?? '{}')
-    const { stake, seed: requestedSeed } = body
+    const { stake, seed: requestedSeed, cardNumbers: providedCards } = body
 
     // Validate stake
     if (!STAKE_LEVELS.includes(stake)) {
       return error(400, `Invalid stake. Must be one of: ${STAKE_LEVELS.join(', ')}`)
     }
 
-    // Use requested seed (dev/test) or generate cryptographic seed (production)
+    // Always generate a fresh seed (used for ball sequence + slot bonus)
     const seed = (typeof requestedSeed === 'number' && requestedSeed > 0 && requestedSeed < 2147483647)
       ? requestedSeed
       : crypto.randomInt(1, 2147483646)
     const roundId = ulid()
 
-    // Run engine
     const random = makeSeededRandom(seed)
-    const dist = distributeCards(random)
-    const cards = dist.cardNumbers.map((nums, i) => {
+    let cardNumbers: number[][]
+    let ballSequence: number[]
+
+    if (Array.isArray(providedCards) && providedCards.length === NUM_CARDS &&
+        providedCards.every((c: unknown) => Array.isArray(c) && (c as number[]).length === CELLS)) {
+      // Reuse provided cards — only generate new ball sequence + slot
+      cardNumbers = providedCards as number[][]
+      ballSequence = shuffle(cardNumbers.flat(), random)
+    } else {
+      // Generate everything from seed (first round or shuffle)
+      const dist = distributeCards(random)
+      cardNumbers = dist.cardNumbers
+      ballSequence = dist.ballSequence
+    }
+
+    const cards = cardNumbers.map((nums, i) => {
       const card = new Card(i)
       card.setNumbers(nums)
       return card
     })
-    const round = new Round(cards, dist.ballSequence, random)
+    const round = new Round(cards, ballSequence, random)
     round.process(stake)
 
     // x2 is useless without payout — nullify if base 30 has no payout AND no extras available
@@ -70,7 +84,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       drawCount: DEFAULT_BALLS,
       totalPayout: round.totalPayout,
       status: 'active',
-      cardNumbers: dist.cardNumbers,
+      cardNumbers,
       bellPositions,
       createdAt: now,
       updatedAt: now,

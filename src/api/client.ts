@@ -44,11 +44,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return body as T
 }
 
-/** POST /rounds — create a new round with the given stake (optional seed for testing) */
-export function createRound(stake: number, seed?: number): Promise<CreateRoundResponse> {
+/** POST /rounds — create a new round with the given stake.
+ *  cardNumbers: reuse existing cards (new round / bet change). Omit for shuffle.
+ *  seed: force deterministic seed (dev/test only). */
+export function createRound(stake: number, opts?: { seed?: number; cardNumbers?: number[][] }): Promise<CreateRoundResponse> {
   return request<CreateRoundResponse>('/rounds', {
     method: 'POST',
-    body: JSON.stringify({ stake, ...(seed != null && { seed }) }),
+    body: JSON.stringify({
+      stake,
+      ...(opts?.seed != null && { seed: opts.seed }),
+      ...(opts?.cardNumbers && { cardNumbers: opts.cardNumbers }),
+    }),
   })
 }
 
