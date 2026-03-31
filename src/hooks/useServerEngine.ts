@@ -310,12 +310,22 @@ export function useServerEngine(): DebugEngine {
   const autoNewRoundRef = useRef(autoNewRound)
   autoNewRoundRef.current = autoNewRound
 
-  // ── Stake change during idle → create new round with new stake ──
+  // ── Stake change → create new round with new stake ──
+  // Triggers when idle (drawnIndex === 0) OR settled/conference (not actively drawing)
   useEffect(() => {
     if (stakeIndex === prevStakeIndexRef.current) return
     prevStakeIndexRef.current = stakeIndex
-    // Only re-create if idle (round exists, no draws consumed, not fetching)
-    if (roundRef.current && drawnIndexRef.current === 0 && !fetchingRef.current) {
+    if (!roundRef.current || fetchingRef.current) return
+    const idle = drawnIndexRef.current === 0
+    const settled = drawnIndexRef.current >= targetBallCountRef.current
+    if (idle || settled) {
+      // Cancel any pending auto-end timers
+      if (autoEndTimerRef.current) {
+        clearTimeout(autoEndTimerRef.current)
+        autoEndTimerRef.current = null
+      }
+      autoEndFiredRef.current = false
+      setIsCollecting(false)
       newRound()
     }
   }, [stakeIndex, newRound])
