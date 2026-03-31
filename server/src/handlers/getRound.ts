@@ -13,7 +13,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (!item) return error(404, 'Round not found')
 
     // Replay to current state
-    const round = replayRound(item.seed, item.stake, item.drawCount)
+    const round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
 
     return ok(sanitizeRoundFull(roundId, item.seed, round, item.stake))
   } catch (err) {

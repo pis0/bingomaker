@@ -19,7 +19,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     })
 
     // Replay to get final payout (including x2 multiplier bonus)
-    const round = replayRound(item.seed, item.stake, item.drawCount)
+    const round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
     const finalPayout = round.totalPayout + round.winMultiplierPayout
 
     try {

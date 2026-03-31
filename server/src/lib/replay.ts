@@ -2,21 +2,34 @@ import { Card } from '../../../src/engine/Card'
 import { distributeCards } from '../../../src/engine/CardDistributor'
 import { Round } from '../../../src/engine/Round'
 import { FruitBombBonusSession } from '../../../src/engine/FruitBombBonusSession'
-import { DEFAULT_BALLS, NUM_CARDS } from '../../../src/engine/constants'
+import { DEFAULT_BALLS } from '../../../src/engine/constants'
 import { makeSeededRandom } from './rng'
+import { shuffle } from '../../../src/engine/utils'
 
-export function replayRound(seed: number, stake: number, drawCount: number): Round {
+export function replayRound(seed: number, stake: number, drawCount: number, storedCards?: number[][]): Round {
   const random = makeSeededRandom(seed)
-  const dist = distributeCards(random)
 
-  const cards: Card[] = []
-  for (let i = 0; i < NUM_CARDS; i++) {
-    const card = new Card(i)
-    card.setNumbers(dist.cardNumbers[i])
-    cards.push(card)
+  let cardNumbers: number[][]
+  let ballSequence: number[]
+
+  if (storedCards) {
+    // Reuse stored cards — regenerate ball sequence from seed
+    cardNumbers = storedCards
+    ballSequence = shuffle(storedCards.flat(), random)
+  } else {
+    // Generate everything from seed (legacy rounds)
+    const dist = distributeCards(random)
+    cardNumbers = dist.cardNumbers
+    ballSequence = dist.ballSequence
   }
 
-  const round = new Round(cards, dist.ballSequence, random)
+  const cards = cardNumbers.map((nums, i) => {
+    const card = new Card(i)
+    card.setNumbers(nums)
+    return card
+  })
+
+  const round = new Round(cards, ballSequence, random)
   round.process(stake) // processes first 30 balls
 
   // x2 is useless without payout — nullify if base 30 has no payout AND no extras available

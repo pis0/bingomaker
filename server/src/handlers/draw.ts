@@ -19,7 +19,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (item.drawCount >= MAX_DRAWS) return error(409, 'No more draws available')
 
     // Replay to current state
-    const round = replayRound(item.seed, item.stake, item.drawCount)
+    const round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
 
     // Validate extras are available
     if (!round.extraAvailable && !round.superExtraAvailable) {
