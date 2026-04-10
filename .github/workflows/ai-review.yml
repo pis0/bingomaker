@@ -29,7 +29,7 @@ jobs:
         uses: openai/codex-action@c25d10f3f498316d4b2496cc4c6dd58057a7b031 # v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          prompt-file: .github/codex/prompts/review.md
+          prompt-file: .github/codex/prompts/audit.md
           output-schema-file: .github/codex/schemas/review-schema.json
           output-file: codex-output.json
           safety-strategy: drop-sudo
