@@ -1,0 +1,92 @@
+name: AI Code Review (Codex)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  codex-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+    steps:
+      - name: Checkout PR merge ref
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Fetch base and head refs
+        run: |
+          git fetch --no-tags origin \
+            ${{ github.event.pull_request.base.ref }} \
+            +refs/pull/${{ github.event.pull_request.number }}/head
+
+      - name: Run Codex Review
+        id: run_codex
+        uses: openai/codex-action@c25d10f3f498316d4b2496cc4c6dd58057a7b031 # v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/codex/prompts/review.md
+          output-schema-file: .github/codex/schemas/review-schema.json
+          output-file: codex-output.json
+          safety-strategy: drop-sudo
+          sandbox: read-only
+          model: gpt-5.3-codex
+
+  post-review:
+    runs-on: ubuntu-latest
+    needs: codex-review
+    if: needs.codex-review.outputs.final_message != ''
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post review comment
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const raw = process.env.CODEX_MESSAGE;
+            let body;
+            try {
+              const data = JSON.parse(raw);
+              const priorityLabel = { 0: 'INFO', 1: 'HIGH', 2: 'MEDIUM', 3: 'LOW' };
+              const priorityIcon = { 0: 'ℹ️', 1: '🔴', 2: '🟡', 3: '🟢' };
+              const correctIcon = data.overall_correctness === 'patch is correct' ? '✅' : '⚠️';
+
+              let md = `## AI Code Review (Codex)\n\n`;
+              md += `${correctIcon} **${data.overall_correctness}** (confidence: ${Math.round(data.overall_confidence_score * 100)}%)\n\n`;
+              md += `${data.overall_explanation}\n\n`;
+
+              if (data.findings.length > 0) {
+                md += `---\n\n### Findings\n\n`;
+                for (const f of data.findings) {
+                  const icon = priorityIcon[f.priority] || '⚪';
+                  const label = priorityLabel[f.priority] || 'UNKNOWN';
+                  const loc = f.code_location;
+                  const file = loc?.filepath?.replace(/.*\/bingomaker\//, '') || '';
+                  const lines = loc?.line_range ? `L${loc.line_range.start}-${loc.line_range.end}` : '';
+                  const where = file ? `\`${file}${lines ? ':' + lines : ''}\`` : '';
+
+                  md += `#### ${icon} [${label}] ${f.title}\n`;
+                  if (where) md += `📍 ${where}\n\n`;
+                  md += `${f.body}\n\n`;
+                }
+              } else {
+                md += `\n✨ Nenhum problema encontrado.\n`;
+              }
+
+              body = md;
+            } catch {
+              body = `## AI Code Review (Codex)\n\n${raw}`;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
+        env:
+          CODEX_MESSAGE: ${{ needs.codex-review.outputs.final_message }}
