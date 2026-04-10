@@ -69,6 +69,9 @@ export function useServerEngine(): DebugEngine {
 
   // Track previous stakeIndex for idle-round refresh
   const prevStakeIndexRef = useRef(stakeIndex)
+  /** Always-current stakeIndex — read inside async callbacks to avoid stale closures */
+  const stakeIndexRef = useRef(stakeIndex)
+  stakeIndexRef.current = stakeIndex
 
   // ── Network retry state ─────────────────────────────────────
   const [retrying, setRetrying] = useState(false)
@@ -191,6 +194,14 @@ export function useServerEngine(): DebugEngine {
       .finally(() => {
         fetchingRef.current = false
         rerender()
+        // If stake changed while this fetch was in flight, the bet change
+        // effect was blocked by fetchingRef and prevStakeIndex wasn't updated.
+        // Re-trigger to pick up the latest stake.
+        if (stakeIndexRef.current !== prevStakeIndexRef.current) {
+          prevStakeIndexRef.current = stakeIndexRef.current
+          clearRetry()
+          setTimeout(() => newRoundRef.current(), 0)
+        }
       })
   }, [stakeIndex, rerender, scheduleRetry, clearRetry])
 
@@ -324,11 +335,14 @@ export function useServerEngine(): DebugEngine {
   autoNewRoundRef.current = autoNewRound
 
   // ── Stake change → new round with same cards (reuse seed) ──
-  // Triggers when idle (drawnIndex === 0) OR settled/conference (not actively drawing)
+  // Triggers when idle (drawnIndex === 0) OR settled/conference (not actively drawing).
+  // IMPORTANT: prevStakeIndex is only updated when we actually process the change.
+  // If fetchingRef blocks us, we leave prevStakeIndex stale so the post-fetch
+  // re-check in newRoundImpl.finally() picks up the pending change.
   useEffect(() => {
     if (stakeIndex === prevStakeIndexRef.current) return
-    prevStakeIndexRef.current = stakeIndex
     if (!roundRef.current || fetchingRef.current) return
+    prevStakeIndexRef.current = stakeIndex
     const idle = drawnIndexRef.current === 0
     const settled = drawnIndexRef.current >= targetBallCountRef.current
     if (idle || settled) {
