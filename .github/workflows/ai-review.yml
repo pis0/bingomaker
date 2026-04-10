@@ -9,12 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
     outputs:
       final_message: ${{ steps.run_codex.outputs.final-message }}
     steps:
       - name: Checkout PR merge ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
 
@@ -26,7 +25,7 @@ jobs:
 
       - name: Run Codex Review
         id: run_codex
-        uses: openai/codex-action@v1
+        uses: openai/codex-action@c25d10f3f498316d4b2496cc4c6dd58057a7b031 # v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt-file: .github/codex/prompts/review.md
@@ -44,7 +43,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Post review comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           github-token: ${{ github.token }}
           script: |
