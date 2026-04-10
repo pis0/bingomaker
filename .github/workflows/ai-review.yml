@@ -18,34 +18,23 @@ jobs:
           fetch-depth: 0
 
       - name: Get PR diff
-        id: diff
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr diff ${{ github.event.pull_request.number }} > pr_diff.txt
-          # Truncate to ~100K chars to stay within token limits
           head -c 100000 pr_diff.txt > pr_diff_trimmed.txt
 
       - name: AI Review
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           DIFF=$(cat pr_diff_trimmed.txt)
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_BODY=$(cat <<'PRBODY'
-          ${{ github.event.pull_request.body }}
-          PRBODY
-          )
 
-          # Build JSON payload safely using jq
-          SYSTEM_MSG="You are a senior code reviewer. Review the following pull request diff. Focus on:
-          1. Bugs or logic errors
-          2. Security vulnerabilities
-          3. Performance issues
-          4. Code clarity and maintainability
-
-          Be concise and actionable. If the code looks good, say so briefly. Do not nitpick style.
-          Respond in Portuguese (Brazilian)."
+          SYSTEM_MSG="You are a senior code reviewer. Review the following pull request diff. Focus on: 1) Bugs or logic errors 2) Security vulnerabilities 3) Performance issues 4) Code clarity and maintainability. Be concise and actionable. If the code looks good, say so briefly. Do not nitpick style. Respond in Portuguese (Brazilian)."
 
           USER_MSG=$(printf "## PR: %s\n\n%s\n\n## Diff:\n\`\`\`diff\n%s\n\`\`\`" "$PR_TITLE" "$PR_BODY" "$DIFF")
 
@@ -67,12 +56,7 @@ jobs:
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -d "$PAYLOAD")
 
-          # Extract review text
           REVIEW=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "Review failed — check API response."')
 
-          # Post as PR comment
-          COMMENT=$(printf "## 🤖 AI Code Review (gpt-4o)\n\n%s" "$REVIEW")
-          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          COMMENT=$(printf "## AI Code Review (gpt-4o)\n\n%s" "$REVIEW")
+          gh pr comment "$PR_NUMBER" --body "$COMMENT"
