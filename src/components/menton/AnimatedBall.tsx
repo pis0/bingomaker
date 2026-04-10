@@ -62,8 +62,8 @@ interface Props {
   superPos?: number
   /** Increments when another ball lands — triggers micro-shake on settled balls */
   shakeTick?: number
-  /** Y offset in pixels driven by water animation — ball bobs in sync */
-  floatOffset?: number
+  /** Ref to Y offset in pixels driven by water animation — read imperatively, no re-render */
+  floatOffsetRef?: React.RefObject<number>
   onArrive?: () => void
   /** Fires when ball lands from arc (super only — visual "hit" moment) */
   onLand?: () => void
@@ -78,7 +78,7 @@ interface Props {
  * Extra:   chute (130,-70) → waypoint → grid position (easeOutBack + spin)
  * Super:   chute → phase1 (340,365) → arc → stack position → snap
  */
-export default function AnimatedBall({ number, finalX, finalY, type, index, superPos = 0, shakeTick = 0, floatOffset = 0, onArrive, onLand, onSettled }: Props) {
+export default function AnimatedBall({ number, finalX, finalY, type, index, superPos = 0, shakeTick = 0, floatOffsetRef, onArrive, onLand, onSettled }: Props) {
   const containerRef = useRef<Container>(null)
   const onArriveRef = useRef(onArrive)
   onArriveRef.current = onArrive
@@ -152,17 +152,24 @@ export default function AnimatedBall({ number, finalX, finalY, type, index, supe
     }
   }, [shakeTick, type])
 
-  // Water float: apply Y offset from water animation (synced with TubeWater)
+  // Water float: apply Y offset from water animation (synced with TubeWater).
+  // Read from a ref via Ticker.shared so updates don't trigger re-renders.
   const floatBaseYRef = useRef<number | null>(null)
   useEffect(() => {
-    if (!settledRef.current) return
-    const container = containerRef.current
-    if (!container) return
-    if (floatBaseYRef.current === null) floatBaseYRef.current = container.y
-    container.y = floatBaseYRef.current + floatOffset
-    // Reset base when float ends
-    if (floatOffset === 0) floatBaseYRef.current = null
-  })
+    if (!floatOffsetRef) return
+    const ticker = Ticker.shared
+    const onTick = () => {
+      if (!settledRef.current) return
+      const container = containerRef.current
+      if (!container) return
+      const offset = floatOffsetRef.current
+      if (floatBaseYRef.current === null) floatBaseYRef.current = container.y
+      container.y = floatBaseYRef.current + offset
+      if (offset === 0) floatBaseYRef.current = null
+    }
+    ticker.add(onTick)
+    return () => { ticker.remove(onTick) }
+  }, [floatOffsetRef])
 
   const isExtra = type !== 'regular'
   const textureName = isExtra ? 'extraball' : 'ball'

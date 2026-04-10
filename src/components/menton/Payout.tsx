@@ -125,19 +125,21 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
   const [displayValue, setDisplayValue] = useState(0)
 
   // Detect payout increase → trigger won blink (AS3: blinkWonMoney)
-  if (value > prevValueRef.current && value > 0) {
-    prevValueRef.current = value
-    wonBlinkRef.current = true
-    wonTimerRef.current = 0
-    blinkTimerRef.current = 0
-    blinkToggleRef.current = false
-    setBgTexture(BG_GLOW)
-    setBgTextureImperative(BG_GLOW)
-  }
-  if (value === 0 && !collecting && !collectRef.current.active) {
-    prevValueRef.current = 0
-    wonBlinkRef.current = false
-  }
+  useEffect(() => {
+    if (value > prevValueRef.current && value > 0) {
+      prevValueRef.current = value
+      wonBlinkRef.current = true
+      wonTimerRef.current = 0
+      blinkTimerRef.current = 0
+      blinkToggleRef.current = false
+      setBgTexture(BG_GLOW)
+      setBgTextureImperative(BG_GLOW)
+    }
+    if (value === 0 && !collecting && !collectRef.current.active) {
+      prevValueRef.current = 0
+      wonBlinkRef.current = false
+    }
+  }, [value, collecting, setBgTextureImperative])
 
   // Handle tween trigger
   useEffect(() => {

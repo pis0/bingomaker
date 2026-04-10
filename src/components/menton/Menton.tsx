@@ -333,15 +333,17 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
 
   // Detect when spinSymbols first appears → start bell ring animation
   const rawSpinSymbols = round?.slotBonus.symbols ?? null
-  if (rawSpinSymbols && rawSpinSymbols !== prevSpinSymbolsRef.current) {
-    prevSpinSymbolsRef.current = rawSpinSymbols
-    if (!bellRingActive && !releasedSpinSymbols) {
-      setBellRingActive(true)
+  useEffect(() => {
+    if (rawSpinSymbols && rawSpinSymbols !== prevSpinSymbolsRef.current) {
+      prevSpinSymbolsRef.current = rawSpinSymbols
+      if (!bellRingActive && !releasedSpinSymbols) {
+        setBellRingActive(true)
+      }
     }
-  }
-  if (!rawSpinSymbols) {
-    prevSpinSymbolsRef.current = null
-  }
+    if (!rawSpinSymbols) {
+      prevSpinSymbolsRef.current = null
+    }
+  }, [rawSpinSymbols, bellRingActive, releasedSpinSymbols])
 
   // Bell ring animation complete → release symbols to BellPanel for slot spin
   const handleBellRingComplete = useCallback(() => {

@@ -34,10 +34,23 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     },
   })
 
-  const body = await res.json()
+  // Resilient body parsing — server may return non-JSON (HTML error pages from
+  // API Gateway, empty bodies on 204/5xx, etc). Fall back to text on parse error.
+  const text = await res.text()
+  let body: unknown = null
+  if (text) {
+    try {
+      body = JSON.parse(text)
+    } catch {
+      body = text
+    }
+  }
 
   if (!res.ok) {
-    const message = body?.error ?? body?.message ?? `HTTP ${res.status}`
+    const errBody = body as { error?: string; message?: string } | string | null
+    const message = (typeof errBody === 'object' && errBody !== null && (errBody.error ?? errBody.message))
+      || (typeof errBody === 'string' && errBody)
+      || `HTTP ${res.status}`
     throw new Error(message)
   }
 
