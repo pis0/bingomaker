@@ -4,7 +4,9 @@ import './index.css'
 import App from './App.tsx'
 import { installDevtools } from './engine/devtools'
 
-installDevtools()
+if (import.meta.env.DEV) {
+  installDevtools()
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -34,14 +34,32 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     },
   })
 
-  const body = await res.json()
+  const text = await res.text()
 
+  // Error path: tolerate non-JSON bodies (HTML error pages from API Gateway,
+  // empty bodies on 5xx, etc) so we always surface a meaningful error message.
   if (!res.ok) {
-    const message = body?.error ?? body?.message ?? `HTTP ${res.status}`
+    let errBody: unknown = null
+    if (text) {
+      try { errBody = JSON.parse(text) } catch { errBody = text }
+    }
+    const message = (typeof errBody === 'object' && errBody !== null
+      && ((errBody as { error?: string; message?: string }).error
+        ?? (errBody as { error?: string; message?: string }).message))
+      || (typeof errBody === 'string' && errBody)
+      || `HTTP ${res.status}`
     throw new Error(message)
   }
 
-  return body as T
+  // Success path: require valid JSON. A 2xx with non-JSON body means the server
+  // is broken (or a proxy/gateway is intercepting) — fail loudly instead of
+  // returning an invalid cast that would corrupt downstream state.
+  if (!text) throw new Error(`Empty response body (HTTP ${res.status})`)
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    throw new Error(`Invalid JSON in response (HTTP ${res.status})`)
+  }
 }
 
 /** POST /rounds — create a new round with the given stake.
