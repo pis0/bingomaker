@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "maxLength": 80 },
+          "body": { "type": "string" },
+          "confidence_score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "priority": { "type": "integer", "minimum": 0, "maximum": 3 },
+          "code_location": {
+            "type": "object",
+            "properties": {
+              "filepath": { "type": "string" },
+              "line_range": {
+                "type": "object",
+                "properties": {
+                  "start": { "type": "integer" },
+                  "end": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "required": ["title", "body", "priority"]
+      }
+    },
+    "overall_correctness": {
+      "type": "string",
+      "enum": ["patch is correct", "patch is incorrect"]
+    },
+    "overall_explanation": { "type": "string" },
+    "overall_confidence_score": { "type": "number", "minimum": 0, "maximum": 1 }
+  },
+  "required": ["findings", "overall_correctness", "overall_explanation"]
+}
