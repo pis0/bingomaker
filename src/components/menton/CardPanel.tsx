@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Container } from 'pixi.js'
 import { extend } from '@pixi/react'
 import { FULL } from '../../engine/Pattern'
@@ -50,27 +50,24 @@ export default function CardPanel({ x, y, onShuffle }: Props) {
   const triggeredFullRef = useRef<Set<number>>(new Set())
 
   // Detect FULL pattern on any card (AS3: Cardd → CardPanel.ME.animaBingo).
-  // Re-runs whenever the current ball index changes (i.e. a ball was drawn).
-  // setState is gated by triggeredFullRef so it fires at most once per FULL,
-  // not on every effect run — no cascading renders.
-  const currentBallIndex = round?.currentBallIndex ?? 0
-  useEffect(() => {
-    if (round) {
-      for (const card of round.cards) {
-        if (card.completedPatterns.has(FULL) && !triggeredFullRef.current.has(card.index)) {
-          triggeredFullRef.current.add(card.index)
-          // eslint-disable-next-line react-hooks/set-state-in-effect
-          setBingoCardIndex(card.index)
-          break
-        }
-        if (!card.completedPatterns.has(FULL) && triggeredFullRef.current.has(card.index)) {
-          triggeredFullRef.current.delete(card.index)
-        }
+  // Intentional render-time check guarded by triggeredFullRef. Engine mutates
+  // `round` in-place (fruit bomb etc.), so useEffect deps would miss state changes.
+  // The ref guard ensures setBingoCardIndex fires at most once per FULL detection.
+  if (round) {
+    for (const card of round.cards) {
+      if (card.completedPatterns.has(FULL) && !triggeredFullRef.current.has(card.index)) {
+        triggeredFullRef.current.add(card.index)
+        setBingoCardIndex(card.index)
+        break
       }
-    } else if (triggeredFullRef.current.size > 0) {
-      triggeredFullRef.current.clear()
+      // Undo cleared the FULL — allow re-trigger
+      if (!card.completedPatterns.has(FULL) && triggeredFullRef.current.has(card.index)) {
+        triggeredFullRef.current.delete(card.index)
+      }
     }
-  }, [round, currentBallIndex])
+  } else if (triggeredFullRef.current.size > 0) {
+    triggeredFullRef.current.clear()
+  }
 
   const handleHideCards = useCallback(() => {
     playSFX(PRIZE_BINGO, { volume: 0.2 })

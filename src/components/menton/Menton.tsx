@@ -331,19 +331,20 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     }
   })
 
-  // Detect when spinSymbols first appears → start bell ring animation
+  // Detect when spinSymbols first appears → start bell ring animation.
+  // Intentional render-time check guarded by ref. Engine mutates `round` in-place
+  // (bonus flows), so useEffect deps would miss reference-stable mutations.
+  // The ref guard fires at most once per change — no cascading renders.
   const rawSpinSymbols = round?.slotBonus.symbols ?? null
-  useEffect(() => {
-    if (rawSpinSymbols && rawSpinSymbols !== prevSpinSymbolsRef.current) {
-      prevSpinSymbolsRef.current = rawSpinSymbols
-      if (!bellRingActive && !releasedSpinSymbols) {
-        setBellRingActive(true)
-      }
+  if (rawSpinSymbols && rawSpinSymbols !== prevSpinSymbolsRef.current) {
+    prevSpinSymbolsRef.current = rawSpinSymbols
+    if (!bellRingActive && !releasedSpinSymbols) {
+      setBellRingActive(true)
     }
-    if (!rawSpinSymbols) {
-      prevSpinSymbolsRef.current = null
-    }
-  }, [rawSpinSymbols, bellRingActive, releasedSpinSymbols])
+  }
+  if (!rawSpinSymbols) {
+    prevSpinSymbolsRef.current = null
+  }
 
   // Bell ring animation complete → release symbols to BellPanel for slot spin
   const handleBellRingComplete = useCallback(() => {
