@@ -48,12 +48,46 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            const message = process.env.CODEX_MESSAGE;
+            const raw = process.env.CODEX_MESSAGE;
+            let body;
+            try {
+              const data = JSON.parse(raw);
+              const priorityLabel = { 0: 'INFO', 1: 'HIGH', 2: 'MEDIUM', 3: 'LOW' };
+              const priorityIcon = { 0: 'ℹ️', 1: '🔴', 2: '🟡', 3: '🟢' };
+              const correctIcon = data.overall_correctness === 'patch is correct' ? '✅' : '⚠️';
+
+              let md = `## AI Code Review (Codex)\n\n`;
+              md += `${correctIcon} **${data.overall_correctness}** (confidence: ${Math.round(data.overall_confidence_score * 100)}%)\n\n`;
+              md += `${data.overall_explanation}\n\n`;
+
+              if (data.findings.length > 0) {
+                md += `---\n\n### Findings\n\n`;
+                for (const f of data.findings) {
+                  const icon = priorityIcon[f.priority] || '⚪';
+                  const label = priorityLabel[f.priority] || 'UNKNOWN';
+                  const loc = f.code_location;
+                  const file = loc?.filepath?.replace(/.*\/bingomaker\//, '') || '';
+                  const lines = loc?.line_range ? `L${loc.line_range.start}-${loc.line_range.end}` : '';
+                  const where = file ? `\`${file}${lines ? ':' + lines : ''}\`` : '';
+
+                  md += `#### ${icon} [${label}] ${f.title}\n`;
+                  if (where) md += `📍 ${where}\n\n`;
+                  md += `${f.body}\n\n`;
+                }
+              } else {
+                md += `\n✨ Nenhum problema encontrado.\n`;
+              }
+
+              body = md;
+            } catch {
+              body = `## AI Code Review (Codex)\n\n${raw}`;
+            }
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              body: `## AI Code Review (Codex)\n\n${message}`,
+              body,
             });
         env:
           CODEX_MESSAGE: ${{ needs.codex-review.outputs.final_message }}
