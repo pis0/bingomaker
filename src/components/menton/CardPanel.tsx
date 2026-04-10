@@ -49,7 +49,10 @@ export default function CardPanel({ x, y, onShuffle }: Props) {
   const [bingoCardIndex, setBingoCardIndex] = useState<number | null>(null)
   const triggeredFullRef = useRef<Set<number>>(new Set())
 
-  // Detect FULL pattern on any card (AS3: Cardd → CardPanel.ME.animaBingo)
+  // Detect FULL pattern on any card (AS3: Cardd → CardPanel.ME.animaBingo).
+  // Intentional render-time check guarded by triggeredFullRef. Engine mutates
+  // `round` in-place (fruit bomb etc.), so useEffect deps would miss state changes.
+  // The ref guard ensures setBingoCardIndex fires at most once per FULL detection.
   if (round) {
     for (const card of round.cards) {
       if (card.completedPatterns.has(FULL) && !triggeredFullRef.current.has(card.index)) {

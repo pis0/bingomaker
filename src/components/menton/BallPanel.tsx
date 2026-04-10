@@ -329,11 +329,11 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
   const FLOAT_RISE = 2555 // ms — matches W2_PH1
   const FLOAT_FALL = 2000 // ms — matches W2_PH2
   const floatStartRef = useRef(0)
-  const [floatOffset, setFloatOffset] = useState(0)
+  const floatOffsetRef = useRef(0)
 
   useEffect(() => {
     if (launchedIndices.length === 0) {
-      setFloatOffset(0)
+      floatOffsetRef.current = 0
       return
     }
     if (floatStartRef.current === 0) floatStartRef.current = performance.now()
@@ -341,14 +341,12 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
     const onTick = () => {
       const elapsed = performance.now() - floatStartRef.current
       if (elapsed < FLOAT_RISE) {
-        // Rise phase: 0 → -FLOAT_AMP
-        setFloatOffset(-FLOAT_AMP * (elapsed / FLOAT_RISE))
+        floatOffsetRef.current = -FLOAT_AMP * (elapsed / FLOAT_RISE)
       } else if (elapsed < FLOAT_RISE + FLOAT_FALL) {
-        // Fall phase: -FLOAT_AMP → 0
         const t = (elapsed - FLOAT_RISE) / FLOAT_FALL
-        setFloatOffset(-FLOAT_AMP * (1 - t))
+        floatOffsetRef.current = -FLOAT_AMP * (1 - t)
       } else {
-        setFloatOffset(0)
+        floatOffsetRef.current = 0
         ticker.remove(onTick)
       }
     }
@@ -889,7 +887,7 @@ export default function BallPanel({ onBallArrive, onPeelChange, onSuperFlyingCha
               type="regular"
               index={i}
               shakeTick={regularShakeTick}
-              floatOffset={floatOffset}
+              floatOffsetRef={floatOffsetRef}
               onArrive={onRegularBallArrive}
             />
           )

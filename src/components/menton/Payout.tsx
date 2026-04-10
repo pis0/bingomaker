@@ -124,7 +124,9 @@ export default function Payout({ value, stake = 1, lastPayout = 0, tween = false
   // Displayed value — either real value, decrementing value, or lastPayout
   const [displayValue, setDisplayValue] = useState(0)
 
-  // Detect payout increase → trigger won blink (AS3: blinkWonMoney)
+  // Detect payout increase → trigger won blink (AS3: blinkWonMoney).
+  // Intentional render-time check guarded by prevValueRef — fires at most once
+  // per value increase, no cascading renders.
   if (value > prevValueRef.current && value > 0) {
     prevValueRef.current = value
     wonBlinkRef.current = true

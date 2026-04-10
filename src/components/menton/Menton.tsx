@@ -331,7 +331,10 @@ export default function Menton({ round, stakeIndex = 0, targetBallCount = 0, pro
     }
   })
 
-  // Detect when spinSymbols first appears → start bell ring animation
+  // Detect when spinSymbols first appears → start bell ring animation.
+  // Intentional render-time check guarded by ref. Engine mutates `round` in-place
+  // (bonus flows), so useEffect deps would miss reference-stable mutations.
+  // The ref guard fires at most once per change — no cascading renders.
   const rawSpinSymbols = round?.slotBonus.symbols ?? null
   if (rawSpinSymbols && rawSpinSymbols !== prevSpinSymbolsRef.current) {
     prevSpinSymbolsRef.current = rawSpinSymbols
