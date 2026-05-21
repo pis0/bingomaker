@@ -89,8 +89,13 @@ export function useServerEngine(): DebugEngine {
    * skip commitChainRef and race the queued commit for the same drawCount.
    * Peek consumption (ready/pending) is allowed because those balls are for
    * a later drawCount and serialise behind the chain.
+   *
+   * Paired with commitEpochRef: a round change bumps the epoch and resets the
+   * counter, and stale commits (captured under an older epoch) skip the
+   * decrement so the counter can't go negative and unblock the guard.
    */
   const pendingCommitsRef = useRef(0)
+  const commitEpochRef = useRef(0)
 
   /**
    * Generation counter bumped whenever a peek-in-flight should be considered
@@ -194,9 +199,12 @@ export function useServerEngine(): DebugEngine {
     prefetchRef.current = { state: 'idle' }
     // Reset the commit chain so a stuck/hung commit from the previous round
     // can't keep pendingCommitsRef > 0 and block extras in the new round.
-    // The dropped commit is logged but the old roundId is now stale anyway.
+    // Bump the epoch so old commits' `finally` skips the decrement — without
+    // this, stale finishes would drive the counter negative and silently
+    // disable the idle-path guard.
     commitChainRef.current = Promise.resolve()
     pendingCommitsRef.current = 0
+    commitEpochRef.current++
 
     fetchingRef.current = true
     const opts: { seed?: number; cardNumbers?: number[][] } = {}
@@ -362,6 +370,7 @@ export function useServerEngine(): DebugEngine {
    * from being finalised with stale drawCount.
    */
   const queueCommit = useCallback((roundId: string) => {
+    const epoch = commitEpochRef.current
     pendingCommitsRef.current++
     commitChainRef.current = commitChainRef.current
       .catch(() => {})
@@ -403,7 +412,12 @@ export function useServerEngine(): DebugEngine {
             }
           }
         } finally {
-          pendingCommitsRef.current--
+          // Skip decrement if a round change reset the counter — otherwise
+          // this stale finish would drive it negative and unblock the
+          // idle-path guard for the new round.
+          if (commitEpochRef.current === epoch) {
+            pendingCommitsRef.current--
+          }
         }
       })
   }, [rerender])
