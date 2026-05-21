@@ -136,6 +136,9 @@ export default function FruitBombAnimation({ active, bombPositions, onShake, onC
     phaseTimerRef.current = 0
   }, [])
 
+  // Persist sprites through round (matches AS3). Free players on unmount.
+  useEffect(() => cleanup, [cleanup])
+
   useTick((ticker) => {
     // Detect activation
     if (active && !wasActiveRef.current) {
@@ -200,8 +203,9 @@ export default function FruitBombAnimation({ active, bombPositions, onShake, onC
     }
 
     if (!active && wasActiveRef.current) {
+      // AS3: sprite persists on card until Cardd.clear() at round end.
+      // Round-end cleanup happens via parent's roundGen key change → unmount.
       wasActiveRef.current = false
-      cleanup()
       return
     }
 
