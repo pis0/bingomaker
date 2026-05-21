@@ -417,6 +417,9 @@ export function useServerEngine(): DebugEngine {
           // idle-path guard for the new round.
           if (commitEpochRef.current === epoch) {
             pendingCommitsRef.current--
+            // Re-evaluate canAdvance once the chain drains so the button
+            // un-disables when the last commit acks (no other render fires).
+            if (pendingCommitsRef.current === 0) rerender()
           }
         }
       })
@@ -724,8 +727,11 @@ export function useServerEngine(): DebugEngine {
   } else if (drawn < DEFAULT_BALLS && halted && !bonusActive) {
     advanceLabel = 'Next'
     canAdvance = true
-  } else if (isSettling || bonusActive || fetchingRef.current) {
-    // Busy — show current phase label but disabled
+  } else if (isSettling || bonusActive || fetchingRef.current || pendingCommitsRef.current > 0) {
+    // Busy — show current phase label but disabled.
+    // pendingCommitsRef > 0 means a peek-consumed draw is still committing;
+    // fetchExtraDraw's idle path bails until it acks. Without this guard the
+    // button would look clickable but taps would be silently ignored.
     if (drawn < DEFAULT_BALLS) {
       advanceLabel = 'Play'
     } else if (round.superExtraAvailable) {
