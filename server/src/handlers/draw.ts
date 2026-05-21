@@ -1,6 +1,7 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda'
 import { DEFAULT_BALLS, EXTRA_BALLS, SUPER_EXTRA_BALLS } from '../../../src/engine/constants'
 import { replayRound } from '../lib/replay'
+import { getCachedRound, setCachedRound, invalidateCachedRound } from '../lib/roundCache'
 import { getRoundItem, incrementDrawCount } from '../lib/dynamo'
 import { sanitizeDraw, sanitizeCard, sanitizeSlotBonus } from '../lib/sanitize'
 import { ok, error } from '../lib/responses'
@@ -18,8 +19,13 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (item.status !== 'active') return error(409, 'Round already completed')
     if (item.drawCount >= MAX_DRAWS) return error(409, 'No more draws available')
 
-    // Replay to current state
-    const round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
+    // Hydrate round: warm-instance cache avoids replaying 30+ draws from seed.
+    // Cached entry must match the DDB drawCount, otherwise it's stale.
+    let round = getCachedRound(roundId)
+    if (!round || round.currentBallIndex !== item.drawCount) {
+      round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
+      setCachedRound(roundId, round)
+    }
 
     // Validate extras are available
     if (!round.extraAvailable && !round.superExtraAvailable) {
@@ -29,7 +35,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     // Get extra price BEFORE drawing
     const extraPrice = round.extraPriceAt(item.drawCount, item.stake)
 
-    // Draw next ball
+    // Draw next ball (mutates the cached round in place)
     const draw = round.drawNext(item.stake)
     if (!draw) return error(500, 'Draw failed unexpectedly')
 
@@ -38,6 +44,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       await incrementDrawCount(roundId, item.drawCount, round.totalPayout)
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+        // Cache is now ahead of DDB (we mutated locally but didn't persist) — drop it
+        invalidateCachedRound(roundId)
         return error(409, 'Concurrent draw detected. Retry.')
       }
       throw err

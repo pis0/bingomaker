@@ -8,6 +8,7 @@ import { FruitBombBonusSession } from '../../../src/engine/FruitBombBonusSession
 import { STAKE_LEVELS, DEFAULT_BALLS, NUM_CARDS, CELLS } from '../../../src/engine/constants'
 import { makeSeededRandom } from '../lib/rng'
 import { putRoundItem } from '../lib/dynamo'
+import { setCachedRound } from '../lib/roundCache'
 import { sanitizeRoundFull } from '../lib/sanitize'
 import { created, error } from '../lib/responses'
 import { shuffle } from '../../../src/engine/utils'
@@ -90,6 +91,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       updatedAt: now,
       ttl: Math.floor(Date.now() / 1000) + 86400, // 24h TTL
     })
+
+    // Warm cache so the first drawExtra/endRound skips the replay rebuild
+    setCachedRound(roundId, round)
 
     return created(sanitizeRoundFull(roundId, seed, round, stake, bombPositions))
   } catch (err) {
