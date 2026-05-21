@@ -91,6 +91,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       ttl: Math.floor(Date.now() / 1000) + 86400, // 24h TTL
     })
 
+    // Note: NOT warming the cache here — sanitizeRoundFull eagerly calls
+    // round.extraPriceAt(i+30, stake) for all 15 extra slots while the round
+    // is still at state=30, baking stale prices into Round._extraPrices.
+    // Caching this object would return those stale prices on subsequent draws.
+    // First drawExtra/endRound replays fresh (lazy cache then stays correct).
+
     return created(sanitizeRoundFull(roundId, seed, round, stake, bombPositions))
   } catch (err) {
     console.error('createRound error:', err)

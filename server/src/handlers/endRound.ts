@@ -1,5 +1,6 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda'
 import { replayRound } from '../lib/replay'
+import { getCachedRound, invalidateCachedRound } from '../lib/roundCache'
 import { getRoundItem, completeRound } from '../lib/dynamo'
 import { ok, error } from '../lib/responses'
 
@@ -18,8 +19,11 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       status: 'completed',
     })
 
-    // Replay to get final payout (including x2 multiplier bonus)
-    const round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
+    // Replay to get final payout (including x2 multiplier bonus) — prefer cache
+    let round = getCachedRound(roundId)
+    if (!round || round.currentBallIndex !== item.drawCount) {
+      round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
+    }
     const finalPayout = round.totalPayout + round.winMultiplierPayout
 
     try {
@@ -30,6 +34,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       }
       throw err
     }
+
+    // Round is now completed — no future draws will hit this cache entry
+    invalidateCachedRound(roundId)
 
     return ok({
       roundId,
