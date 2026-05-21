@@ -382,6 +382,17 @@ export function useServerEngine(): DebugEngine {
               }
               if (attempt === maxAttempts - 1) {
                 console.error('[useServerEngine] commit gave up after retries:', err)
+                // Local state is now ahead of server's drawCount. Disable extras
+                // so the next idle-path click can't fire drawBall and receive the
+                // same ball back (the HIGH duplication scenario). User can still
+                // endRound — the resulting payout mismatch is a known V1 limitation
+                // (full getRound resync deferred until balance/cobrança requires it).
+                const round = roundRef.current
+                if (round) {
+                  round.extraAvailable = false
+                  round.superExtraAvailable = false
+                  rerender()
+                }
                 return
               }
               const delay = Math.min(2000 * Math.pow(2, attempt), 4000)
@@ -392,7 +403,7 @@ export function useServerEngine(): DebugEngine {
           pendingCommitsRef.current--
         }
       })
-  }, [])
+  }, [rerender])
 
   /**
    * Serialise endRound behind any pending commits. All three end paths
