@@ -83,6 +83,14 @@ export function useServerEngine(): DebugEngine {
    */
   const commitChainRef = useRef<Promise<void>>(Promise.resolve())
 
+  /**
+   * Generation counter bumped whenever a peek-in-flight should be considered
+   * cancelled (clearPrefetch, round change, endRound). Pending .then handlers
+   * capture the epoch at kickoff and bail out if it has changed by the time
+   * they run, preventing a late peek response from applying after end.
+   */
+  const prefetchEpochRef = useRef(0)
+
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autoEndFiredRef = useRef(false)
 
@@ -284,9 +292,11 @@ export function useServerEngine(): DebugEngine {
 
   // ── drawExtra/drawSuperExtra — fetch from server ──────────────
 
-  /** Drop the pending peek-prefetch. Pending commits (commitChainRef) are not
-   *  cancelled — they finish so server state stays consistent. */
+  /** Drop the pending peek-prefetch and invalidate any in-flight peek `.then`s
+   *  via the epoch counter. Pending commits (commitChainRef) are NOT cancelled
+   *  — they finish so server state stays consistent. */
   const clearPrefetch = useCallback(() => {
+    prefetchEpochRef.current++
     prefetchRef.current = { state: 'idle' }
   }, [])
 
@@ -302,17 +312,18 @@ export function useServerEngine(): DebugEngine {
     if (prefetchRef.current.state !== 'idle') return
     if (!round.extraAvailable && !round.superExtraAvailable) return
 
+    const epoch = prefetchEpochRef.current
     const promise = peekBall(roundId)
       .then((res): DrawResponse | null => {
-        // Discard if round changed underneath us
+        // Discard if round changed or peek was cancelled (clear/endRound)
         if (roundIdRef.current !== roundId) return null
-        if (prefetchRef.current.forRoundId !== roundId) return null
+        if (prefetchEpochRef.current !== epoch) return null
         prefetchRef.current = { state: 'ready', response: res, forRoundId: roundId }
         return res
       })
       .catch(err => {
         console.debug('[useServerEngine] peek failed:', err)
-        if (prefetchRef.current.forRoundId === roundId) {
+        if (prefetchEpochRef.current === epoch && prefetchRef.current.forRoundId === roundId) {
           prefetchRef.current = { state: 'idle' }
         }
         return null
@@ -338,6 +349,22 @@ export function useServerEngine(): DebugEngine {
       })
   }, [])
 
+  /**
+   * Serialise endRound behind any pending commits. All three end paths
+   * (manual endRound, autoNewRound, post-conference auto-end) must go through
+   * this so the server's final payout includes every committed extra.
+   */
+  const finalizeRound = useCallback((roundId: string) => {
+    commitChainRef.current = commitChainRef.current
+      .catch(() => {})
+      .then(() => apiEndRound(roundId))
+      .then(() => undefined)
+      .catch(err => {
+        // 409 = already completed; rest are network/server issues
+        console.error('[useServerEngine] endRound failed:', err)
+      })
+  }, [])
+
   const fetchExtraDraw = useCallback(() => {
     const roundId = roundIdRef.current
     if (!roundId || fetchingRef.current) return
@@ -359,18 +386,24 @@ export function useServerEngine(): DebugEngine {
 
     // Peek in flight — wait for it instead of duplicating the request
     if (prefetchRef.current.state === 'pending' && prefetchRef.current.forRoundId === roundId) {
+      const epoch = prefetchEpochRef.current
       fetchingRef.current = true
       rerender()
       prefetchRef.current.promise!
         .then(res => {
           fetchingRef.current = false
+          // Round transitioned (endRound/newRound) before peek landed — discard
+          if (prefetchEpochRef.current !== epoch || roundIdRef.current !== roundId) {
+            rerender()
+            return
+          }
           if (!res) {
             // Peek failed — fall through to a fresh commit
             fetchExtraDrawRef.current()
             return
           }
           const round = roundRef.current
-          if (round && roundIdRef.current === roundId) {
+          if (round) {
             applyDrawResponse(round, res)
             targetBallCountRef.current = round.draws.length
             rerender()
@@ -452,11 +485,13 @@ export function useServerEngine(): DebugEngine {
     const prevPayout = roundRef.current?.totalPayout ?? 0
     if (prevPayout > 0) setLastPayout(prevPayout)
     setIsCollecting(false)
-    // Complete old round on server (fire-and-forget, silently ignore 409 = already completed)
+    // Cancel any in-flight peek for the old round
+    clearPrefetch()
+    // Complete old round on server — serialised behind pending commits
     const oldId = roundIdRef.current
-    if (oldId) apiEndRound(oldId).catch(() => { /* already completed — ok */ })
+    if (oldId) finalizeRound(oldId)
     newRound()
-  }, [newRound])
+  }, [newRound, clearPrefetch, finalizeRound])
   // Stable ref — avoids stale closures in setTimeout callbacks
   const autoNewRoundRef = useRef(autoNewRound)
   autoNewRoundRef.current = autoNewRound
@@ -500,15 +535,8 @@ export function useServerEngine(): DebugEngine {
     // Drop unconsumed peek — server DDB hasn't been touched by it
     clearPrefetch()
 
-    // Wait for pending commits to land before finalising, otherwise the
-    // server's endRound payout is computed on stale drawCount.
-    commitChainRef.current = commitChainRef.current
-      .catch(() => {})
-      .then(() => apiEndRound(roundId))
-      .then(() => undefined)
-      .catch(err => {
-        console.error('[useServerEngine] endRound API failed:', err)
-      })
+    // Serialise behind pending commits so server's payout is correct
+    finalizeRound(roundId)
 
     // AS3: apply x2 multiplier bonus at end of round (server-authoritative, idempotent)
     roundRef.current?.applyMultiplierBonus()
@@ -520,7 +548,7 @@ export function useServerEngine(): DebugEngine {
     } else {
       autoEndTimerRef.current = setTimeout(() => autoNewRoundRef.current(), 300)
     }
-  }, [rerender, clearPrefetch])
+  }, [rerender, clearPrefetch, finalizeRound])
 
   // ── Advance — unified button handler ──────────────────────────
 
@@ -684,9 +712,10 @@ export function useServerEngine(): DebugEngine {
       autoEndTimerRef.current = setTimeout(() => {
         setIsCollecting(true)
         rerender()
-        // End on server
+        // End on server — serialised behind pending commits
+        clearPrefetch()
         const rid = roundIdRef.current
-        if (rid) apiEndRound(rid).catch(() => {})
+        if (rid) finalizeRound(rid)
         // Wait for collection to finish, then new round
         autoEndTimerRef.current = setTimeout(() => autoNewRoundRef.current(), 2000)
       }, CONFERENCE_TIMEOUT)
