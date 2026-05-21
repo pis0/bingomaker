@@ -179,7 +179,9 @@ export function useServerEngine(): DebugEngine {
     isPeelingRef.current = false
     setIsPeeling(false)
     peelAdvanceTickRef.current = 0
-    // Drop peek from the previous round (DDB untouched, no rollback needed)
+    // Drop peek + bump epoch so an in-flight peek for the OLD round can't
+    // resolve into `ready` state and block the new round's prefetch.
+    prefetchEpochRef.current++
     prefetchRef.current = { state: 'idle' }
 
     fetchingRef.current = true
@@ -332,19 +334,36 @@ export function useServerEngine(): DebugEngine {
   }, [])
   kickoffPrefetchRef.current = kickoffPrefetch
 
-  /** Queue a commit drawBall behind any in-flight commits. */
+  /**
+   * Queue a commit drawBall behind any in-flight commits. Retries network
+   * errors with backoff so a transient blip doesn't desync local→server
+   * state. Non-network errors (4xx/5xx) aren't retried — they signal a
+   * logical issue retrying won't fix.
+   */
   const queueCommit = useCallback((roundId: string) => {
     commitChainRef.current = commitChainRef.current
       .catch(() => {})
       .then(async () => {
-        // Discard if round changed
         if (roundIdRef.current !== roundId) return
-        try {
-          await drawBall(roundId)
-        } catch (err) {
-          // Commit failure desyncs client (already applied locally) from server.
-          // Surface for now; retry/rollback strategy can be added later.
-          console.warn('[useServerEngine] commit failed:', err)
+        const maxAttempts = 5
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          try {
+            await drawBall(roundId)
+            return
+          } catch (err) {
+            if (!isNetworkError(err)) {
+              console.error('[useServerEngine] commit failed (no retry):', err)
+              return
+            }
+            if (attempt === maxAttempts - 1) {
+              // Exhausted retries — local state is ahead of server. endRound
+              // (which awaits this chain) will compute on stale drawCount.
+              console.error('[useServerEngine] commit gave up after retries:', err)
+              return
+            }
+            const delay = Math.min(2000 * Math.pow(2, attempt), 10000)
+            await new Promise(r => setTimeout(r, delay))
+          }
         }
       })
   }, [])
