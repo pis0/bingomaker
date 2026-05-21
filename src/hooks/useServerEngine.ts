@@ -192,6 +192,11 @@ export function useServerEngine(): DebugEngine {
     // resolve into `ready` state and block the new round's prefetch.
     prefetchEpochRef.current++
     prefetchRef.current = { state: 'idle' }
+    // Reset the commit chain so a stuck/hung commit from the previous round
+    // can't keep pendingCommitsRef > 0 and block extras in the new round.
+    // The dropped commit is logged but the old roundId is now stale anyway.
+    commitChainRef.current = Promise.resolve()
+    pendingCommitsRef.current = 0
 
     fetchingRef.current = true
     const opts: { seed?: number; cardNumbers?: number[][] } = {}
@@ -382,11 +387,9 @@ export function useServerEngine(): DebugEngine {
               }
               if (attempt === maxAttempts - 1) {
                 console.error('[useServerEngine] commit gave up after retries:', err)
-                // Local state is now ahead of server's drawCount. Disable extras
-                // so the next idle-path click can't fire drawBall and receive the
-                // same ball back (the HIGH duplication scenario). User can still
-                // endRound — the resulting payout mismatch is a known V1 limitation
-                // (full getRound resync deferred until balance/cobrança requires it).
+                // Only disable extras if we're still on the same round —
+                // otherwise we'd punish a fresh round for an old commit failure.
+                if (roundIdRef.current !== roundId) return
                 const round = roundRef.current
                 if (round) {
                   round.extraAvailable = false
@@ -485,6 +488,8 @@ export function useServerEngine(): DebugEngine {
     rerender() // disable button immediately
     drawBall(roundId)
       .then(res => {
+        // Discard if the round changed while we were waiting on the network
+        if (roundIdRef.current !== roundId) return
         clearRetry()
         const round = roundRef.current
         if (!round) return
