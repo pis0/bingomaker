@@ -390,14 +390,14 @@ export function useServerEngine(): DebugEngine {
               }
               return
             } catch (err) {
-              if (!isNetworkError(err)) {
-                console.error('[useServerEngine] commit failed (no retry):', err)
-                return
-              }
-              if (attempt === maxAttempts - 1) {
-                console.error('[useServerEngine] commit gave up after retries:', err)
-                // Only disable extras if we're still on the same round —
-                // otherwise we'd punish a fresh round for an old commit failure.
+              const givingUp = !isNetworkError(err) || attempt === maxAttempts - 1
+              if (givingUp) {
+                console.error('[useServerEngine] commit failed:', err)
+                // Disable extras so the idle path can't fire drawBall for the
+                // same stale drawCount (HIGH duplication). Applies to both
+                // exhausted-retry network failures and immediate HTTP errors
+                // (5xx/409) — both leave local state ahead of the server.
+                // Skip if the user already moved on to a fresh round.
                 if (roundIdRef.current !== roundId) return
                 const round = roundRef.current
                 if (round) {
