@@ -8,7 +8,6 @@ import { FruitBombBonusSession } from '../../../src/engine/FruitBombBonusSession
 import { STAKE_LEVELS, DEFAULT_BALLS, NUM_CARDS, CELLS } from '../../../src/engine/constants'
 import { makeSeededRandom } from '../lib/rng'
 import { putRoundItem } from '../lib/dynamo'
-import { setCachedRound } from '../lib/roundCache'
 import { sanitizeRoundFull } from '../lib/sanitize'
 import { created, error } from '../lib/responses'
 import { shuffle } from '../../../src/engine/utils'
@@ -92,8 +91,11 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       ttl: Math.floor(Date.now() / 1000) + 86400, // 24h TTL
     })
 
-    // Warm cache so the first drawExtra/endRound skips the replay rebuild
-    setCachedRound(roundId, round)
+    // Note: NOT warming the cache here — sanitizeRoundFull eagerly calls
+    // round.extraPriceAt(i+30, stake) for all 15 extra slots while the round
+    // is still at state=30, baking stale prices into Round._extraPrices.
+    // Caching this object would return those stale prices on subsequent draws.
+    // First drawExtra/endRound replays fresh (lazy cache then stays correct).
 
     return created(sanitizeRoundFull(roundId, seed, round, stake, bombPositions))
   } catch (err) {
