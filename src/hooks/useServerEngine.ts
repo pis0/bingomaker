@@ -84,6 +84,15 @@ export function useServerEngine(): DebugEngine {
   const commitChainRef = useRef<Promise<void>>(Promise.resolve())
 
   /**
+   * Count of commits queued and not yet finished. The idle (no-peek) path in
+   * fetchExtraDraw bails when this is > 0: firing drawBall directly would
+   * skip commitChainRef and race the queued commit for the same drawCount.
+   * Peek consumption (ready/pending) is allowed because those balls are for
+   * a later drawCount and serialise behind the chain.
+   */
+  const pendingCommitsRef = useRef(0)
+
+  /**
    * Generation counter bumped whenever a peek-in-flight should be considered
    * cancelled (clearPrefetch, round change, endRound). Pending .then handlers
    * capture the epoch at kickoff and bail out if it has changed by the time
@@ -348,34 +357,39 @@ export function useServerEngine(): DebugEngine {
    * from being finalised with stale drawCount.
    */
   const queueCommit = useCallback((roundId: string) => {
+    pendingCommitsRef.current++
     commitChainRef.current = commitChainRef.current
       .catch(() => {})
       .then(async () => {
-        // 3 attempts (~6s worst case) keeps UX snappy. Beyond that,
-        // local state may stay ahead of server until next newRound resets it
-        // — acceptable for V1 single-user/mobile WebView; not worth a full
-        // getRound resync flow yet.
-        const maxAttempts = 3
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          try {
-            await drawBall(roundId)
-            // Server drawCount advanced — next peek is safe to fire
-            if (roundIdRef.current === roundId) {
-              kickoffPrefetchRef.current()
-            }
-            return
-          } catch (err) {
-            if (!isNetworkError(err)) {
-              console.error('[useServerEngine] commit failed (no retry):', err)
+        try {
+          // 3 attempts (~6s worst case) keeps UX snappy. Beyond that,
+          // local state may stay ahead of server until next newRound resets it
+          // — acceptable for V1 single-user/mobile WebView; not worth a full
+          // getRound resync flow yet.
+          const maxAttempts = 3
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+              await drawBall(roundId)
+              // Server drawCount advanced — next peek is safe to fire
+              if (roundIdRef.current === roundId) {
+                kickoffPrefetchRef.current()
+              }
               return
+            } catch (err) {
+              if (!isNetworkError(err)) {
+                console.error('[useServerEngine] commit failed (no retry):', err)
+                return
+              }
+              if (attempt === maxAttempts - 1) {
+                console.error('[useServerEngine] commit gave up after retries:', err)
+                return
+              }
+              const delay = Math.min(2000 * Math.pow(2, attempt), 4000)
+              await new Promise(r => setTimeout(r, delay))
             }
-            if (attempt === maxAttempts - 1) {
-              console.error('[useServerEngine] commit gave up after retries:', err)
-              return
-            }
-            const delay = Math.min(2000 * Math.pow(2, attempt), 4000)
-            await new Promise(r => setTimeout(r, delay))
           }
+        } finally {
+          pendingCommitsRef.current--
         }
       })
   }, [])
@@ -409,6 +423,7 @@ export function useServerEngine(): DebugEngine {
       prefetchRef.current = { state: 'idle' }
       const round = roundRef.current
       if (round) {
+        clearRetry() // drop any stale retry timer from a prior failure
         applyDrawResponse(round, res)
         targetBallCountRef.current = round.draws.length
         rerender()
@@ -437,6 +452,7 @@ export function useServerEngine(): DebugEngine {
           }
           const round = roundRef.current
           if (round) {
+            clearRetry() // drop any stale retry timer from a prior failure
             applyDrawResponse(round, res)
             targetBallCountRef.current = round.draws.length
             rerender()
@@ -447,7 +463,13 @@ export function useServerEngine(): DebugEngine {
       return
     }
 
-    // No peek available — straight commit
+    // No peek available — straight commit.
+    // Block if a previous commit is still in flight: drawBall direct would
+    // bypass commitChainRef and race the queued commit for the same drawCount.
+    // The chained commit will fire the next peek on ack, then user click hits
+    // ready/pending path instead.
+    if (pendingCommitsRef.current > 0) return
+
     fetchingRef.current = true
     rerender() // disable button immediately
     drawBall(roundId)
