@@ -20,7 +20,7 @@ import { DEFAULT_BALLS, STAKE_LEVELS } from '../engine/constants'
 import type { Round } from '../engine/Round'
 import type { DebugEngine } from '../debug/useDebugEngine'
 import { createRound, drawBall, endRound as apiEndRound } from '../api/client'
-import type { CreateRoundResponse } from '../../server/src/types/api'
+import type { CreateRoundResponse, DrawResponse } from '../../server/src/types/api'
 import {
   hydrateRound,
   applyDrawResponse,
@@ -62,6 +62,19 @@ export function useServerEngine(): DebugEngine {
   /** True while an API call is in-flight (prevents double-clicks) */
   const fetchingRef = useRef(false)
 
+  /**
+   * One-ball-ahead prefetch for extras: after each draw response, fire a
+   * background drawBall so the next click is served from memory (~0ms perceived
+   * latency). `forRoundId` guards against stale responses landing after a new
+   * round started; mismatched responses are dropped.
+   */
+  const prefetchRef = useRef<{
+    state: 'idle' | 'pending' | 'ready'
+    promise?: Promise<DrawResponse | null>
+    response?: DrawResponse
+    forRoundId?: string
+  }>({ state: 'idle' })
+
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autoEndFiredRef = useRef(false)
 
@@ -84,6 +97,8 @@ export function useServerEngine(): DebugEngine {
   const newRoundRef = useRef<() => void>(() => {})
   const fetchExtraDrawRef = useRef<() => void>(() => {})
   const advanceWithInitRef = useRef<() => void>(() => {})
+  /** Forward ref so processNextBall (declared earlier) can call kickoffPrefetch. */
+  const kickoffPrefetchRef = useRef<() => void>(() => {})
 
   const isNetworkError = (err: unknown): boolean => err instanceof TypeError
 
@@ -148,6 +163,8 @@ export function useServerEngine(): DebugEngine {
     isPeelingRef.current = false
     setIsPeeling(false)
     peelAdvanceTickRef.current = 0
+    // Drop any prefetch from the previous round
+    prefetchRef.current = { state: 'idle' }
 
     fetchingRef.current = true
     const opts: { seed?: number; cardNumbers?: number[][] } = {}
@@ -246,6 +263,12 @@ export function useServerEngine(): DebugEngine {
       targetBallCountRef.current = round.currentBallIndex
     }
 
+    // Kick off prefetch as soon as the main discharge ends and extras unlock
+    // (kickoffPrefetch is a no-op if one is already in flight or queued).
+    if (round.currentBallIndex >= DEFAULT_BALLS && (round.extraAvailable || round.superExtraAvailable)) {
+      kickoffPrefetchRef.current()
+    }
+
     bumpTick() // Force Zustand subscribers to re-read mutated card state
     rerender()
     return draw
@@ -253,9 +276,85 @@ export function useServerEngine(): DebugEngine {
 
   // ── drawExtra/drawSuperExtra — fetch from server ──────────────
 
+  /** Drop any prefetched/in-flight extra. Called on round changes. */
+  const clearPrefetch = useCallback(() => {
+    prefetchRef.current = { state: 'idle' }
+  }, [])
+
+  /**
+   * Fire a background drawBall for the next extra. Result is stashed in
+   * prefetchRef and consumed by the next user click. No UI side effects
+   * (doesn't toggle fetchingRef, doesn't rerender). Silent on error.
+   */
+  const kickoffPrefetch = useCallback(() => {
+    const roundId = roundIdRef.current
+    const round = roundRef.current
+    if (!roundId || !round) return
+    if (prefetchRef.current.state !== 'idle') return
+    if (!round.extraAvailable && !round.superExtraAvailable) return
+
+    const promise = drawBall(roundId)
+      .then((res): DrawResponse | null => {
+        // Discard if round changed underneath us
+        if (roundIdRef.current !== roundId) return null
+        if (prefetchRef.current.forRoundId !== roundId) return null
+        prefetchRef.current = { state: 'ready', response: res, forRoundId: roundId }
+        return res
+      })
+      .catch(err => {
+        // Silent: user click will retry via normal fetchExtraDraw
+        console.debug('[useServerEngine] prefetch failed:', err)
+        if (prefetchRef.current.forRoundId === roundId) {
+          prefetchRef.current = { state: 'idle' }
+        }
+        return null
+      })
+    prefetchRef.current = { state: 'pending', promise, forRoundId: roundId }
+  }, [])
+  kickoffPrefetchRef.current = kickoffPrefetch
+
   const fetchExtraDraw = useCallback(() => {
     const roundId = roundIdRef.current
     if (!roundId || fetchingRef.current) return
+
+    // Hit prefetched response — apply synchronously (zero perceived latency)
+    if (prefetchRef.current.state === 'ready' && prefetchRef.current.forRoundId === roundId) {
+      const res = prefetchRef.current.response!
+      prefetchRef.current = { state: 'idle' }
+      const round = roundRef.current
+      if (round) {
+        applyDrawResponse(round, res)
+        targetBallCountRef.current = round.draws.length
+        rerender()
+        kickoffPrefetch()
+      }
+      return
+    }
+
+    // Pending prefetch — wait for it instead of duplicating the request
+    if (prefetchRef.current.state === 'pending' && prefetchRef.current.forRoundId === roundId) {
+      fetchingRef.current = true
+      rerender()
+      prefetchRef.current.promise!
+        .then(res => {
+          fetchingRef.current = false
+          if (!res) {
+            // Prefetch failed — fall through to a fresh attempt
+            fetchExtraDrawRef.current()
+            return
+          }
+          const round = roundRef.current
+          if (round && roundIdRef.current === roundId) {
+            applyDrawResponse(round, res)
+            targetBallCountRef.current = round.draws.length
+            rerender()
+            // Clear the 'ready' state set by the resolved prefetch before chaining
+            prefetchRef.current = { state: 'idle' }
+            kickoffPrefetch()
+          }
+        })
+      return
+    }
 
     fetchingRef.current = true
     rerender() // disable button immediately
@@ -268,6 +367,7 @@ export function useServerEngine(): DebugEngine {
         // Bump target so BallPanel animates the new ball
         targetBallCountRef.current = round.draws.length
         rerender()
+        kickoffPrefetch()
       })
       .catch(err => {
         console.warn('[useServerEngine] drawExtra failed:', err)
@@ -288,7 +388,7 @@ export function useServerEngine(): DebugEngine {
         fetchingRef.current = false
         rerender()
       })
-  }, [rerender, scheduleRetry, clearRetry])
+  }, [rerender, scheduleRetry, clearRetry, kickoffPrefetch])
   fetchExtraDrawRef.current = fetchExtraDraw
 
   const drawExtra = useCallback(() => {
@@ -370,6 +470,8 @@ export function useServerEngine(): DebugEngine {
     isPeelingRef.current = false
     setIsPeeling(false)
     peelAdvanceTickRef.current = 0
+    // Drop prefetch — user opted out of more extras
+    clearPrefetch()
 
     // Notify server the round is ending
     apiEndRound(roundId).catch(err => {
@@ -386,7 +488,7 @@ export function useServerEngine(): DebugEngine {
     } else {
       autoEndTimerRef.current = setTimeout(() => autoNewRoundRef.current(), 300)
     }
-  }, [rerender])
+  }, [rerender, clearPrefetch])
 
   // ── Advance — unified button handler ──────────────────────────
 
