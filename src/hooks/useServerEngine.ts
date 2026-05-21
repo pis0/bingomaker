@@ -152,7 +152,7 @@ export function useServerEngine(): DebugEngine {
     fetchingRef.current = true
     const opts: { seed?: number; cardNumbers?: number[][] } = {}
     if (lockSeedRef.current) opts.seed = seedRef.current
-    if (reuseCards && cardNumbersRef.current) opts.cardNumbers = cardNumbersRef.current
+    if (reuseCards && cardNumbersRef.current && !lockSeedRef.current) opts.cardNumbers = cardNumbersRef.current
     console.log(`[newRound] reuseCards=${reuseCards} cards=${opts.cardNumbers ? 'yes' : 'no'} seed=${opts.seed ?? 'random'}`)
     createRound(STAKE_LEVELS[stakeIndex], Object.keys(opts).length > 0 ? opts : undefined)
       .then(res => {
