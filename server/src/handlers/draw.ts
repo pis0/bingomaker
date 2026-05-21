@@ -1,6 +1,7 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda'
 import { DEFAULT_BALLS, EXTRA_BALLS, SUPER_EXTRA_BALLS } from '../../../src/engine/constants'
 import { replayRound } from '../lib/replay'
+import { getCachedRound, setCachedRound, invalidateCachedRound } from '../lib/roundCache'
 import { getRoundItem, incrementDrawCount } from '../lib/dynamo'
 import { sanitizeDraw, sanitizeCard, sanitizeSlotBonus } from '../lib/sanitize'
 import { ok, error } from '../lib/responses'
@@ -12,12 +13,13 @@ const MAX_DRAWS = DEFAULT_BALLS + EXTRA_BALLS + SUPER_EXTRA_BALLS // 45
  *
  * Commit mode (default): advances the round one ball, persists drawCount to
  * DynamoDB via optimistic lock. The client's user-driven extra/super-extra
- * click takes this path.
+ * click takes this path. Uses the warm-instance round cache to skip replay.
  *
  * Peek mode (?peek=true): replays one extra step in-process, returns the
  * same response shape as commit, but does NOT touch DynamoDB. The client's
  * background prefetch uses this so a subsequent endRound is never charged
- * for a ball the user never consumed.
+ * for a ball the user never consumed. Peek deliberately skips the warm cache
+ * to avoid polluting the committed state with a speculative drawNext.
  *
  * Peek and commit are deterministic — for the same (seed, drawCount, stake)
  * they return the same draw. Client applies peek's response locally on user
@@ -36,9 +38,19 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (item.status !== 'active') return error(409, 'Round already completed')
     if (item.drawCount >= MAX_DRAWS) return error(409, 'No more draws available')
 
-    // Replay to current state. Peek deliberately skips the warm cache to avoid
-    // polluting the committed state with a speculative drawNext.
-    const round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
+    // Hydrate round. Commit uses the warm cache to skip replaying 30+ draws
+    // from seed; peek always replays fresh because mutating the cached round
+    // would corrupt the committed state for subsequent commits.
+    let round
+    if (isPeek) {
+      round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
+    } else {
+      round = getCachedRound(roundId)
+      if (!round || round.currentBallIndex !== item.drawCount) {
+        round = replayRound(item.seed, item.stake, item.drawCount, item.cardNumbers)
+        setCachedRound(roundId, round)
+      }
+    }
 
     // Validate extras are available
     if (!round.extraAvailable && !round.superExtraAvailable) {
@@ -48,7 +60,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     // Get extra price BEFORE drawing
     const extraPrice = round.extraPriceAt(item.drawCount, item.stake)
 
-    // Draw next ball
+    // Draw next ball (mutates the cached round in place when committing)
     const draw = round.drawNext(item.stake)
     if (!draw) return error(500, 'Draw failed unexpectedly')
 
@@ -58,6 +70,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         await incrementDrawCount(roundId, item.drawCount, round.totalPayout)
       } catch (err: unknown) {
         if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+          // Cache is now ahead of DDB (we mutated locally but didn't persist) — drop it
+          invalidateCachedRound(roundId)
           return error(409, 'Concurrent draw detected. Retry.')
         }
         throw err
