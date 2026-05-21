@@ -281,9 +281,11 @@ export function useServerEngine(): DebugEngine {
       targetBallCountRef.current = round.currentBallIndex
     }
 
-    // Kick off peek-prefetch as soon as the main discharge ends and extras
-    // unlock (kickoffPrefetch is a no-op if one is already queued).
-    if (round.currentBallIndex >= DEFAULT_BALLS && (round.extraAvailable || round.superExtraAvailable)) {
+    // Kick off the first peek the instant the main discharge ends and extras
+    // unlock. Subsequent peeks are chained by queueCommit on each commit ack
+    // — firing here on every animation tick would race a peek against a
+    // pending commit and re-fetch the same drawCount's ball.
+    if (round.currentBallIndex === DEFAULT_BALLS && (round.extraAvailable || round.superExtraAvailable)) {
       kickoffPrefetchRef.current()
     }
 
