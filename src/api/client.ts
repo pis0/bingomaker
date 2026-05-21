@@ -76,9 +76,18 @@ export function createRound(stake: number, opts?: { seed?: number; cardNumbers?:
   })
 }
 
-/** POST /rounds/:roundId/draw — draw the next ball */
+/** POST /rounds/:roundId/draw — draw the next ball (commits drawCount to DDB) */
 export function drawBall(roundId: string): Promise<DrawResponse> {
   return request<DrawResponse>(`/rounds/${roundId}/draw`, {
+    method: 'POST',
+  })
+}
+
+/** POST /rounds/:roundId/draw?peek=true — preview the next ball without
+ *  advancing server state. Returns the same response shape as drawBall but
+ *  does not write to DynamoDB. Use for background prefetch. */
+export function peekBall(roundId: string): Promise<DrawResponse> {
+  return request<DrawResponse>(`/rounds/${roundId}/draw?peek=true`, {
     method: 'POST',
   })
 }
