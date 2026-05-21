@@ -19,8 +19,8 @@ import type { Draw } from '../engine/Draw'
 import { DEFAULT_BALLS, STAKE_LEVELS } from '../engine/constants'
 import type { Round } from '../engine/Round'
 import type { DebugEngine } from '../debug/useDebugEngine'
-import { createRound, drawBall, endRound as apiEndRound } from '../api/client'
-import type { CreateRoundResponse } from '../../server/src/types/api'
+import { createRound, drawBall, peekBall, endRound as apiEndRound } from '../api/client'
+import type { CreateRoundResponse, DrawResponse } from '../../server/src/types/api'
 import {
   hydrateRound,
   applyDrawResponse,
@@ -62,6 +62,27 @@ export function useServerEngine(): DebugEngine {
   /** True while an API call is in-flight (prevents double-clicks) */
   const fetchingRef = useRef(false)
 
+  /**
+   * One-ball-ahead prefetch for extras via peekBall (read-only on the server).
+   * On user click, the response is applied locally for ~0ms perceived latency
+   * and a commit drawBall is queued through commitChainRef in the background.
+   * `forRoundId` guards against stale responses landing after a new round.
+   */
+  const prefetchRef = useRef<{
+    state: 'idle' | 'pending' | 'ready'
+    promise?: Promise<DrawResponse | null>
+    response?: DrawResponse
+    forRoundId?: string
+  }>({ state: 'idle' })
+
+  /**
+   * Serialised promise chain for commit drawBall calls. Each new commit awaits
+   * the previous so the server sees them in order (drawCount optimistic lock
+   * would otherwise race). endRound also awaits this before finalising so the
+   * server's payout is computed over all peeked-then-clicked balls.
+   */
+  const commitChainRef = useRef<Promise<void>>(Promise.resolve())
+
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autoEndFiredRef = useRef(false)
 
@@ -84,6 +105,8 @@ export function useServerEngine(): DebugEngine {
   const newRoundRef = useRef<() => void>(() => {})
   const fetchExtraDrawRef = useRef<() => void>(() => {})
   const advanceWithInitRef = useRef<() => void>(() => {})
+  /** Forward ref so processNextBall (declared earlier) can call kickoffPrefetch. */
+  const kickoffPrefetchRef = useRef<() => void>(() => {})
 
   const isNetworkError = (err: unknown): boolean => err instanceof TypeError
 
@@ -148,6 +171,8 @@ export function useServerEngine(): DebugEngine {
     isPeelingRef.current = false
     setIsPeeling(false)
     peelAdvanceTickRef.current = 0
+    // Drop peek from the previous round (DDB untouched, no rollback needed)
+    prefetchRef.current = { state: 'idle' }
 
     fetchingRef.current = true
     const opts: { seed?: number; cardNumbers?: number[][] } = {}
@@ -246,6 +271,12 @@ export function useServerEngine(): DebugEngine {
       targetBallCountRef.current = round.currentBallIndex
     }
 
+    // Kick off peek-prefetch as soon as the main discharge ends and extras
+    // unlock (kickoffPrefetch is a no-op if one is already queued).
+    if (round.currentBallIndex >= DEFAULT_BALLS && (round.extraAvailable || round.superExtraAvailable)) {
+      kickoffPrefetchRef.current()
+    }
+
     bumpTick() // Force Zustand subscribers to re-read mutated card state
     rerender()
     return draw
@@ -253,10 +284,105 @@ export function useServerEngine(): DebugEngine {
 
   // ── drawExtra/drawSuperExtra — fetch from server ──────────────
 
+  /** Drop the pending peek-prefetch. Pending commits (commitChainRef) are not
+   *  cancelled — they finish so server state stays consistent. */
+  const clearPrefetch = useCallback(() => {
+    prefetchRef.current = { state: 'idle' }
+  }, [])
+
+  /**
+   * Fire a background peekBall for the next extra. The response is stashed in
+   * prefetchRef and consumed by the next user click. No UI side effects.
+   * Silent on error — user click falls back to a fresh commit.
+   */
+  const kickoffPrefetch = useCallback(() => {
+    const roundId = roundIdRef.current
+    const round = roundRef.current
+    if (!roundId || !round) return
+    if (prefetchRef.current.state !== 'idle') return
+    if (!round.extraAvailable && !round.superExtraAvailable) return
+
+    const promise = peekBall(roundId)
+      .then((res): DrawResponse | null => {
+        // Discard if round changed underneath us
+        if (roundIdRef.current !== roundId) return null
+        if (prefetchRef.current.forRoundId !== roundId) return null
+        prefetchRef.current = { state: 'ready', response: res, forRoundId: roundId }
+        return res
+      })
+      .catch(err => {
+        console.debug('[useServerEngine] peek failed:', err)
+        if (prefetchRef.current.forRoundId === roundId) {
+          prefetchRef.current = { state: 'idle' }
+        }
+        return null
+      })
+    prefetchRef.current = { state: 'pending', promise, forRoundId: roundId }
+  }, [])
+  kickoffPrefetchRef.current = kickoffPrefetch
+
+  /** Queue a commit drawBall behind any in-flight commits. */
+  const queueCommit = useCallback((roundId: string) => {
+    commitChainRef.current = commitChainRef.current
+      .catch(() => {})
+      .then(async () => {
+        // Discard if round changed
+        if (roundIdRef.current !== roundId) return
+        try {
+          await drawBall(roundId)
+        } catch (err) {
+          // Commit failure desyncs client (already applied locally) from server.
+          // Surface for now; retry/rollback strategy can be added later.
+          console.warn('[useServerEngine] commit failed:', err)
+        }
+      })
+  }, [])
+
   const fetchExtraDraw = useCallback(() => {
     const roundId = roundIdRef.current
     if (!roundId || fetchingRef.current) return
 
+    // Apply a ready peek synchronously, fire commit in background
+    if (prefetchRef.current.state === 'ready' && prefetchRef.current.forRoundId === roundId) {
+      const res = prefetchRef.current.response!
+      prefetchRef.current = { state: 'idle' }
+      const round = roundRef.current
+      if (round) {
+        applyDrawResponse(round, res)
+        targetBallCountRef.current = round.draws.length
+        rerender()
+        queueCommit(roundId)
+        kickoffPrefetch()
+      }
+      return
+    }
+
+    // Peek in flight — wait for it instead of duplicating the request
+    if (prefetchRef.current.state === 'pending' && prefetchRef.current.forRoundId === roundId) {
+      fetchingRef.current = true
+      rerender()
+      prefetchRef.current.promise!
+        .then(res => {
+          fetchingRef.current = false
+          if (!res) {
+            // Peek failed — fall through to a fresh commit
+            fetchExtraDrawRef.current()
+            return
+          }
+          const round = roundRef.current
+          if (round && roundIdRef.current === roundId) {
+            applyDrawResponse(round, res)
+            targetBallCountRef.current = round.draws.length
+            rerender()
+            prefetchRef.current = { state: 'idle' }
+            queueCommit(roundId)
+            kickoffPrefetch()
+          }
+        })
+      return
+    }
+
+    // No peek available — straight commit
     fetchingRef.current = true
     rerender() // disable button immediately
     drawBall(roundId)
@@ -268,6 +394,7 @@ export function useServerEngine(): DebugEngine {
         // Bump target so BallPanel animates the new ball
         targetBallCountRef.current = round.draws.length
         rerender()
+        kickoffPrefetch()
       })
       .catch(err => {
         console.warn('[useServerEngine] drawExtra failed:', err)
@@ -288,7 +415,7 @@ export function useServerEngine(): DebugEngine {
         fetchingRef.current = false
         rerender()
       })
-  }, [rerender, scheduleRetry, clearRetry])
+  }, [rerender, scheduleRetry, clearRetry, kickoffPrefetch, queueCommit])
   fetchExtraDrawRef.current = fetchExtraDraw
 
   const drawExtra = useCallback(() => {
@@ -370,11 +497,18 @@ export function useServerEngine(): DebugEngine {
     isPeelingRef.current = false
     setIsPeeling(false)
     peelAdvanceTickRef.current = 0
+    // Drop unconsumed peek — server DDB hasn't been touched by it
+    clearPrefetch()
 
-    // Notify server the round is ending
-    apiEndRound(roundId).catch(err => {
-      console.error('[useServerEngine] endRound API failed:', err)
-    })
+    // Wait for pending commits to land before finalising, otherwise the
+    // server's endRound payout is computed on stale drawCount.
+    commitChainRef.current = commitChainRef.current
+      .catch(() => {})
+      .then(() => apiEndRound(roundId))
+      .then(() => undefined)
+      .catch(err => {
+        console.error('[useServerEngine] endRound API failed:', err)
+      })
 
     // AS3: apply x2 multiplier bonus at end of round (server-authoritative, idempotent)
     roundRef.current?.applyMultiplierBonus()
@@ -386,7 +520,7 @@ export function useServerEngine(): DebugEngine {
     } else {
       autoEndTimerRef.current = setTimeout(() => autoNewRoundRef.current(), 300)
     }
-  }, [rerender])
+  }, [rerender, clearPrefetch])
 
   // ── Advance — unified button handler ──────────────────────────
 
